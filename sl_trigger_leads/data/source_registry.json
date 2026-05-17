@@ -1,0 +1,62 @@
+{
+  "version": "PROMPT#05-transparency-recovery-v1",
+  "policy": "Runtime sources must be real public web pages. Public configured source URLs are discloseable. No sample, synthetic, example.test, or simulated evidence sources are allowed.",
+  "sources": [
+    {
+      "source_id": "dailyft_it_telecom_tech",
+      "source_name": "Daily FT - IT / Telecom / Tech",
+      "base_url": "https://www.ft.lk/it-telecom-tech/50",
+      "type": "news",
+      "country": "Sri Lanka",
+      "fetch_method": "simple_http",
+      "enabled": true,
+      "notes": "Daily FT public section page for Sri Lankan IT, telecom, and technology business news.",
+      "search_terms": ["AI", "digital", "technology", "appoints", "launches", "partners", "automation", "5G", "cybersecurity", "data", "transformation"],
+      "recovery_candidates": ["https://www.ft.lk/", "https://www.ft.lk/rss"]
+    },
+    {
+      "source_id": "dailyft_business",
+      "source_name": "Daily FT - Business",
+      "base_url": "https://www.ft.lk/business/34",
+      "type": "news",
+      "country": "Sri Lanka",
+      "fetch_method": "simple_http",
+      "enabled": true,
+      "notes": "Daily FT public business section page for expansion, leadership, product, and market signals.",
+      "search_terms": ["appoints", "appointed", "launches", "expands", "partners", "investment", "digital", "automation", "platform", "data"],
+      "recovery_candidates": ["https://www.ft.lk/", "https://www.ft.lk/rss"]
+    },
+    {
+      "source_id": "itpro_jobs",
+      "source_name": "ITPro.lk Jobs",
+      "base_url": "https://itpro.lk/jobs",
+      "type": "job_board",
+      "country": "Sri Lanka",
+      "fetch_method": "simple_http",
+      "enabled": true,
+      "notes": "Public Sri Lankan IT jobs page. Hiring signals can indicate IT delivery, data, support, AI, and integration demand.",
+      "search_terms": ["Engineer", "Developer", "Data", "AI", "Automation", "Dynamics", "CRM", "Support", "Integration", "Business Analyst"],
+      "recovery_candidates": ["https://itpro.lk/", "https://itpro.lk/jobs"]
+    },
+    {
+      "source_id": "cse_announcements",
+      "source_name": "Colombo Stock Exchange - Company Announcements",
+      "base_url": "https://www.cse.lk/announcements",
+      "type": "announcements",
+      "country": "Sri Lanka",
+      "fetch_method": "simple_http",
+      "enabled": true,
+      "notes": "Public CSE company announcements page. Used conservatively; extraction may be low-yield if content is script-rendered.",
+      "search_terms": ["appointment", "resignation", "acquisition", "investment", "compliance", "digital", "system", "risk"],
+      "recovery_candidates": [
+        "https://www.cse.lk/",
+        "https://www.cse.lk/announcements",
+        "https://www.cse.lk/announcements/?category=CORPORATE+DISCLOSURE",
+        "https://www.cse.lk/general-announcements"
+      ],
+      "previous_urls": [
+        "https://www.cse.lk/pages/company-announcements/company-announcements.component.html"
+      ]
+    }
+  ]
+}

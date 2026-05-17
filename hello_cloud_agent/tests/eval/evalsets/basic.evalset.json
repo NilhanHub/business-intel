@@ -1,0 +1,30 @@
+{
+  "eval_set_id": "basic_eval",
+  "name": "Basic Agent Evaluation",
+  "description": "PROMPT#07 hello-cloud smoke evaluation.",
+  "eval_cases": [
+    {
+      "eval_id": "hello_cloud_exact_reply",
+      "conversation": [
+        {
+          "user_content": {
+            "parts": [{"text": "hello"}]
+          },
+          "final_response": {
+            "role": "model",
+            "parts": [
+              {
+                "text": "Hello Nilhan, the Business-Intel cloud agent is working."
+              }
+            ]
+          }
+        }
+      ],
+      "session_input": {
+        "app_name": "hello_cloud_agent",
+        "user_id": "eval_user",
+        "state": {}
+      }
+    }
+  ]
+}

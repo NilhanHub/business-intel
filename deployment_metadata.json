@@ -1,0 +1,13 @@
+{
+  "remote_agent_runtime_id": "projects/44345068412/locations/us-central1/reasoningEngines/3155700076542689280",
+  "previous_agent_runtime_id": "projects/44345068412/locations/us-central1/reasoningEngines/6014175222062645248",
+  "deployment_target": "agent_runtime",
+  "is_a2a": false,
+  "deployment_timestamp": "2026-05-10T20:02:13.151917+05:30",
+  "identity_redeploy": {
+    "agent_identity_enabled": true,
+    "effective_identity": "agents.global.org-785760668571.system.id.goog/resources/aiplatform/projects/44345068412/locations/us-central1/reasoningEngines/3155700076542689280",
+    "rollback_runtime_id": "projects/44345068412/locations/us-central1/reasoningEngines/6014175222062645248",
+    "evidence_root": "D:\\gaps\\Business_Intel\\Evidence\\AGENT_RUNTIME_IDENTITY_REDEPLOY"
+  }
+}

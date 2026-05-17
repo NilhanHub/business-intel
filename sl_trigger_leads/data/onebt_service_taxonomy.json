@@ -1,0 +1,123 @@
+{
+  "version": "PROMPT#06-onebt-taxonomy-v1",
+  "policy": "Local 1BT service taxonomy for verified live public-signal opportunity analysis. Do not read the 1BT website at runtime. Do not analyze sample, fake, or unverified leads.",
+  "buckets": [
+    {
+      "bucket_id": "staff_augmentation_delivery_capacity",
+      "display_name": "Staff Augmentation / Delivery Capacity",
+      "use_when": "Signals show hiring pressure, many engineering roles, urgent project delivery, QA roles, integration engineers, backend roles, data roles, AI developer roles, or support roles.",
+      "when_not_to_use": "Do not use when the evidence is not about delivery capacity, hiring, project pressure, or technical execution needs.",
+      "best_for_signals": [
+        "hiring software engineers",
+        "hiring QA/QE engineers",
+        "hiring API/integration engineers",
+        "hiring data engineers/analysts",
+        "hiring AI developers",
+        "multiple open tech roles"
+      ],
+      "keywords": ["hiring", "vacancy", "vacancies", "job", "jobs", "role", "roles", "engineer", "developer", "qe", "qa", "api", "integration", "backend", "data engineer", "data analyst", "support engineer", "delivery"],
+      "example_angle": "We noticed you are expanding your technical team; 1BT can provide near-term engineering capacity while hiring ramps.",
+      "evidence_needed": "Live public hiring, role, or delivery-pressure evidence with source URL and excerpt."
+    },
+    {
+      "bucket_id": "custom_software_development",
+      "display_name": "Custom Software Development",
+      "use_when": "Signals show product launch, platform build, app modernization, SaaS build, backend delivery, portals, workflow tools, or new digital products.",
+      "when_not_to_use": "Do not use for generic PR, pure support, or strategy-only signals without delivery evidence.",
+      "best_for_signals": ["product launch", "platform build", "SaaS build", "backend delivery", "portal", "workflow tool", "software engineer"],
+      "keywords": ["software engineer", "software development", ".net", "backend", "developer", "platform", "product launch", "portal", "application", "web developer", "mobile development"],
+      "example_angle": "1BT supports custom software/product delivery with AI-accelerated engineering.",
+      "evidence_needed": "Live evidence of a product, platform, app, backend, portal, or software delivery need."
+    },
+    {
+      "bucket_id": "ai_apps_workflow_automation",
+      "display_name": "AI Apps / AI Workflow Automation",
+      "use_when": "Signals show AI initiatives, automation programs, AI developer roles, AI pilots, productivity automation, agentic workflows, or intelligent process automation.",
+      "when_not_to_use": "Do not use just because AI is fashionable; require concrete AI, automation, workflow, developer, or implementation evidence.",
+      "best_for_signals": ["AI developer", "AI engineer", "automation program", "AI pilot", "agentic workflow", "intelligent process automation"],
+      "keywords": ["ai developer", "ai engineer", "ai", "artificial intelligence", "ml", "machine learning", "mlops", "automation", "workflow", "agentic", "intelligent process"],
+      "example_angle": "1BT helps teams convert AI intent into practical apps, workflows, and automation.",
+      "evidence_needed": "Live evidence of AI or automation activity beyond vague PR language."
+    },
+    {
+      "bucket_id": "ai_strategy_consulting",
+      "display_name": "AI Strategy Consulting",
+      "use_when": "Signals show board/executive AI strategy, digital transformation agenda, exploratory AI programs, or need for AI roadmap before implementation.",
+      "when_not_to_use": "Do not use for concrete engineering roles where implementation capacity is the stronger fit.",
+      "best_for_signals": ["AI strategy", "AI roadmap", "executive digital agenda", "exploratory AI program"],
+      "keywords": ["ai strategy", "ai roadmap", "roadmap", "board", "executive", "digital transformation agenda", "transformation agenda", "exploratory ai"],
+      "example_angle": "1BT can help turn AI ambition into a practical roadmap and delivery plan.",
+      "evidence_needed": "Live evidence of strategy, executive intent, roadmap, or exploratory AI activity."
+    },
+    {
+      "bucket_id": "data_analytics_ai",
+      "display_name": "Data Analytics & AI",
+      "use_when": "Signals show reporting dashboards, analytics products, data workflows, business intelligence, data platforms, customer analytics, or operational insights.",
+      "when_not_to_use": "Do not use for generic technology news without a data, analytics, dashboard, or insight signal.",
+      "best_for_signals": ["dashboard", "analytics", "data analyst", "reporting", "business intelligence", "data platform"],
+      "keywords": ["dashboard", "dashboards", "analytics", "data analyst", "data engineer", "reporting", "business intelligence", "bi", "data workflow", "data platform", "customer analytics", "insights"],
+      "example_angle": "1BT can support data workflows, analytics, and AI-backed insight systems.",
+      "evidence_needed": "Live evidence of data, reporting, analytics, dashboard, BI, or insight needs."
+    },
+    {
+      "bucket_id": "microsoft_dynamics_365_crm_power_platform",
+      "display_name": "Microsoft Dynamics 365 / CRM / Power Platform",
+      "use_when": "Signals show CRM, sales/customer service processes, claims/customer support workflows, Microsoft stack, Power Platform, Dynamics 365, ERP/finance/operations, field service, or customer data modernization.",
+      "when_not_to_use": "Do not claim Dynamics, CRM, or Power Platform unless the evidence names CRM/customer workflow, Microsoft stack, or adjacent operational systems.",
+      "best_for_signals": ["CRM", "Dynamics 365", "Power Platform", "customer service", "claims automation", "field service", "customer data modernization"],
+      "keywords": ["crm", "dynamics", "dynamics 365", "power platform", "customer service", "claims automation", "claims", "field service", "customer data", "erp", "finance operations", "sales process"],
+      "example_angle": "1BT supports Dynamics 365/CRM discovery, design, implementation, migration, training, support, and ongoing management.",
+      "evidence_needed": "Live evidence of CRM, customer service, claims, Microsoft stack, ERP, field service, or customer-data modernization."
+    },
+    {
+      "bucket_id": "integrations_api_middleware",
+      "display_name": "Integrations / API / Middleware",
+      "use_when": "Signals show API engineers, middleware roles, integration projects, system connectivity, data exchange, ERP/CRM integration, payment/logistics/operations integration.",
+      "when_not_to_use": "Do not use when API or integration is absent from the evidence.",
+      "best_for_signals": ["API engineer", "middleware role", "integration project", "system connectivity", "data exchange", "ERP/CRM integration"],
+      "keywords": ["api", "apis", "integration", "integrations", "middleware", "erp integration", "crm integration", "data exchange", "system connectivity", "payment integration"],
+      "example_angle": "1BT can help stabilize and accelerate integrations, APIs, and middleware delivery.",
+      "evidence_needed": "Live evidence that explicitly names APIs, integrations, middleware, or system connectivity."
+    },
+    {
+      "bucket_id": "managed_application_it_support",
+      "display_name": "Managed Application / IT Support",
+      "use_when": "Signals show support load, application support hiring, production systems, operations support, customer support tooling, or need for ongoing platform management.",
+      "when_not_to_use": "Do not use for build-only or strategy-only signals unless support or production operations are evident.",
+      "best_for_signals": ["application support", "support engineer", "production support", "operations support", "managed support"],
+      "keywords": ["application support", "support engineer", "production support", "operations support", "managed support", "managed it", "support load", "customer support tooling", "platform management"],
+      "example_angle": "1BT can provide managed support for applications, workflows, and business systems.",
+      "evidence_needed": "Live evidence of support, production, operations, or ongoing platform management pressure."
+    },
+    {
+      "bucket_id": "cloud_product_development",
+      "display_name": "Cloud Product Development / AWS / Azure",
+      "use_when": "Signals show cloud platform build, SaaS scale-up, AWS/Azure requirements, serverless pipelines, deployment modernization, or cloud product engineering.",
+      "when_not_to_use": "Do not use for generic web development unless cloud, SaaS, AWS, Azure, serverless, or platform scale is present.",
+      "best_for_signals": ["AWS", "Azure", "cloud platform", "SaaS scale-up", "serverless", "deployment modernization"],
+      "keywords": ["aws", "azure", "cloud", "serverless", "saas", "deployment modernization", "cloud platform", "cloud product", "devops"],
+      "example_angle": "1BT can support cloud product development and scalable platform delivery.",
+      "evidence_needed": "Live evidence of cloud platform, SaaS, AWS, Azure, serverless, DevOps, or scalable product delivery."
+    },
+    {
+      "bucket_id": "qa_test_automation",
+      "display_name": "QA / Test Automation",
+      "use_when": "Signals show QA/QE roles, test automation, API testing, BDD, performance testing, quality engineering, regression testing, or release pressure.",
+      "when_not_to_use": "Do not use when quality, testing, QA, QE, or release pressure is absent.",
+      "best_for_signals": ["QE engineer", "QA engineer", "test automation", "API testing", "BDD", "performance testing", "regression testing"],
+      "keywords": ["qe", "qa", "quality engineering", "quality assurance", "test automation", "api testing", "testing", "bdd", "performance testing", "regression testing", "release confidence"],
+      "example_angle": "1BT can strengthen QA, API testing, automation, and release confidence.",
+      "evidence_needed": "Live evidence of QA, QE, test automation, API testing, or release quality pressure."
+    },
+    {
+      "bucket_id": "low_fit_or_watch",
+      "display_name": "Low Fit / Watch",
+      "use_when": "Evidence is real but weak, vague, non-IT, too junior, too general, or not clearly related to 1BT services.",
+      "when_not_to_use": "Do not use if another bucket has clear, source-backed evidence.",
+      "best_for_signals": ["generic PR", "vague AI claim", "non-IT update", "too junior", "no concrete service fit"],
+      "keywords": ["award", "csr", "anniversary", "sponsorship", "celebrates", "recognised", "generic", "vague"],
+      "example_angle": "Do not pitch yet; monitor until stronger operational or technology evidence appears.",
+      "evidence_needed": "A live source still exists, but it does not support a confident 1BT opportunity claim."
+    }
+  ]
+}
