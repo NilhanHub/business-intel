@@ -1,6 +1,7 @@
 from google.adk.agents import Agent
 from google.adk.apps import App
 
+from .agents.classification_reviewer_agent import d365_classification_reviewer_agent
 from .agents.search_agent import d365_search_agent
 from .tools.lead_tools import (
     discover_d365_search_providers,
@@ -31,6 +32,7 @@ Workflow:
 - Use find_uk_ie_d365_leads for lead discovery and evidence scoring.
 - Prefer direct google-genai Google Search grounding through find_uk_ie_d365_leads for live search. Keep d365_search_agent as a search-only ADK sub-agent for routing/future ADK use, not the live provider path.
 - Classify surfaced candidates into Tier A accepted commercial leads, Tier B provisional leads, Tier C watchlist/installed-base leads, and Tier D rejected candidates. Keep Tier B and Tier C visible.
+- Classification review is a separate opt-in audit mode handled by d365_classification_reviewer_agent. Do not automatically invoke it during normal lead discovery, and do not let it change deterministic classifier rules.
 
 Expected lead fields:
 company_name, country, company_website, signal_type, signal_tier, dynamics_product,
@@ -55,7 +57,7 @@ root_agent = Agent(
         find_uk_ie_d365_leads,
         refuse_d365_email_sending,
     ],
-    sub_agents=[d365_search_agent],
+    sub_agents=[d365_search_agent, d365_classification_reviewer_agent],
 )
 
 app = App(root_agent=root_agent, name="uk_ie_d365_leads")

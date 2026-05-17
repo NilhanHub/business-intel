@@ -8,7 +8,10 @@ from pathlib import Path
 from hello_cloud_agent.hello_cloud_agent.agent import root_agent as hello_root_agent
 from sl_trigger_leads.agent import root_agent as sl_root_agent
 from uk_ie_d365_leads.agent import app, root_agent
-from uk_ie_d365_leads.agents.classification_reviewer_agent import classification_reviewer_agent
+from uk_ie_d365_leads.agents.classification_reviewer_agent import (
+    classification_reviewer_agent,
+    d365_classification_reviewer_agent,
+)
 from uk_ie_d365_leads.tools import classification_review_tools
 from uk_ie_d365_leads.tools import lead_tools
 
@@ -29,6 +32,7 @@ class UkIeD365LeadsTest(unittest.TestCase):
         self.assertEqual(root_agent.name, "uk_ie_d365_leads")
         self.assertEqual(app.name, "uk_ie_d365_leads")
         self.assertIn("d365_search_agent", [agent.name for agent in root_agent.sub_agents])
+        self.assertIn("d365_classification_reviewer_agent", [agent.name for agent in root_agent.sub_agents])
         self.assertGreaterEqual(len(root_agent.tools), 3)
 
     def test_provider_unavailable_does_not_generate_fake_leads(self):
@@ -427,9 +431,18 @@ class UkIeD365LeadsTest(unittest.TestCase):
         self.assertNotIn("unit-secret-value", serialized)
 
     def test_classification_reviewer_agent_wrapper_imports_without_tools(self):
-        self.assertEqual(classification_reviewer_agent.name, "d365_classification_reviewer")
+        self.assertEqual(classification_reviewer_agent.name, "d365_classification_reviewer_agent")
+        self.assertIs(classification_reviewer_agent, d365_classification_reviewer_agent)
         self.assertEqual(list(classification_reviewer_agent.tools), [])
         self.assertIn("candidate evidence provided in the input payload", classification_reviewer_agent.instruction)
+        self.assertIn("proposes future deterministic rule changes only", classification_reviewer_agent.instruction)
+
+    def test_classification_reviewer_is_opt_in_and_toolless_sub_agent(self):
+        reviewer_names = [agent.name for agent in root_agent.sub_agents]
+        self.assertIn("d365_classification_reviewer_agent", reviewer_names)
+        self.assertNotIn(classification_reviewer_agent, list(root_agent.tools))
+        self.assertEqual(list(classification_reviewer_agent.tools), [])
+        self.assertIn("Do not automatically invoke it", root_agent.instruction)
 
     def test_classification_review_tools_build_dry_run_package(self):
         with tempfile.TemporaryDirectory() as tmp_dir:
@@ -510,7 +523,54 @@ class UkIeD365LeadsTest(unittest.TestCase):
             self.assertEqual(output["metadata"]["live_request_count"], 0)
             self.assertFalse(output["metadata"]["gcloud_called"])
             self.assertFalse(output["metadata"]["agents_cli_deploy_called"])
-        self.assertEqual(runner.main(["--live-llm"]), 2)
+
+    def test_live_review_package_uses_injected_reviewer_and_enforces_cap(self):
+        def fake_reviewer(record, request_index):  # noqa: ARG001
+            return (
+                json.dumps(
+                    {
+                        "llm_review_decision": "provisional",
+                        "llm_confidence": 0.73,
+                        "discrepancy_type": "false_negative_risk"
+                        if record["deterministic_decision"] == "reject"
+                        else "tier_mismatch",
+                        "evidence_used": record["evidence_used"],
+                        "missing_evidence": [],
+                        "deterministic_rule_likely_at_fault": "unit_test_rule",
+                        "recommended_rule_change": "Consider provisional review in matching evidence patterns.",
+                        "should_promote_to_human_review": True,
+                        "should_remain_rejected": False,
+                        "notes": ["Unit injected review only."],
+                        "proposal_impact": "needs_more_samples",
+                    }
+                ),
+                {"prompt_token_count": 1, "candidates_token_count": 2, "total_token_count": 3},
+                "unit-model",
+            )
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            package = classification_review_tools.build_live_review_package(
+                evidence_file=self.audit_replay_path,
+                output_dir=Path(tmp_dir),
+                max_candidates=3,
+                command_log=["unit live review"],
+                reviewer_call=fake_reviewer,
+            )
+            output = package["review_output"]
+            phase2_json = Path(tmp_dir) / "UK_IE_D365_LLM_CLASSIFICATION_REVIEW_PHASE2.json"
+            proposal_json = Path(tmp_dir) / "UK_IE_D365_LLM_CLASSIFICATION_RULE_PROPOSAL_V1.json"
+            self.assertTrue(phase2_json.is_file())
+            self.assertTrue(proposal_json.is_file())
+        self.assertTrue(output["metadata"]["live_llm_mode_executed"])
+        self.assertEqual(output["counts"]["candidates_reviewed_by_llm"], 3)
+        self.assertEqual(output["counts"]["live_request_count"], 3)
+        self.assertEqual(output["counts"]["token_usage"]["total_token_count"], 9)
+        self.assertTrue(output["schema_validation"]["valid"])
+        self.assertEqual(output["metadata"]["invented_candidate_facts_check_result"], "PASS")
+
+    def test_select_review_candidates_rejects_invalid_cap(self):
+        with self.assertRaises(ValueError):
+            classification_review_tools.select_review_candidates([], 0)
 
     def test_classification_review_secret_scan_redacts_findings(self):
         with tempfile.TemporaryDirectory() as tmp_dir:
