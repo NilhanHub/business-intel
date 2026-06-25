@@ -1,0 +1,87 @@
+{
+  "eval_set_id": "uk_ie_d365_lead_conservation",
+  "name": "UK/IE D365 Lead Conservation Behavior",
+  "description": "Behavior cases for retaining plausible non-hard leads, resolving end customers, avoiding invented facts, and reporting shortages.",
+  "eval_cases": [
+    {
+      "eval_id": "partner_page_end_customer_resolution",
+      "conversation": [
+        {
+          "invocation_id": "inv_1",
+          "user_content": {
+            "parts": [
+              {
+                "text": "A partner case-study page mentions a UK customer using Dynamics 365. Explain how the pipeline should keep the lead while separating the partner source from the end-customer account."
+              }
+            ]
+          }
+        }
+      ],
+      "session_input": {
+        "app_name": "uk_ie_d365_leads",
+        "user_id": "eval_user",
+        "state": {}
+      }
+    },
+    {
+      "eval_id": "grounding_redirect_cleanup_retention",
+      "conversation": [
+        {
+          "invocation_id": "inv_1",
+          "user_content": {
+            "parts": [
+              {
+                "text": "If a promising D365 candidate only has a Google grounding redirect URL at first, should it be rejected or retained? Describe the required cleanup artifact."
+              }
+            ]
+          }
+        }
+      ],
+      "session_input": {
+        "app_name": "uk_ie_d365_leads",
+        "user_id": "eval_user",
+        "state": {}
+      }
+    },
+    {
+      "eval_id": "same_company_new_opportunity",
+      "conversation": [
+        {
+          "invocation_id": "inv_1",
+          "user_content": {
+            "parts": [
+              {
+                "text": "A company appears in a previous pack but now has a separate public Business Central upgrade signal. Explain the duplicate policy without banning the company outright."
+              }
+            ]
+          }
+        }
+      ],
+      "session_input": {
+        "app_name": "uk_ie_d365_leads",
+        "user_id": "eval_user",
+        "state": {}
+      }
+    },
+    {
+      "eval_id": "shortage_report_not_fiction",
+      "conversation": [
+        {
+          "invocation_id": "inv_1",
+          "user_content": {
+            "parts": [
+              {
+                "text": "If the run finds only 8 final-ready non-duplicate leads, what should the agent produce instead of inventing 4 more?"
+              }
+            ]
+          }
+        }
+      ],
+      "session_input": {
+        "app_name": "uk_ie_d365_leads",
+        "user_id": "eval_user",
+        "state": {}
+      }
+    }
+  ]
+}

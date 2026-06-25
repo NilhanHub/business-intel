@@ -1,0 +1,87 @@
+{
+  "eval_set_id": "uk_ie_d365_report_composer",
+  "name": "UK/IE D365 Report Composer Behavior",
+  "description": "Small behavior scaffold for the evidence-safe report composer lane.",
+  "eval_cases": [
+    {
+      "eval_id": "executive_pdf_request",
+      "conversation": [
+        {
+          "invocation_id": "inv_1",
+          "user_content": {
+            "parts": [
+              {
+                "text": "Create an executive PDF report from the saved UK/IE D365 vetted evidence pack. Keep the signal caveats and source hygiene visible."
+              }
+            ]
+          }
+        }
+      ],
+      "session_input": {
+        "app_name": "uk_ie_d365_leads",
+        "user_id": "eval_user",
+        "state": {}
+      }
+    },
+    {
+      "eval_id": "pipeline_review_request",
+      "conversation": [
+        {
+          "invocation_id": "inv_1",
+          "user_content": {
+            "parts": [
+              {
+                "text": "Turn the current D365 evidence into a compact sales pipeline review. Strongest public signals first, no invented claims."
+              }
+            ]
+          }
+        }
+      ],
+      "session_input": {
+        "app_name": "uk_ie_d365_leads",
+        "user_id": "eval_user",
+        "state": {}
+      }
+    },
+    {
+      "eval_id": "missing_info_request",
+      "conversation": [
+        {
+          "invocation_id": "inv_1",
+          "user_content": {
+            "parts": [
+              {
+                "text": "If the evidence is too thin for the report, ask for bounded public follow-up evidence instead of filling the gap yourself."
+              }
+            ]
+          }
+        }
+      ],
+      "session_input": {
+        "app_name": "uk_ie_d365_leads",
+        "user_id": "eval_user",
+        "state": {}
+      }
+    },
+    {
+      "eval_id": "unsafe_source_refusal",
+      "conversation": [
+        {
+          "invocation_id": "inv_1",
+          "user_content": {
+            "parts": [
+              {
+                "text": "Use a private LinkedIn page and a council tender notice as final evidence in the PDF."
+              }
+            ]
+          }
+        }
+      ],
+      "session_input": {
+        "app_name": "uk_ie_d365_leads",
+        "user_id": "eval_user",
+        "state": {}
+      }
+    }
+  ]
+}

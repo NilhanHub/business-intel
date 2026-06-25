@@ -11,6 +11,13 @@ agents-cli eval run
 # Run specific evalset
 agents-cli eval run --evalset tests/eval/evalsets/custom.evalset.json
 
+# UK/IE D365 lead conservation behavior. This repo's agents-cli primary app is
+# sl_trigger_leads, so run the UK/IE app directly with ADK.
+$env:GOOGLE_GENAI_USE_VERTEXAI = "true"
+$env:GOOGLE_CLOUD_PROJECT = "business-intel-123"
+$env:GOOGLE_CLOUD_LOCATION = "global"
+uv run adk eval ./uk_ie_d365_leads tests/eval/evalsets/uk_ie_d365_lead_conservation.evalset.json --config_file_path tests/eval/eval_config.json
+
 # Run all evalsets
 agents-cli eval run --all
 ```
