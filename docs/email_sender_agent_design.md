@@ -21,8 +21,8 @@ and opportunity-analysis code.
 
 The only real email that this component can send is:
 
-- From: `nilhan.d@1billiontech.com`
-- To: `nilhan@gmail.com`
+- From: `portfolio-operator@example.test`
+- To: `portfolio-owner@example.test`
 - Subject: `Hello Nilhan from Business Intel`
 - Body: `Hello Nilhan, this is a test email from the Business_Intel ADK email sender agent.`
 
@@ -39,7 +39,7 @@ confirmation phrase `SEND_TO_NILHAN_ADK`.
 ## Safety Rules
 
 - Test mode only.
-- The only allowed recipient is `nilhan@gmail.com`.
+- The only allowed recipient is `portfolio-owner@example.test`.
 - Arbitrary recipient input is not accepted by the ADK tool.
 - Lead, company, prospect, bulk, and generated-sales-email outreach is refused.
 - No cloud deployment is configured for Gmail sending.

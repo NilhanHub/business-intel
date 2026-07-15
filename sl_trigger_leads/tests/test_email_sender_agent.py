@@ -28,7 +28,7 @@ class EmailSenderAgentTest(unittest.TestCase):
 
     def test_restrictions_report_lead_outreach_blocked(self):
         restrictions = describe_email_sender_restrictions()
-        self.assertEqual(restrictions["allowed_recipient"], "nilhan@gmail.com")
+        self.assertEqual(restrictions["allowed_recipient"], "portfolio-owner@example.test")
         self.assertFalse(restrictions["lead_outreach_enabled"])
         self.assertFalse(restrictions["bulk_send_enabled"])
         self.assertFalse(restrictions["secrets_are_returned"])

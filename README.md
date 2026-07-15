@@ -61,6 +61,8 @@ node --check frontend\static\js\login.js
 uv run --with pip-audit pip-audit --skip-editable
 ```
 
+When the ignored private `Evidence/` replay fixtures are absent, 11 evidence-replay cases report explicit skips rather than reading or inventing operational data. They run automatically in the private workspace when both named fixtures are present.
+
 The local runtime is locked to Google ADK `2.4.0`, FastAPI `0.139.0`, and Starlette `1.3.1`. The ordinary dependency audit must exit cleanly without ignored vulnerabilities. See [docs/dependency-security.md](docs/dependency-security.md) for the exact release gate and all-extras audit.
 
 Paid or account-sensitive checks are explicit approval gates and are not part of `uv run pytest`:

@@ -55,7 +55,7 @@ Gmail message ID: `19ddd54a61441ed4`
 
 ## Safety Verification
 
-- Recipient allowlist enforced: yes, only `nilhan@gmail.com` is allowed.
+- Recipient allowlist enforced: yes, only `portfolio-owner@example.test` is allowed.
 - Lead outreach blocked: yes.
 - Arbitrary recipient input accepted: no.
 - Bulk sending supported: no.
