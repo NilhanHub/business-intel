@@ -10,7 +10,6 @@ from sl_trigger_leads.tools.signal_tools import assert_no_simulation_data
 from sl_trigger_leads.tools.source_recovery import recover_source_url
 from sl_trigger_leads.tools.source_registry import list_configured_sources
 
-
 LOG_PATH = ROOT / "logs" / "PROMPT#05_source_recovery_smoke.log"
 COVERAGE_PATH = ROOT / "outputs" / "PROMPT#05_source_coverage.json"
 LIVE_NOTES_PATH = ROOT / "outputs" / "PROMPT#05_live_leads_with_source_notes.json"

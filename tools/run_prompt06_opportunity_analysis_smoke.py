@@ -12,7 +12,6 @@ from sl_trigger_leads.tools.opportunity_analysis_tools import (
 )
 from sl_trigger_leads.tools.signal_tools import assert_no_simulation_data
 
-
 LOG_PATH = ROOT / "logs" / "PROMPT#06_opportunity_analysis_smoke.log"
 JSON_OUTPUT = ROOT / "outputs" / "PROMPT#06_opportunity_analysis.json"
 CSV_OUTPUT = ROOT / "outputs" / "PROMPT#06_opportunity_analysis.csv"

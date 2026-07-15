@@ -5,7 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from sl_trigger_leads.tools.contact_resolver_tools import (  # noqa: E402
+from sl_trigger_leads.tools.contact_resolver_tools import (
     PROMPT10_SAMPLE_INPUT_PATH,
     resolve_contacts_for_leads,
 )
@@ -23,7 +23,7 @@ DRY_RUN_OUTPUT_PATH = ROOT / "outputs" / "PROMPT#10_contact_resolver_dry_run.jso
 
 
 def utc_now() -> str:
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 def log_safe(event: str, **fields: Any) -> None:

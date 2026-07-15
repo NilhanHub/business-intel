@@ -7,12 +7,11 @@ import json
 import sys
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from uk_ie_d365_leads.tools.classification_review_tools import (  # noqa: E402
+from uk_ie_d365_leads.tools.classification_review_tools import (
     DEFAULT_EVIDENCE_FILE,
     EVIDENCE_DIR,
     build_live_review_package,

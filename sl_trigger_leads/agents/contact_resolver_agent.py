@@ -4,13 +4,12 @@ from ..tools.contact_resolver_tools import (
     discover_contact_live_search_provider,
     find_contact_route_for_company,
     refuse_contact_resolver_sending,
-    resolve_contact_routes_from_text,
     resolve_contact_route_for_lead,
+    resolve_contact_routes_from_text,
     resolve_contacts_for_leads,
     resolve_latest_contact_routes,
     show_contact_resolver_dry_run,
 )
-
 
 CONTACT_RESOLVER_AGENT_INSTRUCTION = """
 You are the Contact Resolver Agent for Business_Intel.

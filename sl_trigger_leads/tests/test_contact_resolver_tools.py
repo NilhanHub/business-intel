@@ -4,7 +4,6 @@ import unittest
 from sl_trigger_leads.tools import contact_resolver_tools as tools
 from sl_trigger_leads.tools.gmail_sender_tools import refuse_lead_outreach_email
 
-
 EXPLICIT_THREE_LEAD_TEXT = """Lead 1:
 company_name: Vs One World (Pvt) Ltd
 signal_summary: QE Engineer - API & Integration hiring signal
@@ -72,7 +71,7 @@ def hunter_record(
     verification_status=None,
     source_urls=None,
 ):
-    first, last = (full_name.split(" ", 1) + [None])[:2] if full_name else (None, None)
+    first, last = ([*full_name.split(" ", 1), None])[:2] if full_name else (None, None)
     status = tools.HUNTER_VERIFIED if verification_status == "valid" else (
         tools.HUNTER_NOT_FOUND if verification_status == "invalid" else tools.HUNTER_FOUND
     )

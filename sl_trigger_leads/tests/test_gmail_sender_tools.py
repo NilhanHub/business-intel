@@ -1,6 +1,8 @@
 import base64
 import json
+import os
 import unittest
+from pathlib import Path
 from unittest.mock import patch
 
 from sl_trigger_leads.tools import gmail_sender_tools as tools
@@ -37,6 +39,40 @@ class _FakeGmailService:
 
 
 class GmailSenderToolsTest(unittest.TestCase):
+    def test_configured_secrets_directory_must_be_absolute(self):
+        with patch.dict(os.environ, {"BT_SECRETS_DIR": "relative/secrets"}):
+            with self.assertRaisesRegex(RuntimeError, "must be an absolute path"):
+                tools._secrets_dir()
+
+    def test_configured_secrets_directory_must_be_outside_source_tree(self):
+        configured = tools.PROJECT_ROOT / "runtime-secrets"
+        with patch.dict(os.environ, {"BT_SECRETS_DIR": str(configured)}):
+            with self.assertRaisesRegex(RuntimeError, "outside the source tree"):
+                tools._secrets_dir()
+
+    def test_configured_external_secrets_directory_is_resolved(self):
+        configured = Path.home() / "business-intel-test-secrets"
+        with patch.dict(os.environ, {"BT_SECRETS_DIR": str(configured)}):
+            self.assertEqual(tools._secrets_dir(), configured.resolve())
+
+    def test_local_app_data_is_ignored_off_windows(self):
+        expected_home = Path.home()
+        env = {"LOCALAPPDATA": str(Path.home() / "unexpected-secrets")}
+        with (
+            patch.dict(os.environ, env),
+            patch.object(tools.os, "name", "posix"),
+            patch.object(tools.Path, "home", return_value=expected_home),
+        ):
+            os.environ.pop("BT_SECRETS_DIR", None)
+            expected = (
+                expected_home
+                / ".local"
+                / "share"
+                / "1bt-business-intel"
+                / "secrets"
+            )
+            self.assertEqual(tools._secrets_dir(), expected)
+
     def test_only_nilhan_gmail_is_allowed(self):
         tools.validate_allowed_recipient("nilhan@gmail.com")
 

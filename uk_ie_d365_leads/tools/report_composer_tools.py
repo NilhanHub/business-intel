@@ -10,14 +10,12 @@ import textwrap
 import urllib.error
 import urllib.parse
 import urllib.request
-from collections import Counter
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
 from uk_ie_d365_leads.tools import lead_tools
 from uk_ie_d365_leads.tools import opportunity_vetting_tools as vetting
-
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 EVIDENCE_DIR = PROJECT_ROOT / "Evidence"
@@ -28,7 +26,8 @@ ALLOWED_STYLE_PRESETS = {
     "board_brief_portrait",
     "dense_pipeline_review",
 }
-FORBIDDEN_FINAL_URL_TERMS = tuple(vetting.FORBIDDEN_FINAL_URL_TERMS) + (
+FORBIDDEN_FINAL_URL_TERMS = (
+    *vetting.FORBIDDEN_FINAL_URL_TERMS,
     "find-tender.service.gov.uk",
     "contracts.service.gov.uk",
     "etenders.gov.ie",
@@ -649,7 +648,7 @@ def run_composer_request(
     composer_call: Any | None,
     parser: Any,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
-    meta = {"stage": stage, "request_index": request_index}
+    meta: dict[str, Any] = {"stage": stage, "request_index": request_index}
     try:
         if composer_call:
             response_text, usage, model_version = composer_call(prompt, stage, request_index)
@@ -704,7 +703,7 @@ def call_report_model(*, client: Any, model: str, prompt: str) -> tuple[str, dic
     return str(getattr(response, "text", "") or ""), usage_dict, getattr(response, "model_version", None)
 
 
-def deterministic_composer_call(prompt: str, stage: str, request_index: int):  # noqa: ARG001
+def deterministic_composer_call(prompt: str, stage: str, request_index: int):
     payload = json.loads(prompt)
     if stage == "blueprint":
         inventory = payload["evidence_inventory"]
@@ -887,7 +886,7 @@ def normalize_followup_item(
     return {"kind": kind, "target": request.get("target"), "query": query, "text": str(item)}
 
 
-def fetch_public_source(url: str, request: dict[str, Any] | None = None) -> dict[str, Any]:  # noqa: ARG001
+def fetch_public_source(url: str, request: dict[str, Any] | None = None) -> dict[str, Any]:
     if forbidden_report_url(url, ""):
         return {"kind": "source_fetch", "url": url, "verified_live": False, "fetch_error": "forbidden_url"}
     started = now_utc()
@@ -899,7 +898,7 @@ def fetch_public_source(url: str, request: dict[str, Any] | None = None) -> dict
         },
     )
     try:
-        with urllib.request.urlopen(req, timeout=12) as response:  # noqa: S310 - public URLs supplied by evidence workflow.
+        with urllib.request.urlopen(req, timeout=12) as response:
             body = response.read(250_000)
             charset = response.headers.get_content_charset() or "utf-8"
             text = body.decode(charset, errors="replace")
@@ -1104,7 +1103,7 @@ def render_markdown(report_spec: dict[str, Any], source_map: dict[str, Any]) -> 
     return "\n".join(lines) + "\n"
 
 
-def render_html(report_spec: dict[str, Any], source_map: dict[str, Any]) -> str:  # noqa: ARG001
+def render_html(report_spec: dict[str, Any], source_map: dict[str, Any]) -> str:
     preset = report_spec.get("style_preset")
     css = css_for_preset(preset)
     account_cards = []
@@ -1264,7 +1263,7 @@ def write_simple_pdf(path: Path, lines: list[str], *, landscape: bool = True) ->
     write_pdf_objects(path, objects)
 
 
-def pdf_content_stream(lines: list[str], *, width: int, height: int) -> bytes:  # noqa: ARG001
+def pdf_content_stream(lines: list[str], *, width: int, height: int) -> bytes:
     commands = ["BT", "/F1 10 Tf", "48 548 Td"]
     for index, line in enumerate(lines):
         if index:

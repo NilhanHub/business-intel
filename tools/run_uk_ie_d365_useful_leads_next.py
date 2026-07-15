@@ -17,25 +17,23 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from uk_ie_d365_leads.agent import root_agent  # noqa: E402
-from uk_ie_d365_leads.tools.classification_review_tools import (  # noqa: E402
+from uk_ie_d365_leads.agent import root_agent
+from uk_ie_d365_leads.tools.classification_review_tools import (
     call_vertex_reviewer,
     make_vertex_reviewer_client,
     parse_review_json,
     prepare_candidate,
 )
-from uk_ie_d365_leads.tools.lead_tools import (  # noqa: E402
+from uk_ie_d365_leads.tools.lead_tools import (
     discover_d365_search_providers,
     effective_google_model,
     find_uk_ie_d365_leads,
     google_native_readiness,
 )
-
 
 EVIDENCE_DIR = PROJECT_ROOT / "Evidence"
 DEFAULT_BASENAME = "UK_IE_D365_USEFUL_LEADS_NEXT"
@@ -518,7 +516,7 @@ def call_ai_reviewer(
         try:
             raw = parse_review_json(response_text)
             parse_error = None
-        except Exception as exc:  # noqa: BLE001 - keep failed review auditable.
+        except Exception as exc:
             raw = {
                 "llm_decision": "reject",
                 "lead_status": "reject",

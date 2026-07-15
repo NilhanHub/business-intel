@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import base64
 import json
+import os
 from collections.abc import Callable
 from email.message import EmailMessage
 from pathlib import Path
@@ -15,7 +16,26 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-SECRETS_DIR = PROJECT_ROOT / ".local_secrets"
+
+
+def _secrets_dir() -> Path:
+    configured = os.environ.get("BT_SECRETS_DIR")
+    if configured:
+        candidate = Path(configured).expanduser()
+        if not candidate.is_absolute():
+            raise RuntimeError("BT_SECRETS_DIR must be an absolute path")
+        candidate = candidate.resolve()
+        project_root = PROJECT_ROOT.resolve()
+        if candidate == project_root or project_root in candidate.parents:
+            raise RuntimeError("BT_SECRETS_DIR must be outside the source tree")
+        return candidate
+    local_app_data = os.environ.get("LOCALAPPDATA")
+    if os.name == "nt" and local_app_data:
+        return Path(local_app_data) / "1BT" / "Business_Intel" / "secrets"
+    return Path.home() / ".local" / "share" / "1bt-business-intel" / "secrets"
+
+
+SECRETS_DIR = _secrets_dir()
 GMAIL_CREDENTIALS_PATH = SECRETS_DIR / "gmail_sender_credentials.json"
 GMAIL_TOKEN_PATH = SECRETS_DIR / "gmail_sender_token.json"
 

@@ -20,7 +20,6 @@ from typing import Any
 
 from uk_ie_d365_leads.tools import discovery_backbone_tools
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 EVIDENCE_DIR = PROJECT_ROOT / "Evidence"
 DEFAULT_PROJECT = "business-intel-123"

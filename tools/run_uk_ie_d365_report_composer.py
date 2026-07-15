@@ -13,12 +13,11 @@ import json
 import sys
 from pathlib import Path
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from uk_ie_d365_leads.tools import report_composer_tools as composer  # noqa: E402
+from uk_ie_d365_leads.tools import report_composer_tools as composer
 
 
 def parser() -> argparse.ArgumentParser:

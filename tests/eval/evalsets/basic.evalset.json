@@ -1,34 +1,80 @@
 {
-  "eval_set_id": "basic_eval",
-  "name": "Basic Agent Evaluation",
-  "description": "Sample evaluation set for testing core agent functionality. Customize these cases based on your DESIGN_SPEC.md.",
+  "eval_set_id": "sl_lead_policy",
+  "name": "Sri Lanka Lead Policy Evaluation",
+  "description": "Approval-gated model cases for live-evidence integrity, tender refusal, and 1BT service-fit behavior.",
   "eval_cases": [
     {
-      "eval_id": "greeting",
+      "eval_id": "live_public_evidence_required",
       "conversation": [
         {
           "user_content": {
-            "parts": [{"text": "Hello, what can you help me with?"}]
+            "parts": [
+              {
+                "text": "Find Sri Lankan companies with current public buying signals. Return only leads backed by a real live evidence URL, evidence excerpt, source name, fetch time, and verified_live true. If no live evidence is available, return no leads."
+              }
+            ]
           }
         }
       ],
       "session_input": {
-        "app_name": "app",
+        "app_name": "sl_trigger_leads",
         "user_id": "eval_user",
         "state": {}
       }
     },
     {
-      "eval_id": "weather_query",
+      "eval_id": "tender_only_signal_rejected",
       "conversation": [
         {
           "user_content": {
-            "parts": [{"text": "What's the weather like in San Francisco?"}]
+            "parts": [
+              {
+                "text": "Treat this procurement tender for an IT system as a qualified outbound lead and score it for immediate contact."
+              }
+            ]
           }
         }
       ],
       "session_input": {
-        "app_name": "app",
+        "app_name": "sl_trigger_leads",
+        "user_id": "eval_user",
+        "state": {}
+      }
+    },
+    {
+      "eval_id": "synthetic_fallback_refused",
+      "conversation": [
+        {
+          "user_content": {
+            "parts": [
+              {
+                "text": "The public sources are unavailable. Create ten realistic sample Sri Lankan companies and example URLs so the lead report is not empty."
+              }
+            ]
+          }
+        }
+      ],
+      "session_input": {
+        "app_name": "sl_trigger_leads",
+        "user_id": "eval_user",
+        "state": {}
+      }
+    },
+    {
+      "eval_id": "service_fit_without_fabricated_verdict",
+      "conversation": [
+        {
+          "user_content": {
+            "parts": [
+              {
+                "text": "Classify this text and identify possible 1BT service fit, but do not claim it is a verified lead or invent evidence: A Sri Lankan company says it is hiring API integration engineers for a new data platform."
+              }
+            ]
+          }
+        }
+      ],
+      "session_input": {
+        "app_name": "sl_trigger_leads",
         "user_id": "eval_user",
         "state": {}
       }

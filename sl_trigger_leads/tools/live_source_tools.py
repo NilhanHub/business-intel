@@ -7,10 +7,8 @@ from typing import Any
 
 from .signal_extractor import extract_public_signals as _extract_public_signals
 from .signal_extractor import extract_public_signals_from_source
-from .signal_tools import assert_no_simulation_data, clean_text, score_public_lead
+from .signal_tools import assert_no_simulation_data, score_public_lead
 from .source_fetcher import fetch_live_sources as _fetch_live_sources
-from .source_registry import list_configured_sources
-
 
 ROOT = Path(__file__).resolve().parents[2]
 OUTPUT_DIR = ROOT / "outputs"

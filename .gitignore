@@ -6,6 +6,8 @@ client_secret*.json
 # Business_Intel Git bootstrap safety ignores
 .env
 .env.*
+!.env.example
+!**/.env.example
 *.key
 *.pem
 *service-account*.json
@@ -40,5 +42,10 @@ Evidence/**/*secret*
 *.sqlite3
 **/eval_history/
 **/data/live_runs/
+frontend/data/*.json
+frontend/data/*.lock
+frontend/data/*.tmp
 archive/
+build/
+dist/
 System.Collections.Specialized.OrderedDictionary

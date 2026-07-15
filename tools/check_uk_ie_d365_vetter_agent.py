@@ -16,14 +16,12 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from uk_ie_d365_leads.tools import lead_tools  # noqa: E402
-from uk_ie_d365_leads.tools import opportunity_vetting_tools as vetting  # noqa: E402
-
+from uk_ie_d365_leads.tools import lead_tools
+from uk_ie_d365_leads.tools import opportunity_vetting_tools as vetting
 
 DEFAULT_INPUT_PACK = vetting.EVIDENCE_DIR / "UK_IE_D365_USEFUL_LEADS_FRESH_20260612.json"
 DEFAULT_SOURCE_CHECKS = vetting.EVIDENCE_DIR / "UK_IE_D365_USEFUL_LEADS_FRESH_20260612_SOURCE_CHECKS.json"
@@ -121,7 +119,7 @@ def source_check_follow_up(lead: dict[str, Any], source_check: dict[str, Any] | 
     ]
 
 
-def dry_run_reviewer(record: dict[str, Any], stage: str, request_index: int):  # noqa: ARG001
+def dry_run_reviewer(record: dict[str, Any], stage: str, request_index: int):
     baseline = record.get("baseline_lead") or {}
     response = {
         "lead_status": baseline.get("lead_status") or "source_cleanup_needed",

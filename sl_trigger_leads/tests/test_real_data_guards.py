@@ -2,11 +2,15 @@ import unittest
 from unittest.mock import patch
 
 from sl_trigger_leads.agent import ROOT_INSTRUCTION
-from sl_trigger_leads.tools.live_source_tools import find_live_leads, report_source_failures, score_live_lead
+from sl_trigger_leads.tools.live_source_tools import (
+    find_live_leads,
+    report_source_failures,
+    score_live_lead,
+)
 from sl_trigger_leads.tools.signal_extractor import extract_public_signals_from_source
+from sl_trigger_leads.tools.signal_tools import assert_no_simulation_data
 from sl_trigger_leads.tools.source_recovery import recover_source_url
 from sl_trigger_leads.tools.source_registry import list_configured_sources
-from sl_trigger_leads.tools.signal_tools import assert_no_simulation_data
 
 
 class RealDataGuardTest(unittest.TestCase):

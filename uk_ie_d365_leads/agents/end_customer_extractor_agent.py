@@ -1,6 +1,5 @@
 from google.adk.agents import Agent
 
-
 END_CUSTOMER_EXTRACTOR_INSTRUCTION = """
 You are d365_end_customer_extractor_agent, a tool-less identity reviewer for
 UK/Ireland Dynamics 365 public evidence.

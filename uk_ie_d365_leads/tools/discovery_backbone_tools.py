@@ -17,7 +17,6 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 EVIDENCE_DIR = PROJECT_ROOT / "Evidence"
 DEFAULT_PROJECT = "business-intel-123"

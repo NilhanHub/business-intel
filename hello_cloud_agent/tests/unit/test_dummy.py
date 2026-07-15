@@ -17,4 +17,5 @@ from hello_cloud_agent.agent import HELLO_RESPONSE, app, root_agent
 def test_hello_agent_is_minimal() -> None:
     assert app.name == "hello_cloud_agent"
     assert root_agent.tools == []
+    assert isinstance(root_agent.instruction, str)
     assert HELLO_RESPONSE in root_agent.instruction

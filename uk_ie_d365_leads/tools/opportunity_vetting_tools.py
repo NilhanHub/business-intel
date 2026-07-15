@@ -11,9 +11,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from uk_ie_d365_leads.tools import discovery_backbone_tools
-from uk_ie_d365_leads.tools import lead_tools
-
+from uk_ie_d365_leads.tools import discovery_backbone_tools, lead_tools
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 EVIDENCE_DIR = PROJECT_ROOT / "Evidence"
@@ -568,7 +566,7 @@ def collect_follow_up_evidence(
         for query in build_follow_up_queries(candidate_record, review_record, max_searches):
             try:
                 follow_up_items = followup_search_call(query, candidate_record, review_record) or []
-            except Exception as exc:  # noqa: BLE001 - keep one failed follow-up from killing the batch.
+            except Exception as exc:
                 evidence.append(
                     {
                         "kind": "search_error",
@@ -758,7 +756,7 @@ def run_vetter_request(
                 }
             )
             break
-        except Exception as exc:  # noqa: BLE001 - preserve batch progress and mark candidate unresolved.
+        except Exception as exc:
             if reviewer_call is None and attempt < max_attempts and retryable_vetter_error(exc):
                 request_meta["retry_after_error_type"] = type(exc).__name__
                 request_meta["retry_after_error"] = str(exc)[:500]
@@ -1582,8 +1580,19 @@ def vendor_only_without_target_customer(review: dict[str, Any], candidate: dict[
 
 
 def fresh_lead_score(review: dict[str, Any]) -> int:
-    status_score = {"ready_to_contact": 300, "provisional_contact_now": 200, "source_cleanup_needed": 100}.get(review.get("lead_status"), 0)
-    strength_score = {"strong": 40, "promising": 25, "emerging": 10, "weak": 0}.get(review.get("signal_strength"), 0)
+    lead_status = str(review.get("lead_status") or "")
+    signal_strength = str(review.get("signal_strength") or "")
+    status_score = {
+        "ready_to_contact": 300,
+        "provisional_contact_now": 200,
+        "source_cleanup_needed": 100,
+    }.get(lead_status, 0)
+    strength_score = {
+        "strong": 40,
+        "promising": 25,
+        "emerging": 10,
+        "weak": 0,
+    }.get(signal_strength, 0)
     text = " ".join(
         str(review.get(key) or "")
         for key in (

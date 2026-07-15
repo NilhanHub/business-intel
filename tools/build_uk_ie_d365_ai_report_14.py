@@ -6,7 +6,6 @@ import re
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-
 EVIDENCE = Path(r"D:\gaps\Business_Intel\Evidence")
 SOURCE_CHECKS = EVIDENCE / "UK_IE_D365_SIGNAL_QUALITY_AUDIT_20260603_SOURCE_CHECKS.json"
 
@@ -512,14 +511,6 @@ def build_markdown(rows: list[dict]) -> str:
 
 
 def build_html(rows: list[dict]) -> str:
-    signal_themes = [
-        "D365 implementation / rollout",
-        "D365 Finance / F&SCM transformation",
-        "Business Central operational support",
-        "Customer Insights / Customer Service / Power Platform",
-        "Data migration / modernisation",
-        "Public-sector digital service transformation",
-    ]
     css = """<!doctype html>
 <html lang="en">
 <head>
