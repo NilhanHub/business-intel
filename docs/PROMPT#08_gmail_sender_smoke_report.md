@@ -13,8 +13,8 @@ PARTIAL
 
 ## Safety Rules
 - Default mode is dry-run.
-- Allowed recipient is hard-coded to `nilhan@gmail.com`.
-- Sender is hard-coded to `nilhan.d@1billiontech.com`.
+- Allowed recipient is hard-coded to `portfolio-owner@example.test`.
+- Sender is hard-coded to `portfolio-operator@example.test`.
 - Scope is limited to `https://www.googleapis.com/auth/gmail.send`.
 - `--send` prints the recipient, subject, and body, then requires this exact confirmation:
 

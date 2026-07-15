@@ -42,8 +42,8 @@ GMAIL_TOKEN_PATH = SECRETS_DIR / "gmail_sender_token.json"
 GMAIL_SEND_SCOPE = "https://www.googleapis.com/auth/gmail.send"
 GMAIL_SCOPES = [GMAIL_SEND_SCOPE]
 
-TEST_SENDER = "nilhan.d@1billiontech.com"
-ALLOWED_TEST_RECIPIENT = "nilhan@gmail.com"
+TEST_SENDER = "portfolio-operator@example.test"
+ALLOWED_TEST_RECIPIENT = "portfolio-owner@example.test"
 HELLO_NILHAN_SUBJECT = "Hello Nilhan from Business Intel"
 HELLO_NILHAN_ADK_BODY = (
     "Hello Nilhan, this is a test email from the Business_Intel ADK email sender agent."
@@ -51,7 +51,7 @@ HELLO_NILHAN_ADK_BODY = (
 
 LEAD_OUTREACH_REFUSAL = (
     "Lead outreach is not unlocked yet. This local Gmail sender can only send the "
-    "single Hello Nilhan test email to nilhan@gmail.com."
+    "single Hello Nilhan test email to portfolio-owner@example.test."
 )
 
 CredentialLoader = Callable[[], Any]

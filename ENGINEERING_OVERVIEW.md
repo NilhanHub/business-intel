@@ -10,7 +10,7 @@ Business Intel is an evidence-grounded multi-agent system for discovering, valid
 | Agent lanes | Sri Lanka trigger leads, contact resolution, opportunity analysis, UK/IE Dynamics 365 intelligence |
 | Trust model | Real-data-only policy, source provenance, live verification flags, tender rejection, explicit delivery gates |
 | Operator surface | Authenticated local web application plus command-line smoke and evaluation tools |
-| Quality strategy | Ruff, 266 passing tests, 3 intentional skips, 9 passing subtests, evalsets, live-smoke boundaries |
+| Quality strategy | Ruff, 255 public-snapshot tests, 14 explicit skips, 9 passing subtests, evalsets, live-smoke boundaries |
 
 ## Why this project is technically interesting
 
@@ -61,8 +61,8 @@ The application can be evaluated without exposing a public service. Authenticati
 The employer release passes:
 
 - `uv run ruff check .`;
-- 266 pytest tests;
-- 3 documented skips and 9 passing subtests;
+- 255 pytest tests in the public snapshot;
+- 14 documented skips and 9 passing subtests; 11 skips are private-evidence replay cases;
 - a redacted Git-history and current-snapshot secret scan;
 - no object or publishable file above 90 MB.
 

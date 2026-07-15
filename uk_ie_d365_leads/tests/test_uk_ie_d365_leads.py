@@ -42,6 +42,11 @@ class UkIeD365LeadsTest(unittest.TestCase):
     vetter_check_script_path = Path(__file__).resolve().parents[2] / "tools" / "check_uk_ie_d365_vetter_agent.py"
     report_composer_script_path = Path(__file__).resolve().parents[2] / "tools" / "run_uk_ie_d365_report_composer.py"
 
+    def require_saved_evidence(self) -> None:
+        missing = [path.name for path in (self.evidence_run_path, self.audit_replay_path) if not path.is_file()]
+        if missing:
+            self.skipTest(f"private Evidence fixtures are not present: {', '.join(missing)}")
+
     @classmethod
     def review_module(cls):
         spec = importlib.util.spec_from_file_location("review_uk_ie_d365_candidates", cls.review_script_path)
@@ -822,6 +827,7 @@ class UkIeD365LeadsTest(unittest.TestCase):
         self.assertNotIn("unit-secret-value", json.dumps(metadata))
 
     def test_replay_adds_audit_without_live_search_and_preserves_counts(self):
+        self.require_saved_evidence()
         original_search = lead_tools.ADKGoogleGroundingProvider.search_web
 
         def fail_if_called(self, query, limit=5):
@@ -840,6 +846,7 @@ class UkIeD365LeadsTest(unittest.TestCase):
         self.assertEqual(len(replay["tier_c_watchlist_leads"]), 1)
 
     def test_every_replay_candidate_has_audit_trace_and_final_decision(self):
+        self.require_saved_evidence()
         replay = lead_tools.replay_uk_ie_d365_audit(str(self.evidence_run_path))
         candidates = replay["leads"] + replay["rejected_leads"]
         self.assertTrue(candidates)
@@ -879,6 +886,7 @@ class UkIeD365LeadsTest(unittest.TestCase):
         self.assertFalse(result["sending_enabled"])
 
     def test_human_review_utility_parses_replay_without_live_calls(self):
+        self.require_saved_evidence()
         review = self.review_module()
         with tempfile.TemporaryDirectory() as tmp_dir:
             output_json = Path(tmp_dir) / "shortlist.json"
@@ -894,6 +902,7 @@ class UkIeD365LeadsTest(unittest.TestCase):
         self.assertEqual(result["output_counts"]["tier_c"], 1)
 
     def test_human_review_includes_tier_b_and_c_candidates(self):
+        self.require_saved_evidence()
         review = self.review_module()
         with tempfile.TemporaryDirectory() as tmp_dir:
             result = review.build_human_review_shortlist(
@@ -915,6 +924,7 @@ class UkIeD365LeadsTest(unittest.TestCase):
         self.assertTrue(expected_names.issubset(actual_names))
 
     def test_human_review_surfaces_risky_tier_d_and_preserves_tender_rejections(self):
+        self.require_saved_evidence()
         review = self.review_module()
         with tempfile.TemporaryDirectory() as tmp_dir:
             result = review.build_human_review_shortlist(
@@ -937,6 +947,7 @@ class UkIeD365LeadsTest(unittest.TestCase):
         self.assertTrue(all(item["recommended_review_action"] == "keep_rejected" for item in tender_items))
 
     def test_human_review_outputs_metadata_markdown_breakdowns_and_no_secrets(self):
+        self.require_saved_evidence()
         review = self.review_module()
         old_secret = os.environ.get("SERPER_API_KEY")
         os.environ["SERPER_API_KEY"] = "unit-secret-value"
@@ -986,6 +997,7 @@ class UkIeD365LeadsTest(unittest.TestCase):
         self.assertIn("The deterministic layer is only a guardrail layer", opportunity_vetter_agent.instruction)
 
     def test_classification_review_tools_build_dry_run_package(self):
+        self.require_saved_evidence()
         with tempfile.TemporaryDirectory() as tmp_dir:
             package = classification_review_tools.build_review_package(
                 evidence_file=self.audit_replay_path,
@@ -1004,6 +1016,7 @@ class UkIeD365LeadsTest(unittest.TestCase):
         self.assertTrue(output["dry_run_risk_ranked_rule_patterns"])
 
     def test_classification_review_uses_saved_deterministic_fields(self):
+        self.require_saved_evidence()
         data = classification_review_tools.load_saved_evidence(self.audit_replay_path)
         first = classification_review_tools.all_candidates(data)[0]
         prepared = classification_review_tools.prepare_candidate(first, index=1)
@@ -1032,6 +1045,7 @@ class UkIeD365LeadsTest(unittest.TestCase):
         self.assertNotIn("signal_tier", fields)
 
     def test_classification_review_schema_and_no_invented_facts(self):
+        self.require_saved_evidence()
         data = classification_review_tools.load_saved_evidence(self.audit_replay_path)
         records = [
             classification_review_tools.prepare_candidate(candidate, index=index)["review_record"]
@@ -1046,6 +1060,7 @@ class UkIeD365LeadsTest(unittest.TestCase):
         self.assertTrue(all(record["live_llm_used"] is False for record in records))
 
     def test_classification_review_runner_default_is_dry_run_and_live_mode_refuses(self):
+        self.require_saved_evidence()
         runner_path = Path(__file__).resolve().parents[2] / "tools" / "run_uk_ie_d365_llm_classification_review.py"
         spec = importlib.util.spec_from_file_location("run_uk_ie_d365_llm_classification_review", runner_path)
         runner = importlib.util.module_from_spec(spec)
@@ -1066,6 +1081,7 @@ class UkIeD365LeadsTest(unittest.TestCase):
             self.assertFalse(output["metadata"]["agents_cli_deploy_called"])
 
     def test_live_review_package_uses_injected_reviewer_and_enforces_cap(self):
+        self.require_saved_evidence()
         def fake_reviewer(record, request_index):
             return (
                 json.dumps(

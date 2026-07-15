@@ -74,7 +74,7 @@ class GmailSenderToolsTest(unittest.TestCase):
             self.assertEqual(tools._secrets_dir(), expected)
 
     def test_only_nilhan_gmail_is_allowed(self):
-        tools.validate_allowed_recipient("nilhan@gmail.com")
+        tools.validate_allowed_recipient("portfolio-owner@example.test")
 
     def test_other_recipients_are_refused(self):
         with self.assertRaises(ValueError):
@@ -130,7 +130,7 @@ class GmailSenderToolsTest(unittest.TestCase):
         )
         raw = tools.encode_message_base64url(message)
         decoded = base64.urlsafe_b64decode(raw.encode("ascii")).decode("utf-8")
-        self.assertIn("To: nilhan@gmail.com", decoded)
+        self.assertIn("To: portfolio-owner@example.test", decoded)
         self.assertIn("Subject: Hello Nilhan from Business Intel", decoded)
 
     def test_token_and_secret_values_are_never_returned(self):

@@ -58,8 +58,8 @@ def run_dry_run() -> int:
 
 def run_send() -> int:
     print("About to send the ADK Hello Nilhan test email.")
-    print("From: nilhan.d@1billiontech.com")
-    print("To: nilhan@gmail.com")
+    print("From: portfolio-operator@example.test")
+    print("To: portfolio-owner@example.test")
     print("Subject: Hello Nilhan from Business Intel")
     print("Body:")
     print("Hello Nilhan, this is a test email from the Business_Intel ADK email sender agent.")
