@@ -11,7 +11,6 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-
 REVIEW_SCHEMA_VERSION = "2026-05-17.llm-classification-review-dry-run-v1"
 REPO_ROOT = Path(__file__).resolve().parents[2]
 EVIDENCE_DIR = REPO_ROOT / "Evidence"
@@ -1070,7 +1069,7 @@ def detect_invented_candidate_facts(source_record: dict[str, Any], raw: dict[str
 
 def validate_live_review_records(records: list[dict[str, Any]]) -> dict[str, Any]:
     errors = []
-    required = list(REQUIRED_REVIEW_FIELDS) + ["proposal_impact"]
+    required = [*REQUIRED_REVIEW_FIELDS, "proposal_impact"]
     for index, record in enumerate(records, start=1):
         missing = [field for field in required if field not in record]
         if missing:

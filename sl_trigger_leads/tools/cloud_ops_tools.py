@@ -12,7 +12,7 @@ import os
 import re
 import urllib.parse
 import urllib.request
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from .contact_resolver_tools import (
@@ -326,7 +326,7 @@ def _secret_manager_access_via_adc() -> dict[str, Any]:
             "status": "OK",
             "payload": {"payload": {"data": response.payload.data}},
         }
-    except Exception as exc:  # noqa: BLE001 - diagnostics must stay safe.
+    except Exception as exc:
         return {
             "status": "BLOCKED",
             "message": str(exc),
@@ -516,7 +516,7 @@ def _sha256_prefix(value: str | None) -> str | None:
 
 
 def _now() -> str:
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 def _sanitize_text(value: str) -> str:

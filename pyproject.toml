@@ -1,32 +1,52 @@
 [project]
 name = "business-intel"
 version = "0.1.0"
-description = ""
+description = "Local-only Sri Lanka public-signal lead intelligence for 1BT"
 authors = [
-    {name = "Your Name", email = "your@email.com"},
+    {name = "1BT"},
 ]
 dependencies = [
-    "google-adk>=1.15.0,<2.1.0",
-    "opentelemetry-instrumentation-google-genai>=0.1.0,<1.0.0",
-    "gcsfs>=2024.11.0",
-    "google-cloud-logging>=3.12.0,<4.0.0",
-    "google-cloud-aiplatform[evaluation,agent-engines]>=1.130.0",
+    "google-adk>=2.4.0,<3.0.0",
+    "google-genai>=2.9.0,<3.0.0",
+    "google-auth>=2.0.0,<3.0.0",
+    "google-auth-oauthlib>=1.0.0,<2.0.0",
+    "google-api-python-client>=2.0.0,<3.0.0",
+    "requests>=2.31.0,<3.0.0",
     "protobuf>=6.31.1,<7.0.0",
     "pypdf>=5.0.0,<7.0.0",
+    "fastapi>=0.139.0,<1.0.0",
+    "starlette>=1.3.1,<2.0.0",
+    "uvicorn[standard]>=0.34.0",
+    "python-multipart>=0.0.18",
+    "pyjwt>=2.10.0",
+    "bcrypt>=4.2.0",
+    "filelock>=3.20.0",
+    "pydantic>=2.12.0,<3.0.0",
+    "pydantic-settings>=2.0.0",
+    "aiofiles>=24.1.0",
+    "httpx>=0.28.0",
 ]
 requires-python = ">=3.11,<3.14"
 
 
 [dependency-groups]
 dev = [
-    "pytest>=8.3.4,<9.0.0",
-    "pytest-asyncio>=0.23.8,<1.0.0",
+    "pytest>=9.0.3,<10.0.0",
+    "pytest-asyncio>=1.0.0,<2.0.0",
     "nest-asyncio>=1.6.0,<2.0.0",
+    "httpx2>=2.7.0,<3.0.0",
 ]
 
 [project.optional-dependencies]
 eval = [
-    "google-adk[eval]>=1.15.0,<2.1.0",
+    "google-adk[eval]>=2.4.0,<3.0.0",
+]
+agent-runtime = [
+    "gcsfs>=2024.11.0",
+    "google-cloud-aiplatform[evaluation,agent-engines]>=1.130.0",
+    "google-cloud-logging>=3.12.0,<4.0.0",
+    "google-cloud-secret-manager>=2.29.0,<3.0.0",
+    "opentelemetry-instrumentation-google-genai>=0.7b1,<1.0.0",
 ]
 lint = [
     "ruff>=0.4.6,<1.0.0",
@@ -54,12 +74,15 @@ ignore = ["E501", "C901", "B006"] # ignore line too long, too complex
 [tool.ruff.lint.isort]
 known-first-party = ["sl_trigger_leads", "uk_ie_d365_leads", "frontend"]
 
+[tool.ruff.lint.per-file-ignores]
+"tools/*.py" = ["E402"]
+
 [tool.ty]
 # ty is Astral's Rust-based type checker (same team as ruff/uv)
 # See: https://docs.astral.sh/ty/
 
 [tool.ty.environment]
-python-version = "3.10"
+python-version = "3.11"
 
 [tool.ty.src]
 exclude = [".venv/**"]
@@ -76,8 +99,8 @@ not-subscriptable = "ignore"
 deprecated = "ignore"
 
 [tool.codespell]
-ignore-words-list = "rouge"
-skip = "./locust_env/*,uv.lock,.venv,./frontend,**/package-lock.json"
+ignore-words-list = "rouge,etenders,emac,fulfilment"
+skip = "./locust_env/*,uv.lock,.venv,Evidence,archive,outputs,logs,**/package-lock.json"
 
 
 [build-system]
@@ -89,15 +112,39 @@ build-backend = "hatchling.build"
 pythonpath = "."
 addopts = "--import-mode=importlib"
 asyncio_default_fixture_loop_scope = "function"
+testpaths = [
+    "tests/unit",
+    "sl_trigger_leads/tests",
+    "uk_ie_d365_leads/tests",
+    "hello_cloud_agent/tests/unit",
+]
+norecursedirs = ["Evidence", "archive", ".adk", ".venv", "outputs"]
+markers = [
+    "live: requires live external services or credentials and is excluded from the default suite",
+    "paid: may invoke a paid model or service and requires explicit approval",
+]
+filterwarnings = [
+    "error",
+    # ADK 2.4.0 imports its own deprecated BaseAgentConfig compatibility class.
+    # Keep this exact exception narrow and remove it once upstream stops emitting it.
+    "ignore:BaseAgentConfig is deprecated and will be removed in future versions\\..*:DeprecationWarning",
+]
+
+[tool.hatch.build]
+exclude = [
+    "/frontend/data/**",
+    "/frontend/.env*",
+    "**/*.log",
+]
 
 [tool.hatch.build.targets.wheel]
-packages = ["sl_trigger_leads","uk_ie_d365_leads","frontend"]
+packages = ["sl_trigger_leads", "uk_ie_d365_leads", "frontend"]
 
 [tool.agents-cli]
 # Generation metadata - enables CLI commands to understand project context
 # These fields allow any generated project to work as a remote template
 name = "business-intel"
-description = ""
+description = "Local Sri Lanka public-signal lead intelligence with strict live-evidence guardrails"
 base_template = "local_Business_Intel"
 agent_directory = "sl_trigger_leads"
 

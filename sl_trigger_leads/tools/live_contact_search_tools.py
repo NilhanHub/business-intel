@@ -174,7 +174,7 @@ class HunterContactEnrichmentProvider:
         self.unavailable_reason = None if self.configured else "HUNTER_API_KEY is not set."
 
     @classmethod
-    def from_env(cls) -> "HunterContactEnrichmentProvider":
+    def from_env(cls) -> HunterContactEnrichmentProvider:
         return cls()
 
     def domain_search(self, domain: str, *, limit: int = 10) -> HunterLookupResult:

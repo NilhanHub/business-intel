@@ -4,9 +4,12 @@ import unittest
 
 from sl_trigger_leads.agent import ROOT_INSTRUCTION, root_agent
 from sl_trigger_leads.tools import cloud_ops_tools as ops
-from sl_trigger_leads.tools.contact_resolver_tools import resolve_contact_routes_from_text
-from sl_trigger_leads.tools.live_contact_search_tools import HunterContactEnrichmentProvider
-
+from sl_trigger_leads.tools.contact_resolver_tools import (
+    resolve_contact_routes_from_text,
+)
+from sl_trigger_leads.tools.live_contact_search_tools import (
+    HunterContactEnrichmentProvider,
+)
 
 WSO2_LEAD_TEXT = """Lead 1:
 company_name: WSO2

@@ -8,7 +8,6 @@ from ..tools.opportunity_analysis_tools import (
     load_onebt_service_taxonomy,
 )
 
-
 OPPORTUNITY_ANALYST_INSTRUCTION = """
 You are opportunity_analyst, a focused sub-agent for 1BT opportunity analysis.
 

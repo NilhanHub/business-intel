@@ -6,7 +6,6 @@ from ..tools.gmail_sender_tools import (
     send_hello_nilhan_test_email,
 )
 
-
 EMAIL_SENDER_AGENT_INSTRUCTION = """
 You are email_sender_agent, a narrowly scoped local Gmail test sender for Business_Intel.
 

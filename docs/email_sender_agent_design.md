@@ -44,7 +44,7 @@ confirmation phrase `SEND_TO_NILHAN_ADK`.
 - Lead, company, prospect, bulk, and generated-sales-email outreach is refused.
 - No cloud deployment is configured for Gmail sending.
 - The Gmail send path uses local OAuth user credentials only.
-- OAuth client files and token files stay under `.local_secrets`.
+- OAuth client files and token files stay outside the source tree under `BT_SECRETS_DIR`.
 - Returned results and logs include only safe metadata, never token or client
   secret values.
 
@@ -52,8 +52,8 @@ confirmation phrase `SEND_TO_NILHAN_ADK`.
 
 The local sender uses these private files at runtime:
 
-- `D:\gaps\Business_Intel\.local_secrets\gmail_sender_credentials.json`
-- `D:\gaps\Business_Intel\.local_secrets\gmail_sender_token.json`
+- `%LOCALAPPDATA%\1BT\Business_Intel\secrets\gmail_sender_credentials.json`
+- `%LOCALAPPDATA%\1BT\Business_Intel\secrets\gmail_sender_token.json`
 
 These files are not copied into source files, docs, logs, outputs, or evidence
 ZIPs.
@@ -64,4 +64,3 @@ ZIPs.
 - `Send the Hello Nilhan test email.`
 - `What email sending restrictions are currently active?`
 - `Can you send an email to a lead?`
-

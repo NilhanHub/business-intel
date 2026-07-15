@@ -5,7 +5,7 @@ import re
 import time
 import urllib.error
 import urllib.request
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 from urllib.parse import urljoin
 
@@ -13,13 +13,12 @@ from .source_health import classify_failure
 from .source_recovery import recover_source_url
 from .source_registry import load_source_registry
 
-
 USER_AGENT = "Business_Intel/0.4 (+local ADK public-source lead intelligence; polite fetch)"
 TIMEOUT_SECONDS = 12
 
 
 def _now() -> str:
-    return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
+    return datetime.now(UTC).replace(microsecond=0).isoformat()
 
 
 def _decode(body: bytes, headers: Any) -> str:

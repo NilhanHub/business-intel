@@ -1,9 +1,10 @@
+import importlib.util
 import json
 import os
 import tempfile
 import unittest
-import importlib.util
 from pathlib import Path
+from typing import ClassVar
 from unittest.mock import patch
 
 from hello_cloud_agent.hello_cloud_agent.agent import root_agent as hello_root_agent
@@ -25,11 +26,13 @@ from uk_ie_d365_leads.agents.report_composer_agent import (
     d365_report_composer_agent,
     report_composer_agent,
 )
-from uk_ie_d365_leads.tools import classification_review_tools
-from uk_ie_d365_leads.tools import discovery_backbone_tools
-from uk_ie_d365_leads.tools import lead_tools
-from uk_ie_d365_leads.tools import opportunity_vetting_tools
-from uk_ie_d365_leads.tools import report_composer_tools
+from uk_ie_d365_leads.tools import (
+    classification_review_tools,
+    discovery_backbone_tools,
+    lead_tools,
+    opportunity_vetting_tools,
+    report_composer_tools,
+)
 
 
 class UkIeD365LeadsTest(unittest.TestCase):
@@ -190,7 +193,7 @@ class UkIeD365LeadsTest(unittest.TestCase):
             url = "https://customer.example.co.uk/canonical-d365"
             status_code = 200
             ok = True
-            headers = {"content-type": "text/html; charset=utf-8"}
+            headers: ClassVar[dict[str, str]] = {"content-type": "text/html; charset=utf-8"}
             encoding = "utf-8"
             apparent_encoding = "utf-8"
             content = (
@@ -226,7 +229,7 @@ class UkIeD365LeadsTest(unittest.TestCase):
             url = "https://customer.co.uk/case-study.pdf"
             status_code = 200
             ok = True
-            headers = {"content-type": "application/pdf"}
+            headers: ClassVar[dict[str, str]] = {"content-type": "application/pdf"}
             encoding = None
             apparent_encoding = None
             content = None
@@ -249,7 +252,7 @@ class UkIeD365LeadsTest(unittest.TestCase):
             url = "https://customer.co.uk/image-only-case-study.pdf"
             status_code = 200
             ok = True
-            headers = {"content-type": "application/pdf"}
+            headers: ClassVar[dict[str, str]] = {"content-type": "application/pdf"}
             encoding = None
             apparent_encoding = None
             content = b"%PDF-1.4\n1 0 obj << /Type /Catalog >> endobj\n%%EOF\n"
@@ -821,7 +824,7 @@ class UkIeD365LeadsTest(unittest.TestCase):
     def test_replay_adds_audit_without_live_search_and_preserves_counts(self):
         original_search = lead_tools.ADKGoogleGroundingProvider.search_web
 
-        def fail_if_called(self, query, limit=5):  # noqa: ARG001
+        def fail_if_called(self, query, limit=5):
             raise AssertionError("Replay must not call live search")
 
         lead_tools.ADKGoogleGroundingProvider.search_web = fail_if_called
@@ -1063,7 +1066,7 @@ class UkIeD365LeadsTest(unittest.TestCase):
             self.assertFalse(output["metadata"]["agents_cli_deploy_called"])
 
     def test_live_review_package_uses_injected_reviewer_and_enforces_cap(self):
-        def fake_reviewer(record, request_index):  # noqa: ARG001
+        def fake_reviewer(record, request_index):
             return (
                 json.dumps(
                     {
@@ -1121,7 +1124,7 @@ class UkIeD365LeadsTest(unittest.TestCase):
         )["lead"]
         evidence = {"review_candidates": [candidate], "hard_rejected_leads": []}
 
-        def fake_vetter(record, stage, request_index):  # noqa: ARG001
+        def fake_vetter(record, stage, request_index):
             response = {
                 "lead_status": "source_cleanup_needed" if stage == "initial" else "ready_to_contact",
                 "signal_strength": "emerging" if stage == "initial" else "strong",
@@ -1142,7 +1145,7 @@ class UkIeD365LeadsTest(unittest.TestCase):
             }
             return json.dumps(response), {"total_token_count": 1}, "unit-vetter"
 
-        def fake_followup(query, candidate_record, review_record):  # noqa: ARG001
+        def fake_followup(query, candidate_record, review_record):
             return [
                 {
                     "title": "Northstar Components Dynamics 365 case study",
@@ -1181,7 +1184,7 @@ class UkIeD365LeadsTest(unittest.TestCase):
         }
         evidence = {"review_candidates": [candidate], "hard_rejected_leads": []}
 
-        def fake_vetter(record, stage, request_index):  # noqa: ARG001
+        def fake_vetter(record, stage, request_index):
             return json.dumps(
                 {
                     "lead_status": "ready_to_contact",
@@ -1217,7 +1220,7 @@ class UkIeD365LeadsTest(unittest.TestCase):
         self.assertEqual(Path(package["artifacts"]["json"]).name, "UNIT_AI_VETTING.json")
 
     def test_ai_vetter_provider_label_uses_agent_platform_branding(self):
-        def fake_factory(model_override=None):  # noqa: ARG001
+        def fake_factory(model_override=None):
             return object(), {
                 "model": "unit-model",
                 "provider_path": opportunity_vetting_tools.GEMINI_AGENT_PLATFORM_PROVIDER_PATH,
@@ -1350,7 +1353,7 @@ class UkIeD365LeadsTest(unittest.TestCase):
             )
         )["lead"]
 
-        def inventing_vetter(record, stage, request_index):  # noqa: ARG001
+        def inventing_vetter(record, stage, request_index):
             return (
                 json.dumps(
                     {
@@ -1442,7 +1445,7 @@ class UkIeD365LeadsTest(unittest.TestCase):
             ]
         }
 
-        def fake_reviewer(record, stage, request_index):  # noqa: ARG001
+        def fake_reviewer(record, stage, request_index):
             response = {
                 "lead_status": "ready_to_contact",
                 "signal_strength": "strong",
@@ -1679,7 +1682,7 @@ class UkIeD365LeadsTest(unittest.TestCase):
                 report_composer_tools.enforce_report_project("business-intel-123")
 
     def test_report_composer_workflow_with_stubbed_ai_and_followup(self):
-        def fake_composer(prompt, stage, request_index):  # noqa: ARG001
+        def fake_composer(prompt, stage, request_index):
             if stage == "blueprint":
                 return json.dumps(
                     {
@@ -1719,7 +1722,7 @@ class UkIeD365LeadsTest(unittest.TestCase):
                 ), {"total_token_count": 10}, "unit"
             return json.dumps(self._composer_report_spec()), {"total_token_count": 20}, "unit"
 
-        def fake_source_fetch(url, request):  # noqa: ARG001
+        def fake_source_fetch(url, request):
             return {
                 "kind": "source_fetch",
                 "url": url,
@@ -1774,7 +1777,7 @@ class UkIeD365LeadsTest(unittest.TestCase):
         candidate = {"company_name": "Northstar Components", "evidence_urls": []}
         review = {"lead_status": "source_cleanup_needed", "follow_up_queries": ["northstar dynamics 365"]}
 
-        def failing_search(query, candidate_record, review_record):  # noqa: ARG001
+        def failing_search(query, candidate_record, review_record):
             raise RuntimeError("quota exhausted")
 
         evidence = opportunity_vetting_tools.collect_follow_up_evidence(
@@ -1794,7 +1797,7 @@ class UkIeD365LeadsTest(unittest.TestCase):
             "evidence_snippets": ["Dynamics 365 signal."],
         }
 
-        def failing_reviewer(record, stage, request_index):  # noqa: ARG001
+        def failing_reviewer(record, stage, request_index):
             raise RuntimeError("quota exhausted https://cloud.google.com/vertex-ai/generative-ai/docs/error-code-429")
 
         review, meta = opportunity_vetting_tools.run_vetter_request(
@@ -2100,7 +2103,7 @@ class UkIeD365LeadsTest(unittest.TestCase):
                 self.configured = configured
                 self.unavailable_reason = unavailable_reason
 
-            def search_web(self, query: str, limit: int = 5):  # noqa: ARG002
+            def search_web(self, query: str, limit: int = 5):
                 if error:
                     raise error
                 return results[:limit]

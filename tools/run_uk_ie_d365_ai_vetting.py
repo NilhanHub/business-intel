@@ -14,13 +14,12 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from uk_ie_d365_leads.tools import lead_tools  # noqa: E402
-from uk_ie_d365_leads.tools.opportunity_vetting_tools import (  # noqa: E402
+from uk_ie_d365_leads.tools import lead_tools
+from uk_ie_d365_leads.tools.opportunity_vetting_tools import (
     DEFAULT_OUTPUT_BASENAME,
     DETERMINISTIC_AUDIT_BASENAME,
     EVIDENCE_DIR,
@@ -28,7 +27,6 @@ from uk_ie_d365_leads.tools.opportunity_vetting_tools import (  # noqa: E402
     build_fresh_leads_outputs,
     build_vetting_package,
 )
-
 
 TARGETED_SECOND_PASS_QUERIES = [
     {"signal_class": "named_customer_case_study", "query": '"Dynamics 365" "case study" "United Kingdom" -jobs -careers -tender'},
@@ -87,7 +85,7 @@ def parser() -> argparse.ArgumentParser:
     return p
 
 
-def dry_run_reviewer(record: dict[str, Any], stage: str, request_index: int):  # noqa: ARG001
+def dry_run_reviewer(record: dict[str, Any], stage: str, request_index: int):
     status = "source_cleanup_needed" if record.get("deterministic_flags") or record.get("missing_verification_points") else "provisional_contact_now"
     response = {
         "lead_status": status,
@@ -118,7 +116,7 @@ def make_followup_search(provider_name: str):
     if not provider.configured:
         raise SystemExit(provider.unavailable_reason or "Search provider is not configured.")
 
-    def search(query: str, candidate: dict[str, Any], review: dict[str, Any]):  # noqa: ARG001
+    def search(query: str, candidate: dict[str, Any], review: dict[str, Any]):
         return provider.search_web(query, limit=3)
 
     return search
@@ -127,7 +125,7 @@ def make_followup_search(provider_name: str):
 def make_source_fetch(*, parse_pdfs: bool = False):
     fetcher = lead_tools.SourceFetcher(parse_pdfs=parse_pdfs)
 
-    def fetch_public_source(url: str, candidate: dict[str, Any], review: dict[str, Any]):  # noqa: ARG001
+    def fetch_public_source(url: str, candidate: dict[str, Any], review: dict[str, Any]):
         return fetcher.fetch(
             url,
             provider=str(candidate.get("source_provider") or "followup_source_fetch"),
@@ -286,7 +284,7 @@ def run_targeted_search(args: argparse.Namespace) -> dict[str, Any]:
                 )
                 for result in results
             )
-        except Exception as exc:  # noqa: BLE001 - preserve partial second-pass evidence.
+        except Exception as exc:
             errors.append({"query": query_item["query"], "error": str(exc)[:500]})
     extraction = lead_tools.extract_d365_leads(
         raw_results,

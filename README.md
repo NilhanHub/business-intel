@@ -1,82 +1,86 @@
-# business-intel
+# Business Intel
 
+> [!TIP]
+> Start with [ENGINEERING_OVERVIEW.md](ENGINEERING_OVERVIEW.md) for the architecture, agent lanes, trust model, verification evidence, and implementation boundaries.
 
-Agent generated with `agents-cli` version `0.1.2`
+Business Intel is a local-only Google ADK and FastAPI workspace for Sri Lanka public-signal lead intelligence. Runtime leads are accepted only when they retain genuine public evidence, and tender/procurement-only signals are rejected.
 
-## Project Structure
+## Local setup on Windows
 
-```
-business-intel/
-├── sl_trigger_leads/         # Core agent code
-│   ├── agent.py               # Main agent logic
-│   ├── agent_runtime_app.py    # Agent Runtime application logic
-│   └── app_utils/             # App utilities and helpers
-├── tests/                     # Unit, integration, and load tests
-├── GEMINI.md                  # AI-assisted development guide
-└── pyproject.toml             # Project dependencies
+Requirements: Python 3.11–3.13, [`uv`](https://docs.astral.sh/uv/), and PowerShell.
+
+```powershell
+uv sync
+Copy-Item frontend\.env.example .env
 ```
 
-> 💡 **Tip:** Use [Gemini CLI](https://github.com/google-gemini/gemini-cli) for AI-assisted development - project context is pre-configured in `GEMINI.md`.
+Generate a bcrypt password hash without placing the plaintext password in shell history:
 
-## Requirements
-
-Before you begin, ensure you have:
-- **uv**: Python package manager (used for all dependency management in this project) - [Install](https://docs.astral.sh/uv/getting-started/installation/) ([add packages](https://docs.astral.sh/uv/concepts/dependencies/) with `uv add <package>`)
-- **agents-cli**: Agents CLI - Install with `uv tool install google-agents-cli`
-- **Google Cloud SDK**: For GCP services - [Install](https://cloud.google.com/sdk/docs/install)
-
-
-## Quick Start
-
-Install required packages:
-
-```bash
-agents-cli install
+```powershell
+uv run python -c "import bcrypt,getpass; p=getpass.getpass('Shared password: '); print(bcrypt.hashpw(p.encode(), bcrypt.gensalt()).decode())"
 ```
 
-Test the agent with a local web server:
+Generate an independent session-signing secret:
 
-```bash
-agents-cli playground
+```powershell
+uv run python -c "import secrets; print(secrets.token_urlsafe(48))"
 ```
 
-You can also use features from the [ADK](https://adk.dev/) CLI with `uv run adk`.
+Paste those two generated values into `.env` as `BT_SHARED_PASSWORD_HASH` and `BT_SESSION_SECRET_KEY`. The app intentionally refuses to start when either value is missing or invalid.
 
-## Commands
+Start the local server:
 
-| Command              | Description                                                                                 |
-| -------------------- | ------------------------------------------------------------------------------------------- |
-| `agents-cli install` | Install dependencies using uv                                                         |
-| `agents-cli playground` | Launch local development environment                                                  |
-| `agents-cli lint`    | Run code quality checks                                                               |
-| `uv run pytest tests/unit tests/integration` | Run unit and integration tests                                                        |
-| `agents-cli deploy`  | Deploy agent to Agent Runtime                                                                |
-| `agents-cli publish gemini-enterprise` | Register deployed agent to Gemini Enterprise                    |
-
-## 🛠️ Project Management
-
-| Command | What It Does |
-|---------|--------------|
-| `agents-cli scaffold enhance` | Add CI/CD pipelines and Terraform infrastructure |
-| `agents-cli infra cicd` | One-command setup of entire CI/CD pipeline + infrastructure |
-| `agents-cli scaffold upgrade` | Auto-upgrade to latest version while preserving customizations |
-
----
-
-## Development
-
-Edit your agent logic in `sl_trigger_leads/agent.py` and test with `agents-cli playground` - it auto-reloads on save.
-
-## Deployment
-
-```bash
-gcloud config set project <your-project-id>
-agents-cli deploy
+```powershell
+uv run python -m frontend.server
 ```
 
-To add CI/CD and Terraform, run `agents-cli scaffold enhance`.
-To set up your production infrastructure, run `agents-cli infra cicd`.
+Open [http://127.0.0.1:8080](http://127.0.0.1:8080). The single shared username defaults to `1bt-user`; the password is the one used to generate the bcrypt hash.
 
-## Observability
+The server is restricted to `127.0.0.1`. Mutable leads and workspace state default to `%LOCALAPPDATA%\1BT\Business_Intel`, outside the repository. Override that location with `BT_DATA_DIR` only when needed.
 
-Built-in telemetry exports to Cloud Trace, BigQuery, and Cloud Logging.
+## Web workspace
+
+- Dashboard, verified live leads, public-source status, and shared local notes
+- HttpOnly, SameSite=Strict session cookie with CSRF protection
+- Genuine live-source refresh; saved output is used only for first-run bootstrap
+- Text-only signal classification and 1BT service-fit preview
+- No free-text lead score, fabricated evidence, multi-user tenancy, or deployment path
+
+## Verification
+
+The safe default suite excludes `Evidence`, archives, integration tests, and paid live-model evaluation:
+
+```powershell
+uv sync --extra lint
+uv run pytest
+uv run ruff check .
+uv run ty check
+uv run codespell
+node --check frontend\static\js\app.js
+node --check frontend\static\js\login.js
+uv run --with pip-audit pip-audit --skip-editable
+```
+
+The local runtime is locked to Google ADK `2.4.0`, FastAPI `0.139.0`, and Starlette `1.3.1`. The ordinary dependency audit must exit cleanly without ignored vulnerabilities. See [docs/dependency-security.md](docs/dependency-security.md) for the exact release gate and all-extras audit.
+
+Paid or account-sensitive checks are explicit approval gates and are not part of `uv run pytest`:
+
+```powershell
+uv run pytest tests\integration hello_cloud_agent\tests\integration
+agents-cli eval run --all
+```
+
+## Project layout
+
+- `frontend/` — local FastAPI server and static browser UI
+- `sl_trigger_leads/` — Sri Lanka public-signal ADK app and real-data guardrails
+- `uk_ie_d365_leads/` — separate UK/IE Dynamics 365 workflow
+- `tests/unit/` — deterministic web security and integrity checks
+- `tests/eval/` — explicit model-evaluation configuration and lead-policy cases
+- `Evidence/` — local verification evidence; ignored by Git
+
+## Deployment status
+
+Deployment is out of scope. Cloud Agent Runtime dependencies are not installed by `uv sync`; they live in the optional `agent-runtime` extra. The legacy adapters fail closed before importing Vertex unless `BT_ENABLE_AGENT_RUNTIME=1` is set for an explicitly approved cloud workflow.
+
+[HOSTINGER_DEPLOYMENT.md](HOSTINGER_DEPLOYMENT.md) is retained only as an unsupported future draft and must not be treated as a runbook. The `agents-cli` deployment metadata is historical scaffold configuration, not authorization to deploy.

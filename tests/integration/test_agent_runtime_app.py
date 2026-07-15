@@ -12,28 +12,36 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import importlib
 import logging
+import sys
+from typing import Any
 
 import pytest
 from google.adk.events.event import Event
 
-from sl_trigger_leads.agent_runtime_app import AgentEngineApp
-
 
 @pytest.fixture
-def agent_app(monkeypatch: pytest.MonkeyPatch) -> AgentEngineApp:
+def agent_app(monkeypatch: pytest.MonkeyPatch) -> Any:
     """Fixture to create and set up AgentEngineApp instance"""
+    module_name = "sl_trigger_leads.agent_runtime_app"
+    previous_module = sys.modules.pop(module_name, None)
+    monkeypatch.setenv("BT_ENABLE_AGENT_RUNTIME", "1")
     # Set integration test flag to mock external services
     monkeypatch.setenv("INTEGRATION_TEST", "TRUE")
-
-    from sl_trigger_leads.agent_runtime_app import agent_runtime
-
-    agent_runtime.set_up()
-    return agent_runtime
+    try:
+        module = importlib.import_module(module_name)
+        agent_runtime = module.agent_runtime
+        agent_runtime.set_up()
+        yield agent_runtime
+    finally:
+        sys.modules.pop(module_name, None)
+        if previous_module is not None:
+            sys.modules[module_name] = previous_module
 
 
 @pytest.mark.asyncio
-async def test_agent_stream_query(agent_app: AgentEngineApp) -> None:
+async def test_agent_stream_query(agent_app: Any) -> None:
     """
     Integration test for the agent stream query functionality.
     Tests that the agent returns valid streaming responses.
@@ -61,7 +69,7 @@ async def test_agent_stream_query(agent_app: AgentEngineApp) -> None:
     assert has_text_content, "Expected at least one event with text content"
 
 
-def test_agent_feedback(agent_app: AgentEngineApp) -> None:
+def test_agent_feedback(agent_app: Any) -> None:
     """
     Integration test for the agent feedback functionality.
     Tests that feedback can be registered successfully.

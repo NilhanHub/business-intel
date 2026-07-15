@@ -22,7 +22,6 @@ import requests
 
 from uk_ie_d365_leads.tools import discovery_backbone_tools
 
-
 AUDIT_SCHEMA_VERSION = "1.1"
 CLASSIFIER_VERSION = "2026-05-17.deterministic-rules-v1"
 QUERY_MATRIX_VERSION = "2026-05-17.commercial-non-tender-v1"
@@ -916,7 +915,7 @@ def code_version_hint() -> str:
         if result.returncode == 0 and result.stdout.strip():
             return result.stdout.strip()
         return "not_git_repository"
-    except Exception:  # noqa: BLE001 - audit metadata should never block lead extraction.
+    except Exception:
         return "unknown"
 
 
@@ -1045,7 +1044,7 @@ def find_uk_ie_d365_leads(
                 )
                 raw_results.append(row)
                 raw_result_ledger.append(raw_result_audit_row(row, search_query=search_query))
-        except Exception as exc:  # noqa: BLE001 - return actionable provider error.
+        except Exception as exc:
             errors.append({"query": search_query, "error": _safe_error(exc)})
             break
 
@@ -1242,7 +1241,7 @@ def find_uk_ie_d365_leads_fanout(
                     raw_result_ledger.append(raw_result_audit_row(row, search_query=search_query))
                     if len(raw_results) >= raw_result_cap:
                         break
-            except Exception as exc:  # noqa: BLE001 - fanout keeps partial provider results.
+            except Exception as exc:
                 safe = _safe_error(exc)
                 budget["failures"] += 1
                 if is_timeout_error(exc, safe):
@@ -1654,7 +1653,7 @@ def fetch_sources_for_results(
     *,
     max_urls: int = SOURCE_FETCH_DEFAULT_MAX_URLS,
     parse_pdfs: bool = False,
-    fetcher: "SourceFetcher | None" = None,
+    fetcher: SourceFetcher | None = None,
 ) -> list[dict[str, Any]]:
     fetcher = fetcher or SourceFetcher(parse_pdfs=parse_pdfs)
     seen: set[str] = set()
@@ -1876,7 +1875,7 @@ def extract_pdf_source_text(raw_pdf: bytes, final_url: str) -> dict[str, Any]:
         }
     try:
         from pypdf import PdfReader
-    except Exception as exc:  # noqa: BLE001 - parser availability is reported in artifacts.
+    except Exception as exc:
         fallback_text = simple_pdf_text_fallback(raw_pdf)
         return {
             "parser_status": "pdf_text_extracted_fallback" if fallback_text else "pdf_parser_unavailable",
@@ -1908,7 +1907,7 @@ def extract_pdf_source_text(raw_pdf: bytes, final_url: str) -> dict[str, Any]:
             "text_excerpt": text[:4000],
             "fetch_error": None if text else "pdf_no_text_extracted",
         }
-    except Exception as exc:  # noqa: BLE001 - source cleanup should see parser errors.
+    except Exception as exc:
         fallback_text = simple_pdf_text_fallback(raw_pdf)
         return {
             "parser_status": "pdf_text_extracted_fallback" if fallback_text else "pdf_parse_error",
@@ -3121,7 +3120,7 @@ def _adc_status() -> dict[str, Any]:
             "project": project or None,
             "credential_type": type(credentials).__name__,
         }
-    except Exception as exc:  # noqa: BLE001 - readiness only.
+    except Exception as exc:
         return {
             "available": False,
             "project_present": False,
@@ -3580,9 +3579,9 @@ def _run_google_genai_grounded_search_results(query: str, limit: int = 5, source
         model=effective_google_model()[0],
         contents=prompt,
         config=types.GenerateContentConfig(
-            tools=[types.Tool(googleSearch=types.GoogleSearch())],
+            tools=[types.Tool(google_search=types.GoogleSearch())],
             temperature=0,
-            maxOutputTokens=2048,
+            max_output_tokens=2048,
         ),
     )
     text_results = parse_search_results(getattr(response, "text", "") or "", source=source, limit=limit)

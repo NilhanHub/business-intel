@@ -4,7 +4,6 @@ import json
 from pathlib import Path
 from typing import Any
 
-
 REGISTRY_PATH = Path(__file__).resolve().parents[1] / "data" / "source_registry.json"
 ROOT = Path(__file__).resolve().parents[2]
 

@@ -35,7 +35,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from uk_ie_d365_leads.tools.lead_tools import (  # noqa: E402
+from uk_ie_d365_leads.tools.lead_tools import (
     GOOGLE_GROUNDING_PROVIDER_PATH,
     SearchResult,
     _grounding_metadata_results,
@@ -49,7 +49,6 @@ from uk_ie_d365_leads.tools.lead_tools import (  # noqa: E402
     parse_search_results,
     source_url_type,
 )
-
 
 EVIDENCE_DIR = PROJECT_ROOT / "Evidence"
 DEFAULT_JSON_PATH = EVIDENCE_DIR / "UK_IE_D365_COST_MEASUREMENT.json"
@@ -98,9 +97,9 @@ def plain(value: Any) -> Any:
             except TypeError:
                 try:
                     return plain(method())
-                except Exception:  # noqa: BLE001 - best-effort serialization.
+                except Exception:
                     pass
-            except Exception:  # noqa: BLE001 - best-effort serialization.
+            except Exception:
                 pass
     if hasattr(value, "__dict__"):
         data = {
@@ -340,9 +339,9 @@ def run_grounded_request(
             model=model,
             contents=grounded_prompt(query, max_results),
             config=types.GenerateContentConfig(
-                tools=[types.Tool(googleSearch=types.GoogleSearch())],
+                tools=[types.Tool(google_search=types.GoogleSearch())],
                 temperature=0,
-                maxOutputTokens=2048,
+                max_output_tokens=2048,
             ),
         )
         results = merged_results(
@@ -367,7 +366,7 @@ def run_grounded_request(
             "model_version": model_version(response),
             "error": None,
         }, results
-    except Exception as exc:  # noqa: BLE001 - bounded meter should persist failure details.
+    except Exception as exc:
         finished = now_utc()
         return {
             "query": query,

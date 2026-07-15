@@ -1,0 +1,16 @@
+title = "Business Intel source-tree secret scan"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Exclude dependency, runtime, generated, archived, and evidence trees from source scans"
+paths = [
+  '''(^|[\\/])\.venv([\\/]|$)''',
+  '''(^|[\\/])\.adk([\\/]|$)''',
+  '''(^|[\\/])Evidence([\\/]|$)''',
+  '''(^|[\\/])archive([\\/]|$)''',
+  '''(^|[\\/])logs([\\/]|$)''',
+  '''(^|[\\/])outputs([\\/]|$)''',
+  '''(^|[\\/])(build|dist)([\\/]|$)''',
+]

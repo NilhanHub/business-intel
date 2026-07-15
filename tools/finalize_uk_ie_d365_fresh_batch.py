@@ -9,17 +9,16 @@ private LinkedIn.
 
 from __future__ import annotations
 
+import html
 import json
 import re
 import shutil
-import html
 from collections import Counter
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
 import requests
-
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 EVIDENCE_DIR = PROJECT_ROOT / "Evidence"
@@ -538,9 +537,9 @@ def validate_final_leads(leads: list[dict[str, Any]]) -> None:
 
 def finalized_leads() -> list[dict[str, Any]]:
     fetched_at = now_utc()
-    leads = []
+    leads: list[dict[str, Any]] = []
     for rank, lead in enumerate(FINAL_LEADS, start=1):
-        item = dict(lead)
+        item: dict[str, Any] = dict(lead)
         item.update(
             {
                 "rank": rank,

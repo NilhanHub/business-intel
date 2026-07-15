@@ -9,7 +9,6 @@ sys.path.insert(0, str(ROOT))
 from sl_trigger_leads.tools.live_source_tools import find_live_leads
 from sl_trigger_leads.tools.signal_tools import assert_no_simulation_data
 
-
 OUTPUT_DIR = ROOT / "outputs"
 LOG_PATH = ROOT / "logs" / "PROMPT#04_live_smoke.log"
 JSON_PATH = OUTPUT_DIR / "PROMPT#04_live_leads.json"

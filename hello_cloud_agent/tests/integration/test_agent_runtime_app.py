@@ -12,14 +12,30 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import importlib
+import sys
+from typing import Any
+
 import pytest
 from google.adk.events.event import Event
 
-from hello_cloud_agent.agent_runtime_app import agent_runtime
+
+@pytest.fixture
+def agent_runtime(monkeypatch: pytest.MonkeyPatch) -> Any:
+    module_name = "hello_cloud_agent.agent_runtime_app"
+    previous_module = sys.modules.pop(module_name, None)
+    monkeypatch.setenv("BT_ENABLE_AGENT_RUNTIME", "1")
+    try:
+        module = importlib.import_module(module_name)
+        yield module.agent_runtime
+    finally:
+        sys.modules.pop(module_name, None)
+        if previous_module is not None:
+            sys.modules[module_name] = previous_module
 
 
 @pytest.mark.asyncio
-async def test_agent_stream_query() -> None:
+async def test_agent_stream_query(agent_runtime: Any) -> None:
     """
     Integration test for the agent stream query functionality.
     Tests that the agent returns valid streaming responses.
