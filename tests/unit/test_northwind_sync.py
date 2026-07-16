@@ -29,6 +29,11 @@ def lead() -> dict:
         "signal_strength": "strong",
         "remaining_uncertainty": ["Buying timing is not public."],
         "do_not_claim_notes": ["Do not claim budget."],
+        "contact_target_roles": ["CIO", "Head of Business Applications"],
+        "source_name": "Northstar case study",
+        "board_relevance": "Operational reporting matters to leadership.",
+        "intelligence_reading": "A credible optimisation hypothesis.",
+        "value_of_signal": "Named end-customer evidence.",
     }
 
 
@@ -40,6 +45,25 @@ def test_pack_validation_and_existing_company_shape() -> None:
     assert payload["status"] == "New"
     assert payload["activity"] == []
     assert payload["intel"]["evidenceUrl"].startswith("https://")
+    assert payload["intel"]["evidenceExcerpt"] == "Northstar uses Dynamics 365 Business Central."
+    assert payload["intel"]["contactTargetRoles"] == ["CIO", "Head of Business Applications"]
+    assert payload["intel"]["verifiedLive"] is True
+    assert payload["intel"]["report"]["round"] == 5
+
+
+def test_match_existing_docs_requires_one_exact_company() -> None:
+    class Snapshot:
+        def __init__(self, name: str) -> None:
+            self.id = "northstar"
+            self._name = name
+
+        def to_dict(self) -> dict:
+            return {"name": self._name}
+
+    matched = MODULE.match_existing_docs([lead()], [Snapshot("Northstar Components")])
+    assert matched["Northstar Components"].id == "northstar"
+    with pytest.raises(RuntimeError, match="exactly one"):
+        MODULE.match_existing_docs([lead()], [])
 
 
 def test_target_guard_refuses_drift() -> None:

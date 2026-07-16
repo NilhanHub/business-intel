@@ -21,6 +21,9 @@ APPROVED_PROJECT = "globalapps-northwind-crm"
 APPROVED_DATABASE = "(default)"
 APPROVED_WORKSPACE = "default"
 CREATED_BY = "agent:Intel-Pipeline"
+RUN5_REPORT_TITLE = "UK/IE Dynamics 365 Opportunity Intelligence - Round 5"
+RUN5_REPORT_PDF = "2026-07-16__uk-ie-d365__round-5__20-new-accounts.pdf"
+RUN5_EVIDENCE_PACK = "UK_IE_D365_RUN5_20260716_20_LEADS_FINAL.json"
 
 
 def now_utc() -> str:
@@ -36,6 +39,11 @@ def parser() -> argparse.ArgumentParser:
     p.add_argument("--expected-count", type=int, default=20)
     p.add_argument("--output", default=str(EVIDENCE_DIR / "UK_IE_D365_RUN5_20260716_NORTHWIND_SYNC.json"))
     p.add_argument("--apply", action="store_true", help="Apply one atomic Firestore transaction after preflight.")
+    p.add_argument(
+        "--enrich-existing",
+        action="store_true",
+        help="Update the exact existing companies with the complete lead intelligence instead of creating records.",
+    )
     return p
 
 
@@ -91,11 +99,42 @@ def validate_pack(payload: dict[str, Any], *, expected_count: int) -> list[dict[
     return leads
 
 
+def intel_payload(lead: dict[str, Any]) -> dict[str, Any]:
+    remaining_uncertainty = [str(item) for item in lead.get("remaining_uncertainty") or []]
+    uncertainty = "; ".join(remaining_uncertainty)
+    do_not_claim = [str(item) for item in lead.get("do_not_claim_notes") or []]
+    return {
+        "boardRelevance": str(lead.get("board_relevance") or ""),
+        "commercialOpening": str(lead.get("commercial_opening") or ""),
+        "contactTargetRoles": [str(item) for item in lead.get("contact_target_roles") or []],
+        "doNotClaim": do_not_claim,
+        "evidenceExcerpt": str(lead.get("evidence_excerpt") or ""),
+        "evidenceUrl": str(lead.get("evidence_url") or ""),
+        "fetchedAt": str(lead.get("fetched_at") or ""),
+        "intelligenceReading": str(lead.get("intelligence_reading") or ""),
+        "remainingUncertainty": remaining_uncertainty,
+        "report": {
+            "evidencePackFilename": RUN5_EVIDENCE_PACK,
+            "leadCount": 20,
+            "pdfFilename": RUN5_REPORT_PDF,
+            "round": 5,
+            "title": RUN5_REPORT_TITLE,
+        },
+        "signal": str(lead.get("opportunity_signal") or ""),
+        "signalTier": str(lead.get("signal_strength") or "").title(),
+        "signalType": str(lead.get("signal_type") or ""),
+        "sourceChannel": str(lead.get("source_channel") or ""),
+        "sourceName": str(lead.get("source_name") or ""),
+        "uncertainty": uncertainty,
+        "valueOfSignal": str(lead.get("value_of_signal") or ""),
+        "verifiedLive": lead.get("verified_live") is True,
+        "whyItMatters": str(lead.get("why_this_matters_to_1bt") or ""),
+    }
+
+
 def company_payload(lead: dict[str, Any], *, timestamp: str) -> dict[str, Any]:
     name = str(lead["company_name"])
     doc_id = company_document_id(name)
-    uncertainty = "; ".join(str(item) for item in lead.get("remaining_uncertainty") or [])
-    do_not_claim = [str(item) for item in lead.get("do_not_claim_notes") or []]
     return {
         "activity": [],
         "contactName": "",
@@ -106,16 +145,7 @@ def company_payload(lead: dict[str, Any], *, timestamp: str) -> dict[str, Any]:
         "email": "",
         "id": doc_id,
         "industry": "",
-        "intel": {
-            "commercialOpening": str(lead.get("commercial_opening") or ""),
-            "doNotClaim": do_not_claim,
-            "evidenceUrl": str(lead.get("evidence_url") or ""),
-            "signal": str(lead.get("opportunity_signal") or ""),
-            "signalTier": str(lead.get("signal_strength") or "").title(),
-            "signalType": str(lead.get("signal_type") or ""),
-            "uncertainty": uncertainty,
-            "whyItMatters": str(lead.get("why_this_matters_to_1bt") or ""),
-        },
+        "intel": intel_payload(lead),
         "lastContactAt": None,
         "name": name,
         "nextStep": {"type": "email", "note": ""},
@@ -142,6 +172,24 @@ def find_duplicates(leads: list[dict[str, Any]], existing_docs: list[Any]) -> li
     ]
 
 
+def match_existing_docs(leads: list[dict[str, Any]], existing_docs: list[Any]) -> dict[str, Any]:
+    by_name: dict[str, list[Any]] = {}
+    for doc in existing_docs:
+        normalized = normalize_company_for_match((doc.to_dict() or {}).get("name") or "")
+        if normalized:
+            by_name.setdefault(normalized, []).append(doc)
+    matched: dict[str, Any] = {}
+    for lead in leads:
+        company_name = str(lead["company_name"])
+        candidates = by_name.get(normalize_company_for_match(company_name), [])
+        if len(candidates) != 1:
+            raise RuntimeError(
+                f"Expected exactly one existing Northwind company for {company_name!r}; found {len(candidates)}."
+            )
+        matched[company_name] = candidates[0]
+    return matched
+
+
 def run(args: argparse.Namespace) -> dict[str, Any]:
     enforce_target(args.project, args.database, args.workspace)
     try:
@@ -159,14 +207,15 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     companies_ref = workspace_ref.collection("companies")
     existing_before = list(companies_ref.stream())
     duplicates = find_duplicates(leads, existing_before)
-    if duplicates:
+    existing_matches = match_existing_docs(leads, existing_before) if args.enrich_existing else {}
+    if duplicates and not args.enrich_existing:
         raise RuntimeError(f"Northwind already contains matching companies: {duplicates}")
 
     timestamp = now_utc()
     prepared = [company_payload(lead, timestamp=timestamp) for lead in leads]
     existing_ids = {doc.id for doc in existing_before}
     collisions = [item["id"] for item in prepared if item["id"] in existing_ids]
-    if collisions:
+    if collisions and not args.enrich_existing:
         raise RuntimeError(f"Northwind document ID collision: {collisions}")
 
     applied = False
@@ -177,15 +226,29 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         def apply_once(txn: Any) -> None:
             workspace_snapshot = workspace_ref.get(transaction=txn)
             live_docs = list(txn.get(companies_ref.limit(1000)))
-            live_duplicates = find_duplicates(leads, live_docs)
-            if live_duplicates:
-                raise RuntimeError(f"Northwind changed after preflight; duplicate companies: {live_duplicates}")
-            live_ids = {doc.id for doc in live_docs}
-            live_collisions = [item["id"] for item in prepared if item["id"] in live_ids]
-            if live_collisions:
-                raise RuntimeError(f"Northwind changed after preflight; document ID collision: {live_collisions}")
-            for item in prepared:
-                txn.create(companies_ref.document(item["id"]), item)
+            if args.enrich_existing:
+                live_matches = match_existing_docs(leads, live_docs)
+                for lead in leads:
+                    doc = live_matches[str(lead["company_name"])]
+                    current = doc.to_dict() or {}
+                    txn.update(
+                        doc.reference,
+                        {
+                            "intel": intel_payload(lead),
+                            "updatedAt": timestamp,
+                            "version": int(current.get("version") or 0) + 1,
+                        },
+                    )
+            else:
+                live_duplicates = find_duplicates(leads, live_docs)
+                if live_duplicates:
+                    raise RuntimeError(f"Northwind changed after preflight; duplicate companies: {live_duplicates}")
+                live_ids = {doc.id for doc in live_docs}
+                live_collisions = [item["id"] for item in prepared if item["id"] in live_ids]
+                if live_collisions:
+                    raise RuntimeError(f"Northwind changed after preflight; document ID collision: {live_collisions}")
+                for item in prepared:
+                    txn.create(companies_ref.document(item["id"]), item)
             workspace_data = workspace_snapshot.to_dict() or {}
             txn.update(
                 workspace_ref,
@@ -200,8 +263,18 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
 
     existing_after = list(companies_ref.stream())
     after_by_id = {doc.id: doc.to_dict() or {} for doc in existing_after}
-    verified_ids = [item["id"] for item in prepared if after_by_id.get(item["id"], {}).get("name") == item["name"]]
-    expected_after = len(existing_before) + (len(prepared) if applied else 0)
+    if args.enrich_existing:
+        verified_ids = [
+            existing_matches[str(lead["company_name"])].id
+            for lead in leads
+            if after_by_id.get(existing_matches[str(lead["company_name"])].id, {}).get("intel")
+            == intel_payload(lead)
+        ]
+    else:
+        verified_ids = [
+            item["id"] for item in prepared if after_by_id.get(item["id"], {}).get("name") == item["name"]
+        ]
+    expected_after = len(existing_before) + (len(prepared) if applied and not args.enrich_existing else 0)
     if len(existing_after) != expected_after:
         raise RuntimeError(
             f"Northwind count verification failed: expected {expected_after}, found {len(existing_after)}."
@@ -212,7 +285,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     result = {
         "artifact_type": "uk_ie_d365_northwind_crm_sync",
         "generated_at": now_utc(),
-        "mode": "apply" if applied else "dry_run",
+        "mode": ("apply" if applied else "dry_run") + ("_enrich_existing" if args.enrich_existing else ""),
         "target": {
             "project": args.project,
             "database": args.database,
@@ -223,17 +296,20 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "input_lead_count": len(leads),
         "company_count_before": len(existing_before),
         "company_count_after": len(existing_after),
-        "duplicate_count": len(duplicates),
-        "inserted_count": len(verified_ids),
+        "duplicate_count": 0 if args.enrich_existing else len(duplicates),
+        "existing_match_count": len(existing_matches),
+        "inserted_count": 0 if args.enrich_existing else len(verified_ids),
+        "enriched_count": len(verified_ids) if args.enrich_existing else 0,
         "prepared_companies": [
             {"id": item["id"], "name": item["name"], "country": item["country"], "sector": item["sector"]}
             for item in prepared
         ],
-        "verified_inserted_ids": verified_ids,
+        "verified_inserted_ids": [] if args.enrich_existing else verified_ids,
+        "verified_enriched_ids": verified_ids if args.enrich_existing else [],
         "created_contacts": 0,
         "created_routes": 0,
         "created_activities": 0,
-        "schema_note": "Used the existing companies document shape; no collection or field schema was created.",
+        "schema_note": "Used the existing companies/intel document shape; no collection schema was created.",
     }
     output_path = Path(args.output).resolve()
     output_path.parent.mkdir(parents=True, exist_ok=True)
