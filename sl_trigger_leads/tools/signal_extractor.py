@@ -4,8 +4,12 @@ import re
 from typing import Any
 from urllib.parse import unquote
 
-from .signal_tools import classify_signal, clean_text, contains_simulation_marker, detect_1bt_fit
-
+from .signal_tools import (
+    classify_signal,
+    clean_text,
+    contains_simulation_marker,
+    detect_1bt_fit,
+)
 
 COMPANY_SUFFIXES = r"(?:PLC|Pvt\.?\s+Ltd\.?|Private\s+Limited|Limited|Ltd\.?|Group|Holdings|Bank|Finance|Insurance|Hotels?|Technologies|Solutions|Systems|Digital|Global|Lanka)"
 

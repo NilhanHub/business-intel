@@ -6,7 +6,6 @@ import urllib.error
 import urllib.request
 from typing import Any
 
-
 USER_AGENT = "Business_Intel/0.5 (+source health check; polite public fetch)"
 
 

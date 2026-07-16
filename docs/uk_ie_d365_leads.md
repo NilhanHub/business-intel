@@ -91,7 +91,7 @@ fetch errors. Private LinkedIn, tender/procurement portals, fake/example hosts,
 non-HTTP URLs, and obvious binary files are skipped and logged instead of
 silently disappearing. With `--parse-pdfs`, public PDF sources are parsed with
 `pypdf`; text-bearing PDFs can become verified evidence, while image-heavy or
-unparseable PDFs remain cleanup items. End-customer extraction runs against
+unparsable PDFs remain cleanup items. End-customer extraction runs against
 fetched page/PDF text, so partner/vendor pages can provide evidence for the
 named customer without the partner being mistaken for the buyer.
 

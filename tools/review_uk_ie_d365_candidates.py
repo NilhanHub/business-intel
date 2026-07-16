@@ -8,7 +8,6 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-
 REVIEW_SCHEMA_VERSION = "2026-05-17.human-review-shortlist-v1"
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_INPUT = REPO_ROOT / "Evidence" / "UK_IE_D365_AUDIT_REPLAY.json"
@@ -273,7 +272,6 @@ def usefulness_label(candidate: dict[str, Any], score: int) -> str:
 def recommended_action(candidate: dict[str, Any], risk: str, usefulness: str) -> str:
     tier = candidate.get("signal_tier")
     reason = candidate.get("rejection_reason")
-    text = candidate_text(candidate)
     if is_tender_candidate(candidate):
         return "keep_rejected"
     if tier == "B" and usefulness == "high":

@@ -1,19 +1,9 @@
 from google.adk.agents import Agent
+from google.adk.apps import App
 
 from .agents.contact_resolver_agent import contact_resolver_agent
 from .agents.email_sender_agent import email_sender_agent
 from .agents.opportunity_analyst import opportunity_analyst
-from .tools.contact_resolver_tools import (
-    discover_contact_live_search_provider,
-    find_contact_route_for_company,
-    refuse_contact_resolver_sending,
-    run_hunter_candidate_loss_audit,
-    resolve_contact_routes_from_text,
-    resolve_contact_route_for_lead,
-    resolve_contacts_for_leads,
-    resolve_latest_contact_routes,
-    show_contact_resolver_dry_run,
-)
 from .tools.cloud_ops_tools import (
     check_contact_resolver_provider_status,
     check_runtime_self_identity,
@@ -23,6 +13,17 @@ from .tools.cloud_ops_tools import (
     run_contact_resolver_smoke,
     run_single_company_hunter_probe,
     search_runtime_logs,
+)
+from .tools.contact_resolver_tools import (
+    discover_contact_live_search_provider,
+    find_contact_route_for_company,
+    refuse_contact_resolver_sending,
+    resolve_contact_route_for_lead,
+    resolve_contact_routes_from_text,
+    resolve_contacts_for_leads,
+    resolve_latest_contact_routes,
+    run_hunter_candidate_loss_audit,
+    show_contact_resolver_dry_run,
 )
 from .tools.gmail_sender_tools import (
     describe_email_sender_restrictions,
@@ -48,7 +49,6 @@ from .tools.opportunity_analysis_tools import (
 from .tools.signal_tools import classify_signal
 from .tools.source_recovery import recover_source_url
 from .tools.source_registry import list_configured_sources
-
 
 ROOT_INSTRUCTION = """
 You are sl_trigger_leads, a local ADK lead-intelligence assistant for 1 Billion Tech / 1BT in Sri Lanka.
@@ -77,6 +77,10 @@ Workflow roles:
 
 Rules:
 - This is not tender intelligence. Tender/procurement-only signals should be rejected or parked.
+- Treat questions about how the repository's lead-processing pipeline separates evidence sources, partners, and end-customer accounts as lead-data policy questions, not as generic CRM process-design consulting.
+- For a partner or vendor case-study page that names an end customer, keep the partner page, URL, excerpt, and attribution as the evidence source while making the named end customer the candidate account. Never score or present the partner as the end customer merely because it hosts the source page.
+- If the end customer cannot be resolved confidently, retain the candidate in source-cleanup/end-customer-resolution state rather than promoting it as a verified lead or discarding potentially useful public evidence.
+- You may explain these repository policy rules for the bundled UK/IE Dynamics 365 workflow, but do not claim that a policy explanation is a newly verified live lead and do not substitute it for the Sri Lanka live-evidence workflow.
 - Reject or park vague AI fluff, internship-only hiring, stale signals older than 90 days unless strategically important, and signals with no IT/software/AI/CRM/data/support relevance.
 - If live fetching fails, report the source failures clearly.
 - If no verified live leads are found, say so plainly and never fall back to sample data.
@@ -158,7 +162,5 @@ root_agent = Agent(
     ],
     sub_agents=[opportunity_analyst, email_sender_agent, contact_resolver_agent],
 )
-
-from google.adk.apps import App
 
 app = App(root_agent=root_agent, name="sl_trigger_leads")

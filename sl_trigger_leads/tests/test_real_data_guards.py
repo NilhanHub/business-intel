@@ -2,11 +2,15 @@ import unittest
 from unittest.mock import patch
 
 from sl_trigger_leads.agent import ROOT_INSTRUCTION
-from sl_trigger_leads.tools.live_source_tools import find_live_leads, report_source_failures, score_live_lead
+from sl_trigger_leads.tools.live_source_tools import (
+    find_live_leads,
+    report_source_failures,
+    score_live_lead,
+)
 from sl_trigger_leads.tools.signal_extractor import extract_public_signals_from_source
+from sl_trigger_leads.tools.signal_tools import assert_no_simulation_data
 from sl_trigger_leads.tools.source_recovery import recover_source_url
 from sl_trigger_leads.tools.source_registry import list_configured_sources
-from sl_trigger_leads.tools.signal_tools import assert_no_simulation_data
 
 
 class RealDataGuardTest(unittest.TestCase):
@@ -75,6 +79,14 @@ class RealLeadWorkflowTest(unittest.TestCase):
         self.assertIn("configured public source names and urls are not confidential", lowered)
         self.assertNotIn("cannot disclose", lowered)
         self.assertNotIn("source secrecy", lowered.replace("do not claim source secrecy", ""))
+
+    def test_agent_instruction_separates_partner_source_from_end_customer(self):
+        lowered = ROOT_INSTRUCTION.lower()
+        self.assertIn("lead-data policy questions", lowered)
+        self.assertIn("making the named end customer the candidate account", lowered)
+        self.assertIn("never score or present the partner as the end customer", lowered)
+        self.assertIn("source-cleanup/end-customer-resolution state", lowered)
+        self.assertIn("bundled uk/ie dynamics 365 workflow", lowered)
 
     def test_cse_old_404_url_recovers_to_announcements(self):
         failed_source = {

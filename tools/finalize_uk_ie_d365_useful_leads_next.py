@@ -22,7 +22,6 @@ from run_uk_ie_d365_useful_leads_next import (
     zip_artifacts,
 )
 
-
 BASENAME = "UK_IE_D365_USEFUL_LEADS_NEXT"
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 

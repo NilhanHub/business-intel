@@ -8,7 +8,6 @@ from typing import Any
 
 from .signal_tools import assert_no_simulation_data, clean_text
 
-
 ROOT = Path(__file__).resolve().parents[2]
 TAXONOMY_PATH = Path(__file__).resolve().parents[1] / "data" / "onebt_service_taxonomy.json"
 
@@ -228,7 +227,7 @@ def classify_opportunity_bucket(lead: dict[str, Any]) -> dict[str, Any]:
     bucket_lookup = _bucket_lookup(taxonomy)
     text = _lead_text(lead)
     lowered = f" {text.lower()} "
-    scores = {bucket_id: 0 for bucket_id in BUCKET_ORDER}
+    scores = dict.fromkeys(BUCKET_ORDER, 0)
     evidence_hits: dict[str, list[str]] = {bucket_id: [] for bucket_id in BUCKET_ORDER}
 
     for bucket_id, rules in KEYWORD_RULES.items():
@@ -560,17 +559,19 @@ def _verify_next(primary_bucket: str) -> list[str]:
         "Check whether the evidence reflects a current business priority.",
     ]
     if primary_bucket == "staff_augmentation_delivery_capacity":
-        return base + [
+        return [
+            *base,
             "Verify whether the open role is still active.",
             "Check whether there are multiple related technical roles.",
         ]
     if primary_bucket == "microsoft_dynamics_365_crm_power_platform":
-        return base + [
+        return [
+            *base,
             "Verify whether CRM, customer service, claims, Microsoft stack, or ERP language appears in additional public evidence.",
         ]
     if primary_bucket == "low_fit_or_watch":
-        return base + ["Find stronger IT, AI, CRM, data, integration, support, or delivery evidence before outreach."]
-    return base + ["Look for corroborating public evidence before making a specific service claim."]
+        return [*base, "Find stronger IT, AI, CRM, data, integration, support, or delivery evidence before outreach."]
+    return [*base, "Look for corroborating public evidence before making a specific service claim."]
 
 
 def _do_not_claim(primary_bucket: str) -> list[str]:

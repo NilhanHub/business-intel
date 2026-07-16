@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -12,7 +12,9 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from sl_trigger_leads.tools.contact_resolver_tools import resolve_contact_routes_from_text  # noqa: E402
+from sl_trigger_leads.tools.contact_resolver_tools import (
+    resolve_contact_routes_from_text,
+)
 
 EVIDENCE_DIR = ROOT / "Evidence"
 LOG_PATH = EVIDENCE_DIR / "CONTACT_RESOLVER_EXPLICIT_LEADS_LOCAL_TEST.log"
@@ -44,7 +46,7 @@ country: United States
 
 
 def utc_now() -> str:
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 def write_json(path: Path, payload: Any) -> None:

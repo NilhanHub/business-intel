@@ -11,16 +11,31 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import hashlib
 import logging
 import os
-import hashlib
 from typing import Any
 
-import vertexai
+if os.environ.get("BT_ENABLE_AGENT_RUNTIME") != "1":
+    raise RuntimeError(
+        "Agent Runtime is disabled for this local-only build. "
+        "Set BT_ENABLE_AGENT_RUNTIME=1 and install the agent-runtime extra only for an explicitly approved cloud workflow."
+    )
+
+try:
+    import vertexai
+    from google.cloud import logging as google_cloud_logging
+    from vertexai.agent_engines.templates.adk import AdkApp
+except ImportError as exc:
+    raise RuntimeError(
+        "Agent Runtime dependencies are not installed. Run `uv sync --extra agent-runtime` only for an explicitly approved cloud workflow."
+    ) from exc
+
 from dotenv import load_dotenv
-from google.adk.artifacts import GcsArtifactService, InMemoryArtifactService
-from google.cloud import logging as google_cloud_logging
-from vertexai.agent_engines.templates.adk import AdkApp
+from google.adk.artifacts import (
+    GcsArtifactService,
+    InMemoryArtifactService,
+)
 
 from sl_trigger_leads.agent import app as adk_app
 from sl_trigger_leads.app_utils.telemetry import setup_telemetry
@@ -54,7 +69,7 @@ def _load_hunter_key_from_secret_manager_if_needed() -> None:
                 "Loaded HUNTER_API_KEY from Secret Manager: present=True hash=%s",
                 digest,
             )
-    except Exception as exc:  # noqa: BLE001 - startup must remain diagnostic-safe.
+    except Exception as exc:
         logging.getLogger(__name__).warning(
             "HUNTER_API_KEY Secret Manager fallback unavailable: %s",
             exc.__class__.__name__,

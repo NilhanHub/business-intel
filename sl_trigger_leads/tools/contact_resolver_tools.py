@@ -11,17 +11,17 @@ import json
 import re
 import time
 from dataclasses import dataclass, field
-from datetime import date, datetime
+from datetime import date
 from pathlib import Path
 from typing import Any, Protocol
 from urllib.parse import urlparse
 
 from .live_contact_search_tools import (
-    EmailExtractor,
     HUNTER_FOUND,
     HUNTER_NOT_CONFIGURED,
     HUNTER_NOT_FOUND,
     HUNTER_VERIFIED,
+    EmailExtractor,
     HunterContactEnrichmentProvider,
     HunterEmailRecord,
     PeopleRoleExtractor,
@@ -1907,7 +1907,7 @@ def _select_company_domain(
     for candidate in candidates:
         if candidate.get("email") and not is_personal_email_domain(candidate.get("email")):
             add_domain(email_domain(candidate.get("email")))
-        for url in list(candidate.get("source_urls") or []) + [candidate.get("contact_url")]:
+        for url in [*(candidate.get("source_urls") or []), candidate.get("contact_url")]:
             if url and is_likely_official_company_url(str(url), normalized["company"]):
                 add_domain(url)
     for url in sources_checked:
@@ -2335,7 +2335,7 @@ def _inspect_public_text_for_candidates(
     observed_emails.extend(email for email in emails if email not in observed_emails)
     people = provider.extract_people_roles(text, normalized["company"], target_personas)
     for person in people:
-        person.source_urls = list(dict.fromkeys(person.source_urls + [url]))
+        person.source_urls = list(dict.fromkeys([*person.source_urls, url]))
         person.contact_url = person.contact_url or url
         if "linkedin.com/in" in url.lower():
             person.linkedin_url = person.linkedin_url or url
@@ -2606,8 +2606,6 @@ def _sort_candidates(candidates: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 
 def _candidate_sort_key(candidate: dict[str, Any]) -> tuple[int, int, int, int, int, int]:
-    role = candidate.get("role")
-    personas = [str(role)] if role else []
     return (
         _contact_route_priority(candidate),
         _hunter_verification_rank(candidate),
@@ -2983,7 +2981,7 @@ def _named_contact_notes(results: list[dict[str, Any]]) -> list[str]:
         ]
         role_text = " / ".join(str(role) for role in roles[:3]) or "named buyer"
         suffix = (
-            "no named {roles} found within search budget.".format(roles=role_text)
+            f"no named {role_text} found within search budget."
             if summary.get("named_person_search_attempted")
             else "named-person search not completed."
         )
