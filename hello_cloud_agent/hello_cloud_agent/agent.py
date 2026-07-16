@@ -3,6 +3,7 @@
 import os
 
 import google.auth
+from google.auth.exceptions import DefaultCredentialsError
 from google.adk.agents import Agent
 from google.adk.apps import App
 from google.adk.models import Gemini
@@ -10,7 +11,13 @@ from google.genai import types
 
 HELLO_RESPONSE = "Hello Nilhan, the Business-Intel cloud agent is working."
 
-_, project_id = google.auth.default()
+try:
+    _, project_id = google.auth.default()
+except DefaultCredentialsError:
+    # Documentation, tests, and local exploration should remain importable
+    # without workstation or CI credentials. Deployed environments still use
+    # Application Default Credentials when they are available.
+    project_id = None
 if project_id:
     os.environ.setdefault("GOOGLE_CLOUD_PROJECT", project_id)
 os.environ.setdefault("GOOGLE_CLOUD_LOCATION", "us-central1")

@@ -1,5 +1,10 @@
 # Business Intel
 
+<!-- portfolio-flagship -->
+<p align="center"><img src="docs/social-preview.png" alt="Business Intel social preview" width="100%"></p>
+
+> **Portfolio review path:** Start with the capabilities and architecture below, then reproduce the documented verification commands. See [SECURITY.md](SECURITY.md), [CONTRIBUTING.md](CONTRIBUTING.md), and [RIGHTS.md](RIGHTS.md) for the project's operating and reuse boundaries.
+
 > [!TIP]
 > Start with [ENGINEERING_OVERVIEW.md](ENGINEERING_OVERVIEW.md) for the architecture, agent lanes, trust model, verification evidence, and implementation boundaries.
 
