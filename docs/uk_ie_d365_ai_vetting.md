@@ -67,6 +67,14 @@ Live AI vetting. User-facing artifacts call this
 `google-genai Gemini Enterprise Agent Platform / Vertex AI API via ADC`; the
 underlying SDK still uses the `vertexai=True` client path.
 
+When the active ADC identity is not authorized for the guarded project, select
+an already-authenticated gcloud account for this command only. This does not
+change global gcloud configuration and never writes or prints the access token:
+
+```powershell
+$env:D365_GCLOUD_ACCOUNT = "authorized-account@example.com"
+```
+
 ```powershell
 python tools\run_uk_ie_d365_ai_vetting.py --live-ai --evidence-file Evidence\UK_IE_D365_FRESH_SEARCH_20260603.json
 ```
@@ -76,6 +84,18 @@ Live AI plus bounded follow-up:
 ```powershell
 python tools\run_uk_ie_d365_ai_vetting.py --run-search --live-ai --live-followup --max-followup-searches 2 --max-source-fetches 3
 ```
+
+For larger saved candidate pools, vet bounded non-overlapping slices so each
+successful batch is durable, then merge them after all batches finish:
+
+```powershell
+python tools\run_uk_ie_d365_ai_vetting.py --live-ai --evidence-file Evidence\SEARCH.json --candidate-offset 0 --max-candidates 20 --output-file Evidence\VETTING_01.json
+python tools\run_uk_ie_d365_ai_vetting.py --live-ai --evidence-file Evidence\SEARCH.json --candidate-offset 20 --max-candidates 20 --output-file Evidence\VETTING_02.json
+python tools\run_uk_ie_d365_ai_vetting.py --merge-vetting-files Evidence\VETTING_01.json Evidence\VETTING_02.json --output-file Evidence\VETTING_MERGED.json
+```
+
+The merge command refuses overlapping candidate IDs or batches produced from
+different input evidence.
 
 Regression-check the production vetter against the saved 12-lead baseline:
 

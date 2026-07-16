@@ -69,6 +69,8 @@ SECRET_PATTERNS = {
 PRIOR_ACCOUNT_ARTIFACTS = [
     "UK_IE_D365_USEFUL_LEADS_NOW.json",
     "UK_IE_D365_USEFUL_LEADS_NEXT.json",
+    "UK_IE_D365_USEFUL_LEADS_FRESH_20260612.json",
+    "UK_IE_D365_USEFUL_LEADS_NEXT_20260624_CURATED.json",
     "UK_IE_D365_AI_Opportunity_Intelligence_14_SOURCE_MAP.json",
 ]
 ADDITIONAL_PRIOR_OR_PARKED_ACCOUNTS = {
@@ -79,8 +81,10 @@ ADDITIONAL_PRIOR_OR_PARKED_ACCOUNTS = {
     "Kepak Group",
     "Simply Dynamics 365 Growth Announcement- D365 Partner",
     "Simply Dynamics",
+    "Simply Dynamics 365",
     "Synergy Technology",
     "The Royal Society",
+    "The Royal Society / Subscribe360",
     "The Royal Society / Subscribe360 case-study source",
     "Tourism NI",
     "UK defence apparel manufacturer",
@@ -88,6 +92,7 @@ ADDITIONAL_PRIOR_OR_PARKED_ACCOUNTS = {
     "Uniphar Medtech Limited",
     "Willmott Dixon",
     "Glenveagh",
+    "Glenveagh Properties plc",
     "Mental Health Commission Ireland",
     "Weetabix Food Company",
     "Net Zero Group Ireland",
@@ -109,6 +114,7 @@ ADDITIONAL_PRIOR_OR_PARKED_ACCOUNTS = {
     "THF Group",
     "Aurivo",
     "Aurivo Co-operative Society Limited",
+    "Health Service Executive",
     "RHealthcare",
     "ADEGA manufacturer",
     "Teachers Union of Ireland",
@@ -302,13 +308,19 @@ def make_vertex_vetter_client(model_override: str | None = None) -> tuple[Any, d
     model = vetter_model_name(model_override)
     if not project:
         raise RuntimeError("Vertex/ADC project is unclear; refusing live vetting.")
-    client = genai.Client(vertexai=True, project=project, location=location)
+    credentials = lead_tools.gcloud_account_credentials()
+    client = genai.Client(
+        vertexai=True,
+        project=project,
+        location=location,
+        **({"credentials": credentials} if credentials else {}),
+    )
     return client, {
         "model": model,
         "provider_path": GEMINI_AGENT_PLATFORM_PROVIDER_PATH,
         "project": project,
         "location": location,
-        "auth_mode": "ADC",
+        "auth_mode": "gcloud_short_lived_access_token" if credentials else "ADC",
     }
 
 
@@ -593,6 +605,7 @@ def build_vetting_package(
     evidence_file: Path | str,
     output_dir: Path | str = EVIDENCE_DIR,
     output_basename: str = DEFAULT_OUTPUT_BASENAME,
+    candidate_offset: int = 0,
     max_candidates: int = 40,
     max_followup_searches: int = 2,
     max_source_fetches: int = 3,
@@ -604,7 +617,11 @@ def build_vetting_package(
     command_log: list[str] | None = None,
 ) -> dict[str, Any]:
     data = load_saved_evidence(evidence_file)
-    candidates = select_vetting_candidates(all_reviewable_candidates(data), max_candidates)
+    candidate_offset = max(0, int(candidate_offset or 0))
+    candidates = select_vetting_candidates(
+        all_reviewable_candidates(data),
+        candidate_offset + max_candidates,
+    )[candidate_offset:]
     output_dir = Path(output_dir)
     client = None
     if reviewer_call is None:
@@ -695,6 +712,7 @@ def build_vetting_package(
             "project": client_info["project"],
             "location": client_info["location"],
             "auth_mode": client_info["auth_mode"],
+            "candidate_offset": candidate_offset,
             "max_candidates": max_candidates,
             "max_followup_searches_per_candidate": max_followup_searches,
             "max_source_fetches_per_candidate": max_source_fetches,
@@ -718,6 +736,91 @@ def build_vetting_package(
         ],
     }
     artifacts = write_vetting_artifacts(output, output_dir=output_dir, output_basename=output_basename)
+    return {"vetting_output": output, "artifacts": artifacts}
+
+
+def merge_vetting_outputs(
+    outputs: list[dict[str, Any]],
+    *,
+    output_dir: Path | str = EVIDENCE_DIR,
+    output_basename: str = DEFAULT_OUTPUT_BASENAME,
+) -> dict[str, Any]:
+    """Merge non-overlapping vetting batches into the standard artifact schema."""
+    if not outputs:
+        raise ValueError("At least one vetting output is required.")
+    input_files = {
+        str(item.get("metadata", {}).get("input_evidence_file") or "")
+        for item in outputs
+    }
+    if len(input_files) != 1 or not next(iter(input_files)):
+        raise ValueError("Vetting batches must reference the same input evidence file.")
+
+    records_by_candidate: dict[str, dict[str, Any]] = {}
+    requests: list[dict[str, Any]] = []
+    follow_up_by_candidate: dict[str, dict[str, Any]] = {}
+    for output in sorted(
+        outputs,
+        key=lambda item: int(item.get("metadata", {}).get("candidate_offset") or 0),
+    ):
+        for record in output.get("records") or []:
+            candidate_id = str(
+                (record.get("candidate") or {}).get("candidate_id")
+                or (record.get("final_review") or {}).get("candidate_id")
+                or ""
+            )
+            if not candidate_id:
+                raise ValueError("Every merged vetting record must have a candidate_id.")
+            if candidate_id in records_by_candidate:
+                raise ValueError(f"Overlapping vetting batches contain {candidate_id!r}.")
+            records_by_candidate[candidate_id] = record
+        requests.extend(dict(request) for request in output.get("llm_request_records") or [])
+        for follow_up in output.get("follow_up_records") or []:
+            candidate_id = str(follow_up.get("candidate_id") or "")
+            if candidate_id:
+                follow_up_by_candidate[candidate_id] = follow_up
+
+    for index, request in enumerate(requests, start=1):
+        request["request_index"] = index
+    records = list(records_by_candidate.values())
+    final_reviews = [record["final_review"] for record in records]
+    useful_statuses = {"ready_to_contact", "provisional_contact_now", "source_cleanup_needed"}
+    useful_leads = [review for review in final_reviews if review.get("lead_status") in useful_statuses]
+    rejected_reviews = [review for review in final_reviews if review.get("lead_status") == "reject"]
+    first_metadata = dict(outputs[0].get("metadata") or {})
+    first_metadata.update(
+        {
+            "started_at": min(str(item.get("metadata", {}).get("started_at") or "") for item in outputs),
+            "finished_at": max(str(item.get("metadata", {}).get("finished_at") or "") for item in outputs),
+            "candidate_offset": 0,
+            "max_candidates": len(records),
+            "merged_batch_count": len(outputs),
+        }
+    )
+    output = {
+        "metadata": first_metadata,
+        "required_output_fields": REQUIRED_VETTING_FIELDS,
+        "counts": vetting_counts(records, requests),
+        "useful_leads": useful_leads,
+        "rejected_reviews": rejected_reviews,
+        "reject_review_summary": {
+            "rejected_count": len(rejected_reviews),
+            "final_rejection_reasons": dict(
+                Counter(review.get("final_rejection_reason") or "unspecified" for review in rejected_reviews)
+            ),
+        },
+        "llm_request_records": requests,
+        "follow_up_records": list(follow_up_by_candidate.values()),
+        "records": records,
+        "notes": [
+            "Merged from bounded, non-overlapping vetting batches over one saved search artifact.",
+            "Deterministic rules act as guardrails only; AI vetting owns opportunity judgement.",
+        ],
+    }
+    artifacts = write_vetting_artifacts(
+        output,
+        output_dir=Path(output_dir),
+        output_basename=output_basename,
+    )
     return {"vetting_output": output, "artifacts": artifacts}
 
 
@@ -1407,6 +1510,9 @@ def retention_row_from_record(
         "run_id": review.get("run_id") or candidate.get("run_id"),
         "candidate_id": candidate_id,
         "company_name": review.get("company_name") or candidate.get("company_name"),
+        "country": review.get("country") or candidate.get("country"),
+        "sector": review.get("sector") or candidate.get("sector"),
+        "industry": review.get("industry") or candidate.get("industry"),
         "source_company": review.get("source_company") or candidate.get("source_company"),
         "source_role": review.get("source_role") or candidate.get("source_role"),
         "account_identity_status": review.get("account_identity_status") or candidate.get("account_identity_status"),
@@ -1637,6 +1743,9 @@ def final_lead_from_vetting_record(record: dict[str, Any], *, rank: int, metadat
         "opportunity_fingerprint": review.get("opportunity_fingerprint") or candidate.get("opportunity_fingerprint") or current_opportunity_fingerprint(review, candidate, follow_up),
         "source_fingerprint": review.get("source_fingerprint") or candidate.get("source_fingerprint"),
         "company_name": review.get("company_name") or candidate.get("company_name"),
+        "country": review.get("country") or candidate.get("country"),
+        "sector": review.get("sector") or candidate.get("sector"),
+        "industry": review.get("industry") or candidate.get("industry"),
         "source_company": review.get("source_company") or candidate.get("source_company"),
         "source_role": review.get("source_role") or candidate.get("source_role"),
         "account_identity_status": review.get("account_identity_status") or candidate.get("account_identity_status"),

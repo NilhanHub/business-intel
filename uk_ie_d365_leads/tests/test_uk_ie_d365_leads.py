@@ -1219,6 +1219,62 @@ class UkIeD365LeadsTest(unittest.TestCase):
             self.assertTrue((Path(tmp_dir) / "UNIT_AI_VETTING_SECRET_SCAN.json").is_file())
         self.assertEqual(Path(package["artifacts"]["json"]).name, "UNIT_AI_VETTING.json")
 
+    def test_ai_vetting_batches_can_be_offset_and_merged(self):
+        candidates = [
+            {
+                "company_name": name,
+                "signal_type": "business_central_rollout",
+                "evidence_urls": [f"https://{slug}.co.uk/dynamics-365"],
+                "evidence_snippets": [f"{name} uses Dynamics 365 Business Central."],
+            }
+            for name, slug in (("Alpha Works", "alpha-works"), ("Beta Works", "beta-works"))
+        ]
+
+        def fake_vetter(record, stage, request_index):
+            return json.dumps(
+                {
+                    "lead_status": "ready_to_contact",
+                    "signal_strength": "strong",
+                    "signal_type": record.get("signal_type"),
+                    "evidence_used": record.get("evidence_urls") + record.get("evidence_snippets"),
+                    "evidence_gaps": [],
+                    "opportunity_signal": "Public Dynamics 365 rollout.",
+                    "why_this_matters_to_1bt": "Named Microsoft business-app evidence.",
+                    "commercial_opening": "Open with post-rollout support.",
+                    "value_of_signal": "Direct evidence.",
+                    "intelligence_reading": "Supplied evidence only.",
+                    "board_relevance": "Core operating platform.",
+                    "contact_target_roles": ["Head of IT"],
+                    "do_not_claim_notes": ["Do not claim budget."],
+                    "remaining_uncertainty": [],
+                    "final_rejection_reason": "",
+                    "needs_follow_up": False,
+                }
+            ), {"total_token_count": 1}, "unit-vetter"
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            evidence_path = Path(tmp_dir) / "evidence.json"
+            evidence_path.write_text(json.dumps({"review_candidates": candidates}), encoding="utf-8")
+            batches = [
+                opportunity_vetting_tools.build_vetting_package(
+                    evidence_file=evidence_path,
+                    output_dir=Path(tmp_dir),
+                    output_basename=f"BATCH_{offset}",
+                    candidate_offset=offset,
+                    max_candidates=1,
+                    reviewer_call=fake_vetter,
+                )["vetting_output"]
+                for offset in (0, 1)
+            ]
+            merged = opportunity_vetting_tools.merge_vetting_outputs(
+                batches,
+                output_dir=Path(tmp_dir),
+                output_basename="MERGED",
+            )
+
+        self.assertEqual(merged["vetting_output"]["counts"]["candidates_loaded_for_vetting"], 2)
+        self.assertEqual(merged["vetting_output"]["metadata"]["merged_batch_count"], 2)
+
     def test_ai_vetter_provider_label_uses_agent_platform_branding(self):
         def fake_factory(model_override=None):
             return object(), {
@@ -1835,6 +1891,30 @@ class UkIeD365LeadsTest(unittest.TestCase):
             project = lead_tools.effective_google_project({"project": "adc-project"})
         self.assertEqual(project, "business-intel-123")
 
+    def test_gcloud_account_credentials_are_command_scoped(self):
+        lead_tools.gcloud_account_credentials.cache_clear()
+        completed = type(
+            "Completed",
+            (),
+            {"returncode": 0, "stdout": "short-lived-token\n", "stderr": ""},
+        )()
+        with (
+            patch.dict(os.environ, {"D365_GCLOUD_ACCOUNT": "agent@example.test"}, clear=False),
+            patch("uk_ie_d365_leads.tools.lead_tools.shutil.which", return_value="gcloud.cmd"),
+            patch("uk_ie_d365_leads.tools.lead_tools.subprocess.run", return_value=completed) as run,
+        ):
+            credentials = lead_tools.gcloud_account_credentials()
+            credentials.refresh(None)
+        lead_tools.gcloud_account_credentials.cache_clear()
+
+        self.assertEqual(credentials.token, "short-lived-token")
+        self.assertIn("--account", run.call_args.args[0])
+        self.assertIn("agent@example.test", run.call_args.args[0])
+        self.assertNotIn("config", run.call_args.args[0])
+
+        self.assertEqual(run.call_count, 2)
+        self.assertIsNotNone(credentials.expiry)
+
     def test_fresh_curation_excludes_prior_accounts_and_writes_audit(self):
         new_record = self._vetting_record(
             company_name="Northstar Components",
@@ -1874,6 +1954,30 @@ class UkIeD365LeadsTest(unittest.TestCase):
                 and item["reason"] == "prior_or_parked_account_duplicate"
                 and item["retention_status"] == "duplicate_same_opportunity"
                 for item in final_output["selection_exclusions"]
+            )
+        )
+
+    def test_prior_account_blocklist_includes_all_published_batches(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            evidence_dir = Path(tmp_dir)
+            published_batches = {
+                "UK_IE_D365_USEFUL_LEADS_FRESH_20260612.json": "Moneypenny",
+                "UK_IE_D365_USEFUL_LEADS_NEXT_20260624_CURATED.json": "The Royal Mint",
+            }
+            for artifact_name, company_name in published_batches.items():
+                (evidence_dir / artifact_name).write_text(
+                    json.dumps({"leads": [{"company_name": company_name}]}),
+                    encoding="utf-8",
+                )
+
+            blocklist = opportunity_vetting_tools.build_prior_account_blocklist(evidence_dir)
+
+        self.assertIn("moneypenny", blocklist)
+        self.assertIn("the royal mint", blocklist)
+        self.assertTrue(
+            opportunity_vetting_tools.is_prior_or_parked_account(
+                "Health Service Executive",
+                blocklist,
             )
         )
 

@@ -26,6 +26,7 @@ from uk_ie_d365_leads.tools.opportunity_vetting_tools import (
     FRESH_LEADS_BASENAME,
     build_fresh_leads_outputs,
     build_vetting_package,
+    merge_vetting_outputs,
 )
 
 TARGETED_SECOND_PASS_QUERIES = [
@@ -60,6 +61,7 @@ def parser() -> argparse.ArgumentParser:
     p.add_argument("--search-max-results", type=int, default=10)
     p.add_argument("--max-live-requests", type=int, default=25)
     p.add_argument("--max-candidates", type=int, default=40)
+    p.add_argument("--candidate-offset", type=int, default=0)
     p.add_argument("--max-followup-searches", type=int, default=2)
     p.add_argument("--max-source-fetches", type=int, default=3)
     p.add_argument("--source-fetch-max-urls", type=int, default=lead_tools.SOURCE_FETCH_DEFAULT_MAX_URLS)
@@ -82,6 +84,12 @@ def parser() -> argparse.ArgumentParser:
     p.add_argument("--final-output-basename", default=None, help="Basename for final fresh-leads artifacts.")
     p.add_argument("--deterministic-audit-basename", default=None, help="Basename for deterministic reject audit artifacts.")
     p.add_argument("--skip-final-pack", action="store_true", help="Only write raw vetting artifacts.")
+    p.add_argument(
+        "--merge-vetting-files",
+        nargs="+",
+        default=None,
+        help="Merge completed non-overlapping vetting JSON batches before final curation.",
+    )
     return p
 
 
@@ -349,22 +357,31 @@ def main(argv: list[str] | None = None) -> int:
         raise SystemExit("--live-followup requires --live-ai so follow-up evidence is re-vetted.")
     readiness = enforce_required_project(args)
     evidence_file = run_fresh_search(args) if args.run_search else Path(args.evidence_file)
-    reviewer = None if args.live_ai else dry_run_reviewer
-    followup_search = make_followup_search(args.provider_name) if args.live_followup else None
-    source_fetch = make_source_fetch(parse_pdfs=args.parse_pdfs) if args.live_followup else None
-    package = build_vetting_package(
-        evidence_file=evidence_file,
-        output_dir=Path(args.output_dir),
-        output_basename=args.vetting_output_basename or DEFAULT_OUTPUT_BASENAME,
-        max_candidates=args.max_candidates,
-        max_followup_searches=args.max_followup_searches,
-        max_source_fetches=args.max_source_fetches,
-        model=args.model,
-        reviewer_call=reviewer,
-        followup_search_call=followup_search,
-        source_fetch_call=source_fetch,
-        command_log=[" ".join(sys.argv)],
-    )
+    if args.merge_vetting_files:
+        outputs = [load_json_file(path) for path in args.merge_vetting_files]
+        package = merge_vetting_outputs(
+            outputs,
+            output_dir=Path(args.output_dir),
+            output_basename=args.vetting_output_basename or DEFAULT_OUTPUT_BASENAME,
+        )
+    else:
+        reviewer = None if args.live_ai else dry_run_reviewer
+        followup_search = make_followup_search(args.provider_name) if args.live_followup else None
+        source_fetch = make_source_fetch(parse_pdfs=args.parse_pdfs) if args.live_followup else None
+        package = build_vetting_package(
+            evidence_file=evidence_file,
+            output_dir=Path(args.output_dir),
+            output_basename=args.vetting_output_basename or DEFAULT_OUTPUT_BASENAME,
+            candidate_offset=args.candidate_offset,
+            max_candidates=args.max_candidates,
+            max_followup_searches=args.max_followup_searches,
+            max_source_fetches=args.max_source_fetches,
+            model=args.model,
+            reviewer_call=reviewer,
+            followup_search_call=followup_search,
+            source_fetch_call=source_fetch,
+            command_log=[" ".join(sys.argv)],
+        )
     artifacts = dict(package["artifacts"])
     if not args.skip_final_pack:
         raw_search = json.loads(evidence_file.read_text(encoding="utf-8"))

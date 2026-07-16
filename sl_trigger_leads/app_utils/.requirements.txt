@@ -38,7 +38,9 @@ certifi==2026.6.17
 cffi==2.1.0 ; platform_python_implementation != 'PyPy'
     # via cryptography
 charset-normalizer==3.4.9
-    # via requests
+    # via
+    #   reportlab
+    #   requests
 click==8.4.2
     # via
     #   google-adk
@@ -289,6 +291,8 @@ packaging==26.2
     #   google-cloud-aiplatform
     #   google-cloud-bigquery
     #   opentelemetry-instrumentation
+pillow==12.3.0
+    # via reportlab
 propcache==0.5.2
     # via
     #   aiohttp
@@ -365,6 +369,8 @@ referencing==0.37.0
     # via
     #   jsonschema
     #   jsonschema-specifications
+reportlab==4.5.1
+    # via business-intel
 requests==2.34.2
     # via
     #   business-intel
