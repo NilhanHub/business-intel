@@ -278,7 +278,7 @@ dependencies = [
 [package.optional-dependencies]
 agent-runtime = [
     { name = "gcsfs" },
-    { name = "google-cloud-aiplatform", extra = ["agent-engines", "evaluation"] },
+    { name = "google-cloud-aiplatform", extra = ["agent-engines"] },
     { name = "google-cloud-logging" },
     { name = "google-cloud-secret-manager" },
     { name = "opentelemetry-instrumentation-google-genai" },
@@ -313,7 +313,7 @@ requires-dist = [
     { name = "google-api-python-client", specifier = ">=2.0.0,<3.0.0" },
     { name = "google-auth", specifier = ">=2.0.0,<3.0.0" },
     { name = "google-auth-oauthlib", specifier = ">=1.0.0,<2.0.0" },
-    { name = "google-cloud-aiplatform", extras = ["evaluation", "agent-engines"], marker = "extra == 'agent-runtime'", specifier = ">=1.130.0" },
+    { name = "google-cloud-aiplatform", extras = ["agent-engines"], marker = "extra == 'agent-runtime'", specifier = ">=1.161.0,<2.0.0" },
     { name = "google-cloud-logging", marker = "extra == 'agent-runtime'", specifier = ">=3.12.0,<4.0.0" },
     { name = "google-cloud-secret-manager", marker = "extra == 'agent-runtime'", specifier = ">=2.29.0,<3.0.0" },
     { name = "google-genai", specifier = ">=2.9.0,<3.0.0" },

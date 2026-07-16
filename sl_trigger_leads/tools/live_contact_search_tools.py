@@ -296,7 +296,10 @@ class HunterContactEnrichmentProvider:
                 charset = response.headers.get_content_charset() or "utf-8"
                 return json.loads(raw.decode(charset, errors="replace"))
         except urllib.error.HTTPError as exc:
-            raise RuntimeError(f"Hunter API HTTP {exc.code}") from exc
+            try:
+                raise RuntimeError(f"Hunter API HTTP {exc.code}") from exc
+            finally:
+                exc.close()
 
 
 class GoogleCSESearchProvider:
@@ -776,7 +779,10 @@ def _http_get_text(url: str, *, timeout: int) -> _HTTPText:
                 error=None,
             )
     except urllib.error.HTTPError as exc:
-        return _HTTPText(url=normalized_url, status_code=exc.code, text="", error=str(exc))
+        try:
+            return _HTTPText(url=normalized_url, status_code=exc.code, text="", error=str(exc))
+        finally:
+            exc.close()
     except Exception as exc:
         return _HTTPText(
             url=normalized_url,
