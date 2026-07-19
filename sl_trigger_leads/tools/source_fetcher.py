@@ -48,15 +48,18 @@ def fetch_url(url: str, timeout_seconds: int = TIMEOUT_SECONDS) -> dict[str, Any
                 "elapsed_seconds": round(time.perf_counter() - started, 3),
             }
     except urllib.error.HTTPError as exc:
-        return {
-            "ok": False,
-            "url": url,
-            "status_code": exc.code,
-            "error": f"HTTPError: {exc.reason}",
-            "text": "",
-            "fetched_at": fetched_at,
-            "elapsed_seconds": round(time.perf_counter() - started, 3),
-        }
+        try:
+            return {
+                "ok": False,
+                "url": url,
+                "status_code": exc.code,
+                "error": f"HTTPError: {exc.reason}",
+                "text": "",
+                "fetched_at": fetched_at,
+                "elapsed_seconds": round(time.perf_counter() - started, 3),
+            }
+        finally:
+            exc.close()
     except Exception as exc:
         return {
             "ok": False,

@@ -22,13 +22,18 @@ class EmailSenderAgentTest(unittest.TestCase):
         self.assertIn("refuse_lead_outreach_email", tool_names)
 
     def test_email_sender_agent_exposes_tools(self):
-        tool_names = [getattr(tool, "__name__", "") for tool in email_sender_agent.tools]
+        tool_names = [
+            getattr(tool, "__name__", "") for tool in email_sender_agent.tools
+        ]
         self.assertIn("send_hello_nilhan_test_email", tool_names)
         self.assertIn("describe_email_sender_restrictions", tool_names)
 
     def test_restrictions_report_lead_outreach_blocked(self):
         restrictions = describe_email_sender_restrictions()
-        self.assertEqual(restrictions["allowed_recipient"], "portfolio-owner@example.test")
+        self.assertEqual(
+            restrictions["allowed_recipient"], "portfolio-owner@example.test"
+        )
+        self.assertFalse(restrictions["real_send_enabled"])
         self.assertFalse(restrictions["lead_outreach_enabled"])
         self.assertFalse(restrictions["bulk_send_enabled"])
         self.assertFalse(restrictions["secrets_are_returned"])

@@ -44,14 +44,16 @@ GMAIL_SCOPES = [GMAIL_SEND_SCOPE]
 
 TEST_SENDER = "portfolio-operator@example.test"
 ALLOWED_TEST_RECIPIENT = "portfolio-owner@example.test"
+REAL_SEND_ENABLED = False
+REAL_SEND_DISABLED_REFUSAL = "real_send_disabled_no_verified_mailbox"
 HELLO_NILHAN_SUBJECT = "Hello Nilhan from Business Intel"
 HELLO_NILHAN_ADK_BODY = (
     "Hello Nilhan, this is a test email from the Business_Intel ADK email sender agent."
 )
 
 LEAD_OUTREACH_REFUSAL = (
-    "Lead outreach is not unlocked yet. This local Gmail sender can only send the "
-    "single Hello Nilhan test email to portfolio-owner@example.test."
+    "Lead outreach is not unlocked yet. The public local Gmail component is dry-run-only "
+    "and cannot send to any mailbox."
 )
 
 CredentialLoader = Callable[[], Any]
@@ -97,7 +99,9 @@ def validate_oauth_client_file(credentials_path: Path = GMAIL_CREDENTIALS_PATH) 
 
     client_type = "installed" if "installed" in data else "web" if "web" in data else ""
     if not client_type:
-        raise ValueError("OAuth credential JSON must contain an installed or web client.")
+        raise ValueError(
+            "OAuth credential JSON must contain an installed or web client."
+        )
     client = data[client_type]
     required = ["client_id", "client_secret", "auth_uri", "token_uri"]
     missing = [key for key in required if not client.get(key)]
@@ -114,13 +118,17 @@ def load_or_create_gmail_credentials(
     """Load or refresh local OAuth credentials for the Gmail send-only scope."""
     credentials: Credentials | None = None
     if token_path.is_file():
-        credentials = Credentials.from_authorized_user_file(str(token_path), GMAIL_SCOPES)
+        credentials = Credentials.from_authorized_user_file(
+            str(token_path), GMAIL_SCOPES
+        )
 
     if credentials and credentials.expired and credentials.refresh_token:
         credentials.refresh(Request())
 
     if not credentials or not credentials.valid:
-        flow = InstalledAppFlow.from_client_secrets_file(str(credentials_path), GMAIL_SCOPES)
+        flow = InstalledAppFlow.from_client_secrets_file(
+            str(credentials_path), GMAIL_SCOPES
+        )
         credentials = flow.run_local_server(port=0, prompt="consent")
 
     token_path.parent.mkdir(parents=True, exist_ok=True)
@@ -142,7 +150,9 @@ def _send_raw_message(raw_message: str, service: Any) -> str | None:
     return response.get("id")
 
 
-def _base_result(*, dry_run: bool, recipient: str, subject: str, body: str) -> dict[str, Any]:
+def _base_result(
+    *, dry_run: bool, recipient: str, subject: str, body: str
+) -> dict[str, Any]:
     return {
         "sent": False,
         "dry_run": dry_run,
@@ -177,7 +187,9 @@ def send_fixed_test_email(
     The tool never accepts arbitrary recipient input from ADK prompts. Injection
     arguments exist only for unit tests and smoke scripts.
     """
-    result = _base_result(dry_run=dry_run, recipient=recipient, subject=subject, body=body)
+    result = _base_result(
+        dry_run=dry_run, recipient=recipient, subject=subject, body=body
+    )
     try:
         validate_allowed_recipient(recipient)
         message = build_plain_text_mime(
@@ -196,6 +208,10 @@ def send_fixed_test_email(
 
         if not confirm_send:
             result["refusal_reason"] = "confirmation_required_for_real_send"
+            return result
+
+        if not REAL_SEND_ENABLED:
+            result["refusal_reason"] = REAL_SEND_DISABLED_REFUSAL
             return result
 
         validate_oauth_client_file()
@@ -229,13 +245,14 @@ def describe_email_sender_restrictions() -> dict[str, Any]:
     """Return the currently active local Gmail sender restrictions."""
     return {
         "test_mode_only": True,
+        "real_send_enabled": REAL_SEND_ENABLED,
         "allowed_recipient": ALLOWED_TEST_RECIPIENT,
         "sender": TEST_SENDER,
         "gmail_scope": GMAIL_SEND_SCOPE,
         "bulk_send_enabled": False,
         "lead_outreach_enabled": False,
         "cloud_deployment_enabled": False,
-        "credential_mode": "local_oauth_user_authorized",
+        "credential_mode": "disabled_reserved_placeholder_addresses",
         "secrets_are_returned": False,
     }
 

@@ -88,10 +88,11 @@ For basename `UK_IE_D365_REPORT_COMPOSER_DRYRUN_20260614`, the runner writes:
 - `UK_IE_D365_REPORT_COMPOSER_DRYRUN_20260614_QA.json`
 - `UK_IE_D365_REPORT_COMPOSER_DRYRUN_20260614_SECRET_SCAN.json`
 
-The PDF is generated deterministically from the structured report spec. The
-HTML is the richer visual template output and is useful for reviewing layout
-style. The source map is the evidence trace that should be checked before using
-the report for outreach planning.
+The PDF is generated deterministically from the structured report spec with a
+ReportLab renderer that preserves headings, account cards, metrics, links,
+headers, and page numbers. The HTML remains useful for reviewing the companion
+web layout. The source map is the evidence trace that should be checked before
+using the report for outreach planning.
 
 ## Style Presets
 
@@ -111,6 +112,10 @@ Focused deterministic tests:
 ```powershell
 uv run python -m pytest uk_ie_d365_leads/tests/test_uk_ie_d365_leads.py -q
 ```
+
+Render every PDF page to images and visually inspect a contact sheet plus at
+least one account page before release. Automated text/count checks alone do not
+prove that cards, links, wrapping, and page breaks are readable.
 
 Behavior eval scaffold:
 

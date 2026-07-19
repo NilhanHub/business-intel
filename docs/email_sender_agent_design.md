@@ -17,9 +17,9 @@ and opportunity-analysis code.
 - `tools/run_prompt09_email_agent_smoke.py` validates the ADK email sender tool
   from the command line.
 
-## Locked Test Email
+## Locked Dry-Run Email
 
-The only real email that this component can send is:
+The public component can only render this non-deliverable preview:
 
 - From: `portfolio-operator@example.test`
 - To: `portfolio-owner@example.test`
@@ -32,18 +32,19 @@ The ADK tool signature is:
 send_hello_nilhan_test_email(dry_run: bool = True, confirm_send: bool = False)
 ```
 
-Default behavior is dry-run. A real send requires `dry_run=False` and
-`confirm_send=True`. The CLI smoke runner also requires the exact terminal
-confirmation phrase `SEND_TO_NILHAN_ADK`.
+Default behavior is dry-run. Calls with `dry_run=False` fail closed with
+`real_send_disabled_no_verified_mailbox`, even when `confirm_send=True`.
+The reserved `example.test` labels must never reach the Gmail API.
 
 ## Safety Rules
 
 - Test mode only.
-- The only allowed recipient is `portfolio-owner@example.test`.
+- The only preview recipient is `portfolio-owner@example.test`.
+- Real sending is disabled because the public sender and recipient are reserved placeholders.
 - Arbitrary recipient input is not accepted by the ADK tool.
 - Lead, company, prospect, bulk, and generated-sales-email outreach is refused.
 - No cloud deployment is configured for Gmail sending.
-- The Gmail send path uses local OAuth user credentials only.
+- OAuth helpers remain local-only but are unreachable from the public confirmed-send path.
 - OAuth client files and token files stay outside the source tree under `BT_SECRETS_DIR`.
 - Returned results and logs include only safe metadata, never token or client
   secret values.
@@ -61,6 +62,6 @@ ZIPs.
 ## ADK Web Prompts
 
 - `Show me the Hello Nilhan email dry run.`
-- `Send the Hello Nilhan test email.`
+- `Send the Hello Nilhan test email.` (refused; dry-run only)
 - `What email sending restrictions are currently active?`
 - `Can you send an email to a lead?`

@@ -66,7 +66,7 @@ node --check frontend\static\js\login.js
 uv run --with pip-audit pip-audit --skip-editable
 ```
 
-When the ignored private `Evidence/` replay fixtures are absent, 11 evidence-replay cases report explicit skips rather than reading or inventing operational data. They run automatically in the private workspace when both named fixtures are present.
+When ignored private `Evidence/` replay fixtures are absent, evidence-replay cases report explicit skips rather than reading or inventing operational data. They run automatically in the private workspace when the named fixtures are present.
 
 The local runtime is locked to Google ADK `2.4.0`, FastAPI `0.139.0`, and Starlette `1.3.1`. The ordinary dependency audit must exit cleanly without ignored vulnerabilities. See [docs/dependency-security.md](docs/dependency-security.md) for the exact release gate and all-extras audit.
 
@@ -88,6 +88,8 @@ agents-cli eval run --all
 
 ## Deployment status
 
-Deployment is out of scope. Cloud Agent Runtime dependencies are not installed by `uv sync`; they live in the optional `agent-runtime` extra. The legacy adapters fail closed before importing Vertex unless `BT_ENABLE_AGENT_RUNTIME=1` is set for an explicitly approved cloud workflow.
+The FastAPI browser workspace remains local-only and must not be deployed. The ADK agent has one separately approved Google Agent Runtime release path. Cloud dependencies are not installed by `uv sync`; they live in the optional `agent-runtime` extra, and adapters still fail closed unless `BT_ENABLE_AGENT_RUNTIME=1` is present in the managed runtime.
+
+Do not use `agents-cli deploy` for this repository. Version 0.1.2 omits the `agent-runtime` optional dependency group when it generates deployment requirements and inherits its own Python version. Use the exact-target, update-only command documented in [docs/agent-runtime-release.md](docs/agent-runtime-release.md). It supplies the canonical locked requirements file, pins Python 3.13, and refuses to create or update any other runtime.
 
 [HOSTINGER_DEPLOYMENT.md](HOSTINGER_DEPLOYMENT.md) is retained only as an unsupported future draft and must not be treated as a runbook. The `agents-cli` deployment metadata is historical scaffold configuration, not authorization to deploy.

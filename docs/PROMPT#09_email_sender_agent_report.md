@@ -2,7 +2,7 @@
 
 ## Result
 
-Status: PASS
+Status: PASS (dry-run and refusal contract)
 
 PROMPT#09 created a safe, local-only ADK Gmail sender sub-agent and tool inside
 the existing `sl_trigger_leads` app. The implementation keeps Gmail sending
@@ -49,18 +49,19 @@ Command:
 "SEND_TO_NILHAN_ADK" | python tools\run_prompt09_email_agent_smoke.py --send
 ```
 
-Result: PASS. Exactly one allowed test email was sent.
+Result: REFUSED AS DESIGNED. The public mailbox values are reserved `example.test`
+placeholders, so the current component cannot make a Gmail API send.
 
-Gmail message ID: `19ddd54a61441ed4`
+Historical private-workspace delivery metadata has been removed from this public report.
 
 ## Safety Verification
 
-- Recipient allowlist enforced: yes, only `portfolio-owner@example.test` is allowed.
+- Preview recipient allowlist enforced: yes, only the non-deliverable `portfolio-owner@example.test` label is allowed.
 - Lead outreach blocked: yes.
 - Arbitrary recipient input accepted: no.
 - Bulk sending supported: no.
 - Default behavior: dry-run.
-- Real send requires explicit confirmation: yes.
+- Real send enabled: no; confirmed calls fail closed before OAuth or Gmail access.
 - OAuth scope: `https://www.googleapis.com/auth/gmail.send`
 - Cloud deployment performed: no.
 - Compute default service account used: no.

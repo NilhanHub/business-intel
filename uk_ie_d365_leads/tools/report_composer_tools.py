@@ -686,13 +686,19 @@ def make_report_client(model_override: str | None = None) -> tuple[Any, dict[str
     location = os.environ.get("GOOGLE_CLOUD_LOCATION") or "global"
     if not project:
         raise ProjectGuardError("Google project is unclear; refusing live report composition.")
-    client = genai.Client(vertexai=True, project=project, location=location)
+    credentials = lead_tools.gcloud_account_credentials()
+    client = genai.Client(
+        vertexai=True,
+        project=project,
+        location=location,
+        **({"credentials": credentials} if credentials else {}),
+    )
     return client, {
         "model": report_model_name(model_override),
         "provider_path": DEFAULT_PROVIDER_PATH,
         "project": project,
         "location": location,
-        "auth_mode": "ADC",
+        "auth_mode": "gcloud_short_lived_access_token" if credentials else "ADC",
     }
 
 
@@ -1006,10 +1012,24 @@ def render_report_artifacts(
     source_map = build_source_map(report_spec, inventory)
     markdown = render_markdown(report_spec, source_map)
     html_text = render_html(report_spec, source_map)
-    pdf_lines = pdf_lines_from_report(report_spec, source_map)
     paths["markdown"].write_text(markdown, encoding="utf-8")
     paths["html"].write_text(html_text, encoding="utf-8")
-    write_simple_pdf(paths["pdf"], pdf_lines, landscape=report_spec.get("style_preset") != "board_brief_portrait")
+    try:
+        from uk_ie_d365_leads.tools.styled_pdf_tools import write_styled_report_pdf
+
+        write_styled_report_pdf(
+            paths["pdf"],
+            report_spec,
+            source_map,
+            landscape=report_spec.get("style_preset") != "board_brief_portrait",
+        )
+    except ImportError:
+        pdf_lines = pdf_lines_from_report(report_spec, source_map)
+        write_simple_pdf(
+            paths["pdf"],
+            pdf_lines,
+            landscape=report_spec.get("style_preset") != "board_brief_portrait",
+        )
     write_json(paths["source_map"], source_map)
     write_json(paths["browse_log"], {"generated_at": now_utc(), "records": browse_log or []})
     qa = qa_rendered_artifacts(paths, report_spec=report_spec, source_map=source_map)

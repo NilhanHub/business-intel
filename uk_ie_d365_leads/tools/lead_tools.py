@@ -7,11 +7,13 @@ import hashlib
 import json
 import os
 import re
+import shutil
 import subprocess
 import urllib.parse
 from collections import Counter
 from dataclasses import asdict, dataclass
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
+from functools import lru_cache
 from html import unescape
 from html.parser import HTMLParser
 from io import BytesIO
@@ -3103,6 +3105,68 @@ def _prepare_google_native_env() -> None:
         os.environ.setdefault("GOOGLE_CLOUD_LOCATION", "global")
 
 
+def _gcloud_access_token(account: str) -> str:
+    executable = next(
+        (resolved for name in ("gcloud.cmd", "gcloud.exe", "gcloud") if (resolved := shutil.which(name))),
+        None,
+    )
+    if not executable:
+        raise RuntimeError("Google Cloud CLI is unavailable for D365_GCLOUD_ACCOUNT authentication.")
+    result = subprocess.run(
+        [
+            executable,
+            "auth",
+            "print-access-token",
+            "--account",
+            account,
+            "--quiet",
+        ],
+        capture_output=True,
+        text=True,
+        timeout=45,
+        check=False,
+    )
+    token = result.stdout.strip()
+    if result.returncode != 0 or not token:
+        raise RuntimeError("The selected gcloud account could not provide a short-lived access token.")
+    return token
+
+
+class _GcloudAccountCredentials:
+    """Build a refreshable google-auth credential around an existing gcloud login."""
+
+    @staticmethod
+    def create(account: str) -> Any:
+        from google.auth.credentials import Credentials
+
+        class RefreshableCredentials(Credentials):
+            def __init__(self, selected_account: str) -> None:
+                super().__init__()
+                self._selected_account = selected_account
+                self.refresh(None)
+
+            def refresh(self, request: Any) -> None:
+                del request
+                self.token = _gcloud_access_token(self._selected_account)
+                # gcloud user/service-account access tokens normally last an hour.
+                # Refresh early so long scans do not fail between candidate batches.
+                # google-auth compares credential expiry with a timezone-naive
+                # UTC value internally, so preserve that contract here.
+                self.expiry = datetime.now(UTC).replace(tzinfo=None) + timedelta(minutes=50)
+
+        return RefreshableCredentials(account)
+
+
+@lru_cache(maxsize=4)
+def gcloud_account_credentials(account: str | None = None) -> Any | None:
+    """Return refreshable command-scoped credentials without changing gcloud state."""
+    selected_account = (account or os.environ.get("D365_GCLOUD_ACCOUNT") or "").strip()
+    if not selected_account:
+        return None
+
+    return _GcloudAccountCredentials.create(selected_account)
+
+
 def _presence(name: str) -> str:
     return "present" if os.environ.get(name) else "missing"
 
@@ -3566,7 +3630,13 @@ def _run_google_genai_grounded_search_results(query: str, limit: int = 5, source
         readiness = google_native_readiness()
         project = readiness.get("effective_project")
         location = os.environ.get("GOOGLE_CLOUD_LOCATION") or "global"
-        client = genai.Client(vertexai=True, project=project, location=location)
+        credentials = gcloud_account_credentials()
+        client = genai.Client(
+            vertexai=True,
+            project=project,
+            location=location,
+            **({"credentials": credentials} if credentials else {}),
+        )
     prompt = (
         "Search the public web for the query below. Return JSON only: "
         "[{\"title\":\"...\",\"url\":\"https://...\",\"snippet\":\"...\"}]. "

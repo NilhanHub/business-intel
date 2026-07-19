@@ -13,14 +13,9 @@ PARTIAL
 
 ## Safety Rules
 - Default mode is dry-run.
-- Allowed recipient is hard-coded to `portfolio-owner@example.test`.
-- Sender is hard-coded to `portfolio-operator@example.test`.
+- Dry-run recipient/sender labels use the reserved `example.test` domain and are non-deliverable.
 - Scope is limited to `https://www.googleapis.com/auth/gmail.send`.
-- `--send` prints the recipient, subject, and body, then requires this exact confirmation:
-
-```text
-SEND_TO_NILHAN
-```
+- Current `--send` behavior is fail-closed and does not prompt, load OAuth credentials, or call Gmail.
 
 - The script logs only safe metadata: recipient, subject, mode, MIME creation status, refusal reason, and Gmail message ID if a future confirmed send succeeds.
 - The script does not print credential JSON, client secret, access token, refresh token, or token JSON.
@@ -58,7 +53,7 @@ python tools\gmail_sender_smoke.py --send
 Result:
 
 ```text
-Confirmation not provided exactly. No email sent.
+Real Gmail sending is disabled; the public mailbox values are reserved placeholders.
 ```
 
 ## Current Send Status
@@ -83,4 +78,4 @@ The evidence ZIP excludes:
 - access tokens and refresh tokens
 
 ## Next Step To Turn This Into An ADK Email Sender Agent
-After one interactive `--send` run succeeds with `SEND_TO_NILHAN`, wrap the validated send routine as a narrowly scoped ADK tool that keeps the same allowlist, dry-run default, Gmail send-only scope, and explicit confirmation gate. Do not connect it to lead intelligence or `sl_trigger_leads` until a later prompt explicitly requests that integration.
+A future real-send path requires a separately approved change with a verified deliverable mailbox. It must retain the narrow allowlist, dry-run default, Gmail send-only scope, and explicit confirmation gate, and must not be connected to lead outreach.

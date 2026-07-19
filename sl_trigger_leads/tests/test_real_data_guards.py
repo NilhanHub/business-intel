@@ -80,6 +80,14 @@ class RealLeadWorkflowTest(unittest.TestCase):
         self.assertNotIn("cannot disclose", lowered)
         self.assertNotIn("source secrecy", lowered.replace("do not claim source secrecy", ""))
 
+    def test_agent_instruction_separates_partner_source_from_end_customer(self):
+        lowered = ROOT_INSTRUCTION.lower()
+        self.assertIn("lead-data policy questions", lowered)
+        self.assertIn("making the named end customer the candidate account", lowered)
+        self.assertIn("never score or present the partner as the end customer", lowered)
+        self.assertIn("source-cleanup/end-customer-resolution state", lowered)
+        self.assertIn("bundled uk/ie dynamics 365 workflow", lowered)
+
     def test_cse_old_404_url_recovers_to_announcements(self):
         failed_source = {
             "source_id": "cse_announcements",

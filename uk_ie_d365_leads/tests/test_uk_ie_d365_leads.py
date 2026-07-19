@@ -36,34 +36,63 @@ from uk_ie_d365_leads.tools import (
 
 
 class UkIeD365LeadsTest(unittest.TestCase):
-    evidence_run_path = Path(__file__).resolve().parents[2] / "Evidence" / "UK_IE_D365_COMMERCIAL_SEARCH_RUN.json"
-    audit_replay_path = Path(__file__).resolve().parents[2] / "Evidence" / "UK_IE_D365_AUDIT_REPLAY.json"
-    review_script_path = Path(__file__).resolve().parents[2] / "tools" / "review_uk_ie_d365_candidates.py"
-    vetter_check_script_path = Path(__file__).resolve().parents[2] / "tools" / "check_uk_ie_d365_vetter_agent.py"
-    report_composer_script_path = Path(__file__).resolve().parents[2] / "tools" / "run_uk_ie_d365_report_composer.py"
+    evidence_run_path = (
+        Path(__file__).resolve().parents[2]
+        / "Evidence"
+        / "UK_IE_D365_COMMERCIAL_SEARCH_RUN.json"
+    )
+    audit_replay_path = (
+        Path(__file__).resolve().parents[2]
+        / "Evidence"
+        / "UK_IE_D365_AUDIT_REPLAY.json"
+    )
+    review_script_path = (
+        Path(__file__).resolve().parents[2]
+        / "tools"
+        / "review_uk_ie_d365_candidates.py"
+    )
+    vetter_check_script_path = (
+        Path(__file__).resolve().parents[2]
+        / "tools"
+        / "check_uk_ie_d365_vetter_agent.py"
+    )
+    report_composer_script_path = (
+        Path(__file__).resolve().parents[2]
+        / "tools"
+        / "run_uk_ie_d365_report_composer.py"
+    )
 
-    def require_saved_evidence(self) -> None:
-        missing = [path.name for path in (self.evidence_run_path, self.audit_replay_path) if not path.is_file()]
+    def require_saved_evidence(self, *required_paths: Path) -> None:
+        paths = required_paths or (self.evidence_run_path, self.audit_replay_path)
+        missing = [path.name for path in paths if not path.is_file()]
         if missing:
-            self.skipTest(f"private Evidence fixtures are not present: {', '.join(missing)}")
+            self.skipTest(
+                f"private Evidence fixtures are not present: {', '.join(missing)}"
+            )
 
     @classmethod
     def review_module(cls):
-        spec = importlib.util.spec_from_file_location("review_uk_ie_d365_candidates", cls.review_script_path)
+        spec = importlib.util.spec_from_file_location(
+            "review_uk_ie_d365_candidates", cls.review_script_path
+        )
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
         return module
 
     @classmethod
     def vetter_check_module(cls):
-        spec = importlib.util.spec_from_file_location("check_uk_ie_d365_vetter_agent", cls.vetter_check_script_path)
+        spec = importlib.util.spec_from_file_location(
+            "check_uk_ie_d365_vetter_agent", cls.vetter_check_script_path
+        )
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
         return module
 
     @classmethod
     def report_composer_module(cls):
-        spec = importlib.util.spec_from_file_location("run_uk_ie_d365_report_composer", cls.report_composer_script_path)
+        spec = importlib.util.spec_from_file_location(
+            "run_uk_ie_d365_report_composer", cls.report_composer_script_path
+        )
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
         return module
@@ -71,18 +100,36 @@ class UkIeD365LeadsTest(unittest.TestCase):
     def test_agent_import_and_shape(self):
         self.assertEqual(root_agent.name, "uk_ie_d365_leads")
         self.assertEqual(app.name, "uk_ie_d365_leads")
-        self.assertIn("d365_search_agent", [agent.name for agent in root_agent.sub_agents])
-        self.assertIn("d365_classification_reviewer_agent", [agent.name for agent in root_agent.sub_agents])
-        self.assertIn("d365_end_customer_extractor_agent", [agent.name for agent in root_agent.sub_agents])
-        self.assertIn("d365_opportunity_vetter_agent", [agent.name for agent in root_agent.sub_agents])
-        self.assertIn("d365_report_composer_agent", [agent.name for agent in root_agent.sub_agents])
+        self.assertIn(
+            "d365_search_agent", [agent.name for agent in root_agent.sub_agents]
+        )
+        self.assertIn(
+            "d365_classification_reviewer_agent",
+            [agent.name for agent in root_agent.sub_agents],
+        )
+        self.assertIn(
+            "d365_end_customer_extractor_agent",
+            [agent.name for agent in root_agent.sub_agents],
+        )
+        self.assertIn(
+            "d365_opportunity_vetter_agent",
+            [agent.name for agent in root_agent.sub_agents],
+        )
+        self.assertIn(
+            "d365_report_composer_agent",
+            [agent.name for agent in root_agent.sub_agents],
+        )
         self.assertGreaterEqual(len(root_agent.tools), 3)
         self.assertIn("run_uk_ie_d365_report_composer.py", root_agent.instruction)
-        self.assertIn("UK_IE_D365_USEFUL_LEADS_FRESH_20260612.json", root_agent.instruction)
+        self.assertIn(
+            "UK_IE_D365_USEFUL_LEADS_FRESH_20260612.json", root_agent.instruction
+        )
 
     def test_end_customer_extractor_agent_contract(self):
         self.assertIs(end_customer_extractor_agent, d365_end_customer_extractor_agent)
-        self.assertEqual(d365_end_customer_extractor_agent.name, "d365_end_customer_extractor_agent")
+        self.assertEqual(
+            d365_end_customer_extractor_agent.name, "d365_end_customer_extractor_agent"
+        )
         self.assertEqual(list(d365_end_customer_extractor_agent.tools), [])
         instruction = d365_end_customer_extractor_agent.instruction.lower()
         self.assertIn("source company separately", instruction)
@@ -120,8 +167,12 @@ class UkIeD365LeadsTest(unittest.TestCase):
                 )
             ],
         )
-        exa = self._fake_provider("exa", [], configured=False, unavailable_reason="EXA_API_KEY is not set")
-        with patch.object(lead_tools, "_provider_candidates", return_value=[google, exa]):
+        exa = self._fake_provider(
+            "exa", [], configured=False, unavailable_reason="EXA_API_KEY is not set"
+        )
+        with patch.object(
+            lead_tools, "_provider_candidates", return_value=[google, exa]
+        ):
             result = lead_tools.find_uk_ie_d365_leads(
                 provider_name="fanout",
                 max_results=5,
@@ -131,8 +182,12 @@ class UkIeD365LeadsTest(unittest.TestCase):
                 fanout_queries_per_provider=1,
             )
         self.assertEqual(result["provider"], "fanout")
-        self.assertEqual(result["provider_budget"]["google_grounding"]["requests_attempted"], 1)
-        readiness = {item["name"]: item for item in result["provider_readiness"]["providers"]}
+        self.assertEqual(
+            result["provider_budget"]["google_grounding"]["requests_attempted"], 1
+        )
+        readiness = {
+            item["name"]: item for item in result["provider_readiness"]["providers"]
+        }
         self.assertFalse(readiness["exa"]["configured"])
         self.assertIn("EXA_API_KEY", readiness["exa"]["unavailable_reason"])
 
@@ -167,7 +222,9 @@ class UkIeD365LeadsTest(unittest.TestCase):
         self.assertEqual(result["duplicate_raw_result_count"], 1)
 
     def test_fanout_provider_failure_keeps_partial_results(self):
-        google = self._fake_provider("google_grounding", [], error=TimeoutError("search timed out"))
+        google = self._fake_provider(
+            "google_grounding", [], error=TimeoutError("search timed out")
+        )
         exa = self._fake_provider(
             "exa",
             [
@@ -179,7 +236,9 @@ class UkIeD365LeadsTest(unittest.TestCase):
                 )
             ],
         )
-        with patch.object(lead_tools, "_provider_candidates", return_value=[google, exa]):
+        with patch.object(
+            lead_tools, "_provider_candidates", return_value=[google, exa]
+        ):
             result = lead_tools.find_uk_ie_d365_leads(
                 provider_name="fanout",
                 max_results=5,
@@ -198,20 +257,28 @@ class UkIeD365LeadsTest(unittest.TestCase):
             url = "https://customer.example.co.uk/canonical-d365"
             status_code = 200
             ok = True
-            headers: ClassVar[dict[str, str]] = {"content-type": "text/html; charset=utf-8"}
+            headers: ClassVar[dict[str, str]] = {
+                "content-type": "text/html; charset=utf-8"
+            }
             encoding = "utf-8"
             apparent_encoding = "utf-8"
             content = (
                 b"<html><head><title>Customer D365 story</title>"
-                b"<link rel=\"canonical\" href=\"/canonical-d365\"></head>"
+                b'<link rel="canonical" href="/canonical-d365"></head>'
                 b"<body>UK customer implemented Dynamics 365 Business Central.</body></html>"
             )
 
         with patch.object(lead_tools.requests, "get", return_value=FakeResponse()):
-            fetched = lead_tools.SourceFetcher().fetch("https://redirect.example.co.uk/story", provider="unit")
+            fetched = lead_tools.SourceFetcher().fetch(
+                "https://redirect.example.co.uk/story", provider="unit"
+            )
         self.assertEqual(fetched["source_fetch_status"], "fetched")
-        self.assertEqual(fetched["final_url"], "https://customer.example.co.uk/canonical-d365")
-        self.assertEqual(fetched["canonical_url"], "https://customer.example.co.uk/canonical-d365")
+        self.assertEqual(
+            fetched["final_url"], "https://customer.example.co.uk/canonical-d365"
+        )
+        self.assertEqual(
+            fetched["canonical_url"], "https://customer.example.co.uk/canonical-d365"
+        )
         self.assertEqual(fetched["page_title"], "Customer D365 story")
         self.assertTrue(fetched["verified_live"])
 
@@ -269,7 +336,10 @@ class UkIeD365LeadsTest(unittest.TestCase):
             )
         self.assertFalse(fetched["verified_live"])
         self.assertNotEqual(fetched["source_fetch_status"], "fetched")
-        self.assertIn(fetched["pdf_parser_status"], {"pdf_no_text_extracted", "pdf_parse_error", "pdf_invalid_or_truncated"})
+        self.assertIn(
+            fetched["pdf_parser_status"],
+            {"pdf_no_text_extracted", "pdf_parse_error", "pdf_invalid_or_truncated"},
+        )
 
     def test_query_pack_and_known_good_domains_generate_targeted_queries(self):
         preflight = {
@@ -282,7 +352,9 @@ class UkIeD365LeadsTest(unittest.TestCase):
             query_pack="pdf",
         )
         queries = [item["query"] for item in plan]
-        self.assertTrue(any(query.startswith("site:partner-services.co.uk") for query in queries))
+        self.assertTrue(
+            any(query.startswith("site:partner-services.co.uk") for query in queries)
+        )
         self.assertTrue(any("filetype:pdf" in query for query in queries))
 
     def test_shortage_report_seeds_cleanup_queries(self):
@@ -290,8 +362,14 @@ class UkIeD365LeadsTest(unittest.TestCase):
             query_pack="default",
             shortage_report={
                 "shortage_count": 2,
-                "queue_counts": {"source_cleanup_queue": 1, "identity_resolution_queue": 1},
-                "next_actions": ["Resolve end-customer identity.", "Fetch or replace source URLs."],
+                "queue_counts": {
+                    "source_cleanup_queue": 1,
+                    "identity_resolution_queue": 1,
+                },
+                "next_actions": [
+                    "Resolve end-customer identity.",
+                    "Fetch or replace source URLs.",
+                ],
                 "selection_exclusions": [{"company_name": "Northstar Components"}],
             },
         )
@@ -301,13 +379,30 @@ class UkIeD365LeadsTest(unittest.TestCase):
 
     def test_retry_source_fetches_filters_hard_skips_and_retries_timeouts(self):
         payload = [
-            {"url": "https://customer.co.uk/timeout", "source_fetch_status": "timeout", "provider": "unit"},
-            {"url": "https://www.linkedin.com/company/private", "source_fetch_status": "skipped_private_linkedin_source"},
-            {"url": "https://customer.co.uk/case-study.pdf", "source_fetch_status": "skipped_binary_source"},
+            {
+                "url": "https://customer.co.uk/timeout",
+                "source_fetch_status": "timeout",
+                "provider": "unit",
+            },
+            {
+                "url": "https://www.linkedin.com/company/private",
+                "source_fetch_status": "skipped_private_linkedin_source",
+            },
+            {
+                "url": "https://customer.co.uk/case-study.pdf",
+                "source_fetch_status": "skipped_binary_source",
+            },
         ]
-        candidates_without_pdf = lead_tools.source_retry_candidates(payload, parse_pdfs=False)
-        self.assertEqual([item["url"] for item in candidates_without_pdf], ["https://customer.co.uk/timeout"])
-        candidates_with_pdf = lead_tools.source_retry_candidates(payload, parse_pdfs=True)
+        candidates_without_pdf = lead_tools.source_retry_candidates(
+            payload, parse_pdfs=False
+        )
+        self.assertEqual(
+            [item["url"] for item in candidates_without_pdf],
+            ["https://customer.co.uk/timeout"],
+        )
+        candidates_with_pdf = lead_tools.source_retry_candidates(
+            payload, parse_pdfs=True
+        )
         self.assertEqual(
             [item["url"] for item in candidates_with_pdf],
             ["https://customer.co.uk/timeout", "https://customer.co.uk/case-study.pdf"],
@@ -388,12 +483,23 @@ class UkIeD365LeadsTest(unittest.TestCase):
                     }
                 ],
             }
-            (evidence_dir / "UK_IE_D365_UNIT_MEMORY.json").write_text(json.dumps(payload), encoding="utf-8")
+            (evidence_dir / "UK_IE_D365_UNIT_MEMORY.json").write_text(
+                json.dumps(payload), encoding="utf-8"
+            )
             memory = lead_tools.build_local_discovery_memory(evidence_dir)
-        self.assertEqual(memory["prior_final_leads"][0]["company_name"], "Northstar Components")
+        self.assertEqual(
+            memory["prior_final_leads"][0]["company_name"], "Northstar Components"
+        )
         self.assertTrue(memory["prior_duplicate_opportunities"])
-        self.assertEqual(memory["rejected_generic_patterns"]["generic_it_support_without_dynamics_365_evidence"], 1)
-        self.assertEqual(memory["retryable_fetch_failures"][0]["source_fetch_status"], "timeout")
+        self.assertEqual(
+            memory["rejected_generic_patterns"][
+                "generic_it_support_without_dynamics_365_evidence"
+            ],
+            1,
+        )
+        self.assertEqual(
+            memory["retryable_fetch_failures"][0]["source_fetch_status"], "timeout"
+        )
 
     def test_fetched_partner_page_resolves_end_customer_not_partner(self):
         result = lead_tools.SearchResult(
@@ -416,7 +522,9 @@ class UkIeD365LeadsTest(unittest.TestCase):
             }
         ]
         enriched = lead_tools.enrich_results_with_source_fetches([result], fetches)
-        extraction = lead_tools.extract_d365_leads(enriched, max_results=5, include_rejected=True)
+        extraction = lead_tools.extract_d365_leads(
+            enriched, max_results=5, include_rejected=True
+        )
         lead = extraction["surfaced_leads"][0]
         self.assertEqual(lead["company_name"], "Contoso Retail Ltd")
         self.assertEqual(lead["source_company"], "Partner Services")
@@ -441,7 +549,10 @@ class UkIeD365LeadsTest(unittest.TestCase):
         self.assertIn("audit_metadata", result)
         self.assertFalse(result["audit_metadata"]["live_search_run"])
         self.assertIn("cloud_discovery_preflight", result)
-        self.assertEqual(result["source_channel_policy"]["hint_channels"], ["agent_search", "workspace_hint", "crm_hint", "custom_mcp"])
+        self.assertEqual(
+            result["source_channel_policy"]["hint_channels"],
+            ["agent_search", "workspace_hint", "crm_hint", "custom_mcp"],
+        )
 
     def test_source_channel_policy_blocks_hint_channels_from_final_pdf(self):
         cases = {
@@ -453,7 +564,9 @@ class UkIeD365LeadsTest(unittest.TestCase):
         }
         for source, expected in cases.items():
             with self.subTest(source=source):
-                channel = discovery_backbone_tools.classify_source_channel(source=source)
+                channel = discovery_backbone_tools.classify_source_channel(
+                    source=source
+                )
                 self.assertEqual(channel, expected)
                 self.assertEqual(
                     discovery_backbone_tools.final_pdf_eligible_from_channel(channel),
@@ -475,13 +588,17 @@ class UkIeD365LeadsTest(unittest.TestCase):
                         "company_fingerprint": "company_unit",
                         "opportunity_fingerprint": "opp_unit",
                         "source_fingerprint": "source_unit",
-                        "evidence_urls": ["https://northstar-components.co.uk/news/dynamics-365"],
+                        "evidence_urls": [
+                            "https://northstar-components.co.uk/news/dynamics-365"
+                        ],
                         "source_provider": "google_grounding",
                         "verified_live": True,
                     }
                 ],
             }
-            (evidence_dir / "UK_IE_D365_UNIT_PACK.json").write_text(json.dumps(sample), encoding="utf-8")
+            (evidence_dir / "UK_IE_D365_UNIT_PACK.json").write_text(
+                json.dumps(sample), encoding="utf-8"
+            )
             paths = discovery_backbone_tools.write_local_backbone_artifacts(
                 evidence_dir=evidence_dir,
                 output_dir=evidence_dir,
@@ -489,12 +606,24 @@ class UkIeD365LeadsTest(unittest.TestCase):
             )
             for path in paths.values():
                 self.assertTrue(Path(path).exists(), path)
-            preflight = json.loads(Path(paths["preflight_json"]).read_text(encoding="utf-8"))
+            preflight = json.loads(
+                Path(paths["preflight_json"]).read_text(encoding="utf-8")
+            )
             self.assertEqual(preflight["memory_preflight"]["prior_company_count"], 1)
-            self.assertIn("northstar-components.co.uk", preflight["memory_preflight"]["known_good_domains"])
-            manifest = Path(paths["agent_search_import_manifest"]).read_text(encoding="utf-8")
-            self.assertIn("gs://business-intel-123-business-intel-evidence/Evidence/UK_IE_D365_UNIT_PACK.json", manifest)
-            ledger = json.loads(Path(paths["bigquery_ledger_mirror"]).read_text(encoding="utf-8"))
+            self.assertIn(
+                "northstar-components.co.uk",
+                preflight["memory_preflight"]["known_good_domains"],
+            )
+            manifest = Path(paths["agent_search_import_manifest"]).read_text(
+                encoding="utf-8"
+            )
+            self.assertIn(
+                "gs://business-intel-123-business-intel-evidence/Evidence/UK_IE_D365_UNIT_PACK.json",
+                manifest,
+            )
+            ledger = json.loads(
+                Path(paths["bigquery_ledger_mirror"]).read_text(encoding="utf-8")
+            )
             self.assertEqual(ledger["table_counts"]["candidates"], 1)
             self.assertTrue(ledger["tables"]["candidates"][0]["final_pdf_eligible"])
 
@@ -516,7 +645,9 @@ class UkIeD365LeadsTest(unittest.TestCase):
                 source="unit",
             ),
         ]
-        extraction = lead_tools.extract_d365_leads(rows, max_results=5, include_rejected=True)
+        extraction = lead_tools.extract_d365_leads(
+            rows, max_results=5, include_rejected=True
+        )
         leads = extraction["surfaced_leads"]
         self.assertEqual(len(leads), 1)
         self.assertEqual(leads[0]["country"], "United Kingdom")
@@ -601,7 +732,10 @@ class UkIeD365LeadsTest(unittest.TestCase):
         )
         self.assertFalse(decision["accepted"])
         self.assertEqual(decision["lead"]["signal_tier"], "D")
-        self.assertEqual(decision["lead"]["hard_rejection_reason"], "private_or_linkedin_source_excluded")
+        self.assertEqual(
+            decision["lead"]["hard_rejection_reason"],
+            "private_or_linkedin_source_excluded",
+        )
 
     def test_fake_example_url_is_hard_rejected(self):
         decision = lead_tools.evaluate_search_result(
@@ -613,7 +747,9 @@ class UkIeD365LeadsTest(unittest.TestCase):
             )
         )
         self.assertFalse(decision["accepted"])
-        self.assertEqual(decision["lead"]["hard_rejection_reason"], "fake_or_example_url")
+        self.assertEqual(
+            decision["lead"]["hard_rejection_reason"], "fake_or_example_url"
+        )
 
     def test_default_query_plan_excludes_procurement_portals(self):
         queries = " ".join(lead_tools.build_queries()).lower()
@@ -698,7 +834,10 @@ class UkIeD365LeadsTest(unittest.TestCase):
         )
         self.assertTrue(decision["accepted"])
         self.assertIsNone(decision["lead"]["rejection_reason"])
-        self.assertIn("uk_ireland_not_evidenced_in_snippet", decision["lead"]["deterministic_flags"])
+        self.assertIn(
+            "uk_ireland_not_evidenced_in_snippet",
+            decision["lead"]["deterministic_flags"],
+        )
 
     def test_june3_style_promising_thin_candidates_stay_reviewable(self):
         rows = [
@@ -719,8 +858,12 @@ class UkIeD365LeadsTest(unittest.TestCase):
                 source_query='"Net Zero Group Ireland" "Dynamics 365 Business Central" 4PS',
             ),
         ]
-        extraction = lead_tools.extract_d365_leads(rows, max_results=5, include_rejected=True)
-        names = {candidate["company_name"] for candidate in extraction["review_candidates"]}
+        extraction = lead_tools.extract_d365_leads(
+            rows, max_results=5, include_rejected=True
+        )
+        names = {
+            candidate["company_name"] for candidate in extraction["review_candidates"]
+        }
         self.assertIn("Mental Health Commission Ireland", names)
         self.assertIn("Net Zero Group", names)
         self.assertEqual(extraction["tier_counts"]["D"], 0)
@@ -755,7 +898,9 @@ class UkIeD365LeadsTest(unittest.TestCase):
                 signal_class="installed_base_discovery",
             ),
         ]
-        extraction = lead_tools.extract_d365_leads(rows, max_results=5, include_rejected=True)
+        extraction = lead_tools.extract_d365_leads(
+            rows, max_results=5, include_rejected=True
+        )
         tiers = {lead["signal_tier"] for lead in extraction["surfaced_leads"]}
         self.assertIn("B", tiers)
         self.assertIn("C", tiers)
@@ -819,15 +964,19 @@ class UkIeD365LeadsTest(unittest.TestCase):
                 os.environ.pop("GEMINI_API_KEY", None)
             else:
                 os.environ["GEMINI_API_KEY"] = old_secret
-        self.assertEqual(metadata["audit_schema_version"], lead_tools.AUDIT_SCHEMA_VERSION)
+        self.assertEqual(
+            metadata["audit_schema_version"], lead_tools.AUDIT_SCHEMA_VERSION
+        )
         self.assertEqual(metadata["classifier_version"], lead_tools.CLASSIFIER_VERSION)
         self.assertTrue(metadata["effective_model_name"])
-        self.assertIn(metadata["model_source"], {"env:D365_GOOGLE_MODEL", "default", "unknown"})
+        self.assertIn(
+            metadata["model_source"], {"env:D365_GOOGLE_MODEL", "default", "unknown"}
+        )
         self.assertIn(metadata["provider_client_mode"], {"ADC", "API_KEY", "unknown"})
         self.assertNotIn("unit-secret-value", json.dumps(metadata))
 
     def test_replay_adds_audit_without_live_search_and_preserves_counts(self):
-        self.require_saved_evidence()
+        self.require_saved_evidence(self.evidence_run_path)
         original_search = lead_tools.ADKGoogleGroundingProvider.search_web
 
         def fail_if_called(self, query, limit=5):
@@ -846,7 +995,7 @@ class UkIeD365LeadsTest(unittest.TestCase):
         self.assertEqual(len(replay["tier_c_watchlist_leads"]), 1)
 
     def test_every_replay_candidate_has_audit_trace_and_final_decision(self):
-        self.require_saved_evidence()
+        self.require_saved_evidence(self.evidence_run_path)
         replay = lead_tools.replay_uk_ie_d365_audit(str(self.evidence_run_path))
         candidates = replay["leads"] + replay["rejected_leads"]
         self.assertTrue(candidates)
@@ -860,7 +1009,9 @@ class UkIeD365LeadsTest(unittest.TestCase):
             for rule in rule_results:
                 self.assertIn("rule_id", rule)
                 self.assertIn("passed", rule)
-                self.assertIn(rule["severity"], {"blocking", "scoring", "informational"})
+                self.assertIn(
+                    rule["severity"], {"blocking", "scoring", "informational"}
+                )
                 self.assertIn("explanation", rule)
 
     def test_provider_discovery_does_not_leak_secret_values(self):
@@ -886,7 +1037,7 @@ class UkIeD365LeadsTest(unittest.TestCase):
         self.assertFalse(result["sending_enabled"])
 
     def test_human_review_utility_parses_replay_without_live_calls(self):
-        self.require_saved_evidence()
+        self.require_saved_evidence(self.audit_replay_path)
         review = self.review_module()
         with tempfile.TemporaryDirectory() as tmp_dir:
             output_json = Path(tmp_dir) / "shortlist.json"
@@ -897,12 +1048,14 @@ class UkIeD365LeadsTest(unittest.TestCase):
                 markdown_output=output_md,
             )
         self.assertTrue(result["metadata"]["no_live_calls"])
-        self.assertEqual(result["input_counts"]["tier_counts"], {"A": 0, "B": 4, "C": 1, "D": 42})
+        self.assertEqual(
+            result["input_counts"]["tier_counts"], {"A": 0, "B": 4, "C": 1, "D": 42}
+        )
         self.assertEqual(result["output_counts"]["tier_b"], 4)
         self.assertEqual(result["output_counts"]["tier_c"], 1)
 
     def test_human_review_includes_tier_b_and_c_candidates(self):
-        self.require_saved_evidence()
+        self.require_saved_evidence(self.audit_replay_path)
         review = self.review_module()
         with tempfile.TemporaryDirectory() as tmp_dir:
             result = review.build_human_review_shortlist(
@@ -924,7 +1077,7 @@ class UkIeD365LeadsTest(unittest.TestCase):
         self.assertTrue(expected_names.issubset(actual_names))
 
     def test_human_review_surfaces_risky_tier_d_and_preserves_tender_rejections(self):
-        self.require_saved_evidence()
+        self.require_saved_evidence(self.audit_replay_path)
         review = self.review_module()
         with tempfile.TemporaryDirectory() as tmp_dir:
             result = review.build_human_review_shortlist(
@@ -938,16 +1091,30 @@ class UkIeD365LeadsTest(unittest.TestCase):
             "uk_ireland_not_evidenced",
             "missing_explicit_dynamics_365_or_business_app_evidence",
         }
-        tier_d_items = [item for item in result["shortlist"] if item["current_tier"] == "D"]
-        self.assertTrue(any(item["original_rejection_reason"] in risky_reasons for item in tier_d_items))
-        tender_items = [
-            item for item in result["shortlist"]
-            if item.get("original_rejection_reason") == "tender_or_procurement_out_of_scope"
+        tier_d_items = [
+            item for item in result["shortlist"] if item["current_tier"] == "D"
         ]
-        self.assertTrue(all(item["recommended_review_action"] == "keep_rejected" for item in tender_items))
+        self.assertTrue(
+            any(
+                item["original_rejection_reason"] in risky_reasons
+                for item in tier_d_items
+            )
+        )
+        tender_items = [
+            item
+            for item in result["shortlist"]
+            if item.get("original_rejection_reason")
+            == "tender_or_procurement_out_of_scope"
+        ]
+        self.assertTrue(
+            all(
+                item["recommended_review_action"] == "keep_rejected"
+                for item in tender_items
+            )
+        )
 
     def test_human_review_outputs_metadata_markdown_breakdowns_and_no_secrets(self):
-        self.require_saved_evidence()
+        self.require_saved_evidence(self.audit_replay_path)
         review = self.review_module()
         old_secret = os.environ.get("SERPER_API_KEY")
         os.environ["SERPER_API_KEY"] = "unit-secret-value"
@@ -960,7 +1127,9 @@ class UkIeD365LeadsTest(unittest.TestCase):
                     json_output=output_json,
                     markdown_output=output_md,
                 )
-                serialized = output_json.read_text(encoding="utf-8") + output_md.read_text(encoding="utf-8")
+                serialized = output_json.read_text(
+                    encoding="utf-8"
+                ) + output_md.read_text(encoding="utf-8")
                 self.assertTrue(output_md.is_file())
         finally:
             if old_secret is None:
@@ -970,15 +1139,25 @@ class UkIeD365LeadsTest(unittest.TestCase):
         self.assertIn("metadata", result)
         self.assertIn("rejection_breakdown", result)
         self.assertIn("tier_breakdown", result)
-        self.assertEqual(result["metadata"]["review_schema_version"], review.REVIEW_SCHEMA_VERSION)
+        self.assertEqual(
+            result["metadata"]["review_schema_version"], review.REVIEW_SCHEMA_VERSION
+        )
         self.assertNotIn("unit-secret-value", serialized)
 
     def test_classification_reviewer_agent_wrapper_imports_without_tools(self):
-        self.assertEqual(classification_reviewer_agent.name, "d365_classification_reviewer_agent")
+        self.assertEqual(
+            classification_reviewer_agent.name, "d365_classification_reviewer_agent"
+        )
         self.assertIs(classification_reviewer_agent, d365_classification_reviewer_agent)
         self.assertEqual(list(classification_reviewer_agent.tools), [])
-        self.assertIn("candidate evidence provided in the input payload", classification_reviewer_agent.instruction)
-        self.assertIn("proposes future deterministic rule changes only", classification_reviewer_agent.instruction)
+        self.assertIn(
+            "candidate evidence provided in the input payload",
+            classification_reviewer_agent.instruction,
+        )
+        self.assertIn(
+            "proposes future deterministic rule changes only",
+            classification_reviewer_agent.instruction,
+        )
 
     def test_classification_reviewer_is_opt_in_and_toolless_sub_agent(self):
         reviewer_names = [agent.name for agent in root_agent.sub_agents]
@@ -994,10 +1173,13 @@ class UkIeD365LeadsTest(unittest.TestCase):
         self.assertIs(opportunity_vetter_agent, d365_opportunity_vetter_agent)
         self.assertEqual(list(opportunity_vetter_agent.tools), [])
         self.assertIn("production AI vetter", opportunity_vetter_agent.instruction)
-        self.assertIn("The deterministic layer is only a guardrail layer", opportunity_vetter_agent.instruction)
+        self.assertIn(
+            "The deterministic layer is only a guardrail layer",
+            opportunity_vetter_agent.instruction,
+        )
 
     def test_classification_review_tools_build_dry_run_package(self):
-        self.require_saved_evidence()
+        self.require_saved_evidence(self.audit_replay_path)
         with tempfile.TemporaryDirectory() as tmp_dir:
             package = classification_review_tools.build_review_package(
                 evidence_file=self.audit_replay_path,
@@ -1012,21 +1194,29 @@ class UkIeD365LeadsTest(unittest.TestCase):
         self.assertEqual(output["counts"]["candidates_prepared_for_review"], 47)
         self.assertEqual(output["counts"]["candidates_reviewed_by_llm"], 0)
         self.assertEqual(output["metadata"]["schema_validation_result"], "PASS")
-        self.assertEqual(output["metadata"]["invented_candidate_facts_check_result"], "PASS")
+        self.assertEqual(
+            output["metadata"]["invented_candidate_facts_check_result"], "PASS"
+        )
         self.assertTrue(output["dry_run_risk_ranked_rule_patterns"])
 
     def test_classification_review_uses_saved_deterministic_fields(self):
-        self.require_saved_evidence()
+        self.require_saved_evidence(self.audit_replay_path)
         data = classification_review_tools.load_saved_evidence(self.audit_replay_path)
         first = classification_review_tools.all_candidates(data)[0]
         prepared = classification_review_tools.prepare_candidate(first, index=1)
         record = prepared["review_record"]
         self.assertEqual(
             record["review_metadata"]["source_of_truth_fields_used"],
-            [field for field in classification_review_tools.SOURCE_OF_TRUTH_FIELDS if field in first],
+            [
+                field
+                for field in classification_review_tools.SOURCE_OF_TRUTH_FIELDS
+                if field in first
+            ],
         )
         self.assertEqual(record["deterministic_score_or_tier"], first["signal_tier"])
-        self.assertEqual(record["deterministic_confidence_score"], first["confidence_score"])
+        self.assertEqual(
+            record["deterministic_confidence_score"], first["confidence_score"]
+        )
         self.assertEqual(record["deterministic_urgency_score"], first["urgency_score"])
         self.assertEqual(record["deterministic_audit_trace"], first["audit_trace"])
         self.assertEqual(prepared["reconstruction_records"], [])
@@ -1045,33 +1235,54 @@ class UkIeD365LeadsTest(unittest.TestCase):
         self.assertNotIn("signal_tier", fields)
 
     def test_classification_review_schema_and_no_invented_facts(self):
-        self.require_saved_evidence()
+        self.require_saved_evidence(self.audit_replay_path)
         data = classification_review_tools.load_saved_evidence(self.audit_replay_path)
         records = [
-            classification_review_tools.prepare_candidate(candidate, index=index)["review_record"]
-            for index, candidate in enumerate(classification_review_tools.all_candidates(data), start=1)
+            classification_review_tools.prepare_candidate(candidate, index=index)[
+                "review_record"
+            ]
+            for index, candidate in enumerate(
+                classification_review_tools.all_candidates(data), start=1
+            )
         ]
         validation = classification_review_tools.validate_review_records(records)
         invented = classification_review_tools.invented_candidate_facts_check(records)
         self.assertTrue(validation["valid"])
         self.assertTrue(invented["passed"])
-        self.assertFalse(any(record["invented_candidate_facts_detected"] for record in records))
-        self.assertTrue(all(record["llm_review_decision"] == "dry_run_unreviewed" for record in records))
+        self.assertFalse(
+            any(record["invented_candidate_facts_detected"] for record in records)
+        )
+        self.assertTrue(
+            all(
+                record["llm_review_decision"] == "dry_run_unreviewed"
+                for record in records
+            )
+        )
         self.assertTrue(all(record["live_llm_used"] is False for record in records))
 
-    def test_classification_review_runner_default_is_dry_run_and_live_mode_refuses(self):
-        self.require_saved_evidence()
-        runner_path = Path(__file__).resolve().parents[2] / "tools" / "run_uk_ie_d365_llm_classification_review.py"
-        spec = importlib.util.spec_from_file_location("run_uk_ie_d365_llm_classification_review", runner_path)
+    def test_classification_review_runner_default_is_dry_run_and_live_mode_refuses(
+        self,
+    ):
+        self.require_saved_evidence(self.audit_replay_path)
+        runner_path = (
+            Path(__file__).resolve().parents[2]
+            / "tools"
+            / "run_uk_ie_d365_llm_classification_review.py"
+        )
+        spec = importlib.util.spec_from_file_location(
+            "run_uk_ie_d365_llm_classification_review", runner_path
+        )
         runner = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(runner)
         with tempfile.TemporaryDirectory() as tmp_dir:
-            exit_code = runner.main([
-                "--evidence-file",
-                str(self.audit_replay_path),
-                "--output-dir",
-                tmp_dir,
-            ])
+            exit_code = runner.main(
+                [
+                    "--evidence-file",
+                    str(self.audit_replay_path),
+                    "--output-dir",
+                    tmp_dir,
+                ]
+            )
             output_json = Path(tmp_dir) / "UK_IE_D365_LLM_CLASSIFICATION_REVIEW.json"
             self.assertEqual(exit_code, 0)
             self.assertTrue(output_json.is_file())
@@ -1081,7 +1292,8 @@ class UkIeD365LeadsTest(unittest.TestCase):
             self.assertFalse(output["metadata"]["agents_cli_deploy_called"])
 
     def test_live_review_package_uses_injected_reviewer_and_enforces_cap(self):
-        self.require_saved_evidence()
+        self.require_saved_evidence(self.audit_replay_path)
+
         def fake_reviewer(record, request_index):
             return (
                 json.dumps(
@@ -1101,7 +1313,11 @@ class UkIeD365LeadsTest(unittest.TestCase):
                         "proposal_impact": "needs_more_samples",
                     }
                 ),
-                {"prompt_token_count": 1, "candidates_token_count": 2, "total_token_count": 3},
+                {
+                    "prompt_token_count": 1,
+                    "candidates_token_count": 2,
+                    "total_token_count": 3,
+                },
                 "unit-model",
             )
 
@@ -1114,8 +1330,12 @@ class UkIeD365LeadsTest(unittest.TestCase):
                 reviewer_call=fake_reviewer,
             )
             output = package["review_output"]
-            phase2_json = Path(tmp_dir) / "UK_IE_D365_LLM_CLASSIFICATION_REVIEW_PHASE2.json"
-            proposal_json = Path(tmp_dir) / "UK_IE_D365_LLM_CLASSIFICATION_RULE_PROPOSAL_V1.json"
+            phase2_json = (
+                Path(tmp_dir) / "UK_IE_D365_LLM_CLASSIFICATION_REVIEW_PHASE2.json"
+            )
+            proposal_json = (
+                Path(tmp_dir) / "UK_IE_D365_LLM_CLASSIFICATION_RULE_PROPOSAL_V1.json"
+            )
             self.assertTrue(phase2_json.is_file())
             self.assertTrue(proposal_json.is_file())
         self.assertTrue(output["metadata"]["live_llm_mode_executed"])
@@ -1123,7 +1343,9 @@ class UkIeD365LeadsTest(unittest.TestCase):
         self.assertEqual(output["counts"]["live_request_count"], 3)
         self.assertEqual(output["counts"]["token_usage"]["total_token_count"], 9)
         self.assertTrue(output["schema_validation"]["valid"])
-        self.assertEqual(output["metadata"]["invented_candidate_facts_check_result"], "PASS")
+        self.assertEqual(
+            output["metadata"]["invented_candidate_facts_check_result"], "PASS"
+        )
 
     def test_select_review_candidates_rejects_invalid_cap(self):
         with self.assertRaises(ValueError):
@@ -1142,11 +1364,20 @@ class UkIeD365LeadsTest(unittest.TestCase):
 
         def fake_vetter(record, stage, request_index):
             response = {
-                "lead_status": "source_cleanup_needed" if stage == "initial" else "ready_to_contact",
+                "lead_status": "source_cleanup_needed"
+                if stage == "initial"
+                else "ready_to_contact",
                 "signal_strength": "emerging" if stage == "initial" else "strong",
                 "signal_type": record.get("signal_type"),
-                "evidence_used": record.get("evidence_snippets") + [item.get("snippet") for item in record.get("follow_up_evidence", []) if item.get("snippet")],
-                "evidence_gaps": ["resolve target customer"] if stage == "initial" else [],
+                "evidence_used": record.get("evidence_snippets")
+                + [
+                    item.get("snippet")
+                    for item in record.get("follow_up_evidence", [])
+                    if item.get("snippet")
+                ],
+                "evidence_gaps": ["resolve target customer"]
+                if stage == "initial"
+                else [],
                 "opportunity_signal": "Public D365 support signal with follow-up evidence.",
                 "why_this_matters_to_1bt": "The account may need D365 support capacity.",
                 "commercial_opening": "Open with D365 support optimisation.",
@@ -1186,8 +1417,12 @@ class UkIeD365LeadsTest(unittest.TestCase):
             self.assertTrue(Path(package["artifacts"]["secret_scan"]).is_file())
         self.assertEqual(output["counts"]["candidates_loaded_for_vetting"], 1)
         self.assertEqual(output["counts"]["follow_up_candidate_count"], 1)
-        self.assertEqual(output["records"][0]["final_review"]["lead_status"], "ready_to_contact")
-        self.assertEqual(output["records"][0]["final_review"]["signal_strength"], "strong")
+        self.assertEqual(
+            output["records"][0]["final_review"]["lead_status"], "ready_to_contact"
+        )
+        self.assertEqual(
+            output["records"][0]["final_review"]["signal_strength"], "strong"
+        )
         self.assertEqual(len(output["useful_leads"]), 1)
         self.assertEqual(output["reject_review_summary"]["rejected_count"], 0)
 
@@ -1195,32 +1430,39 @@ class UkIeD365LeadsTest(unittest.TestCase):
         candidate = {
             "company_name": "Northstar Components",
             "signal_type": "business_central_rollout",
-            "evidence_urls": ["https://northstar-components.co.uk/news/dynamics-365-business-central"],
+            "evidence_urls": [
+                "https://northstar-components.co.uk/news/dynamics-365-business-central"
+            ],
             "evidence_snippets": ["Northstar selected Dynamics 365 Business Central."],
         }
         evidence = {"review_candidates": [candidate], "hard_rejected_leads": []}
 
         def fake_vetter(record, stage, request_index):
-            return json.dumps(
-                {
-                    "lead_status": "ready_to_contact",
-                    "signal_strength": "strong",
-                    "signal_type": record.get("signal_type"),
-                    "evidence_used": record.get("evidence_urls") + record.get("evidence_snippets"),
-                    "evidence_gaps": [],
-                    "opportunity_signal": "Public Dynamics 365 Business Central rollout.",
-                    "why_this_matters_to_1bt": "Named account with public Microsoft business-app evidence.",
-                    "commercial_opening": "Open with post-rollout support.",
-                    "value_of_signal": "Direct D365 evidence.",
-                    "intelligence_reading": "AI-reviewed supplied evidence only.",
-                    "board_relevance": "Finance operations platform.",
-                    "contact_target_roles": ["Head of IT"],
-                    "do_not_claim_notes": ["Do not claim budget."],
-                    "remaining_uncertainty": [],
-                    "final_rejection_reason": "",
-                    "needs_follow_up": False,
-                }
-            ), {"total_token_count": 1}, "unit-vetter"
+            return (
+                json.dumps(
+                    {
+                        "lead_status": "ready_to_contact",
+                        "signal_strength": "strong",
+                        "signal_type": record.get("signal_type"),
+                        "evidence_used": record.get("evidence_urls")
+                        + record.get("evidence_snippets"),
+                        "evidence_gaps": [],
+                        "opportunity_signal": "Public Dynamics 365 Business Central rollout.",
+                        "why_this_matters_to_1bt": "Named account with public Microsoft business-app evidence.",
+                        "commercial_opening": "Open with post-rollout support.",
+                        "value_of_signal": "Direct D365 evidence.",
+                        "intelligence_reading": "AI-reviewed supplied evidence only.",
+                        "board_relevance": "Finance operations platform.",
+                        "contact_target_roles": ["Head of IT"],
+                        "do_not_claim_notes": ["Do not claim budget."],
+                        "remaining_uncertainty": [],
+                        "final_rejection_reason": "",
+                        "needs_follow_up": False,
+                    }
+                ),
+                {"total_token_count": 1},
+                "unit-vetter",
+            )
 
         with tempfile.TemporaryDirectory() as tmp_dir:
             evidence_path = Path(tmp_dir) / "evidence.json"
@@ -1232,8 +1474,80 @@ class UkIeD365LeadsTest(unittest.TestCase):
                 reviewer_call=fake_vetter,
             )
             self.assertTrue((Path(tmp_dir) / "UNIT_AI_VETTING.json").is_file())
-            self.assertTrue((Path(tmp_dir) / "UNIT_AI_VETTING_SECRET_SCAN.json").is_file())
-        self.assertEqual(Path(package["artifacts"]["json"]).name, "UNIT_AI_VETTING.json")
+            self.assertTrue(
+                (Path(tmp_dir) / "UNIT_AI_VETTING_SECRET_SCAN.json").is_file()
+            )
+        self.assertEqual(
+            Path(package["artifacts"]["json"]).name, "UNIT_AI_VETTING.json"
+        )
+
+    def test_ai_vetting_batches_can_be_offset_and_merged(self):
+        candidates = [
+            {
+                "company_name": name,
+                "signal_type": "business_central_rollout",
+                "evidence_urls": [f"https://{slug}.co.uk/dynamics-365"],
+                "evidence_snippets": [f"{name} uses Dynamics 365 Business Central."],
+            }
+            for name, slug in (
+                ("Alpha Works", "alpha-works"),
+                ("Beta Works", "beta-works"),
+            )
+        ]
+
+        def fake_vetter(record, stage, request_index):
+            return (
+                json.dumps(
+                    {
+                        "lead_status": "ready_to_contact",
+                        "signal_strength": "strong",
+                        "signal_type": record.get("signal_type"),
+                        "evidence_used": record.get("evidence_urls")
+                        + record.get("evidence_snippets"),
+                        "evidence_gaps": [],
+                        "opportunity_signal": "Public Dynamics 365 rollout.",
+                        "why_this_matters_to_1bt": "Named Microsoft business-app evidence.",
+                        "commercial_opening": "Open with post-rollout support.",
+                        "value_of_signal": "Direct evidence.",
+                        "intelligence_reading": "Supplied evidence only.",
+                        "board_relevance": "Core operating platform.",
+                        "contact_target_roles": ["Head of IT"],
+                        "do_not_claim_notes": ["Do not claim budget."],
+                        "remaining_uncertainty": [],
+                        "final_rejection_reason": "",
+                        "needs_follow_up": False,
+                    }
+                ),
+                {"total_token_count": 1},
+                "unit-vetter",
+            )
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            evidence_path = Path(tmp_dir) / "evidence.json"
+            evidence_path.write_text(
+                json.dumps({"review_candidates": candidates}), encoding="utf-8"
+            )
+            batches = [
+                opportunity_vetting_tools.build_vetting_package(
+                    evidence_file=evidence_path,
+                    output_dir=Path(tmp_dir),
+                    output_basename=f"BATCH_{offset}",
+                    candidate_offset=offset,
+                    max_candidates=1,
+                    reviewer_call=fake_vetter,
+                )["vetting_output"]
+                for offset in (0, 1)
+            ]
+            merged = opportunity_vetting_tools.merge_vetting_outputs(
+                batches,
+                output_dir=Path(tmp_dir),
+                output_basename="MERGED",
+            )
+
+        self.assertEqual(
+            merged["vetting_output"]["counts"]["candidates_loaded_for_vetting"], 2
+        )
+        self.assertEqual(merged["vetting_output"]["metadata"]["merged_batch_count"], 2)
 
     def test_ai_vetter_provider_label_uses_agent_platform_branding(self):
         def fake_factory(model_override=None):
@@ -1256,7 +1570,9 @@ class UkIeD365LeadsTest(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as tmp_dir:
             evidence_path = Path(tmp_dir) / "evidence.json"
-            evidence_path.write_text(json.dumps({"review_candidates": [candidate]}), encoding="utf-8")
+            evidence_path.write_text(
+                json.dumps({"review_candidates": [candidate]}), encoding="utf-8"
+            )
             package = opportunity_vetting_tools.build_vetting_package(
                 evidence_file=evidence_path,
                 output_dir=Path(tmp_dir),
@@ -1277,7 +1593,10 @@ class UkIeD365LeadsTest(unittest.TestCase):
         )
         payload = json.loads(prompt)
         rules = " ".join(payload["hard_rules"])
-        self.assertIn("Every non-reject output must cite at least one supplied public evidence URL", rules)
+        self.assertIn(
+            "Every non-reject output must cite at least one supplied public evidence URL",
+            rules,
+        )
         self.assertIn("clean evidence URL", rules)
         self.assertIn("Google grounding redirect", rules)
         self.assertIn("blank required write-up fields", rules)
@@ -1351,13 +1670,22 @@ class UkIeD365LeadsTest(unittest.TestCase):
         )["lead"]
         with tempfile.TemporaryDirectory() as tmp_dir:
             evidence_path = Path(tmp_dir) / "evidence.json"
-            evidence_path.write_text(json.dumps({"review_candidates": [hard], "hard_rejected_leads": [hard]}), encoding="utf-8")
+            evidence_path.write_text(
+                json.dumps(
+                    {"review_candidates": [hard], "hard_rejected_leads": [hard]}
+                ),
+                encoding="utf-8",
+            )
             package = opportunity_vetting_tools.build_vetting_package(
                 evidence_file=evidence_path,
                 output_dir=Path(tmp_dir),
-                reviewer_call=lambda record, stage, request_index: (_ for _ in ()).throw(AssertionError("hard rejects must not be vetted")),
+                reviewer_call=lambda record, stage, request_index: (
+                    _ for _ in ()
+                ).throw(AssertionError("hard rejects must not be vetted")),
             )
-        self.assertEqual(package["vetting_output"]["counts"]["candidates_loaded_for_vetting"], 0)
+        self.assertEqual(
+            package["vetting_output"]["counts"]["candidates_loaded_for_vetting"], 0
+        )
 
     def test_ai_vetting_downgrades_invented_urls_to_source_cleanup(self):
         candidate = lead_tools.evaluate_search_result(
@@ -1396,7 +1724,9 @@ class UkIeD365LeadsTest(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as tmp_dir:
             evidence_path = Path(tmp_dir) / "evidence.json"
-            evidence_path.write_text(json.dumps({"review_candidates": [candidate]}), encoding="utf-8")
+            evidence_path.write_text(
+                json.dumps({"review_candidates": [candidate]}), encoding="utf-8"
+            )
             package = opportunity_vetting_tools.build_vetting_package(
                 evidence_file=evidence_path,
                 output_dir=Path(tmp_dir),
@@ -1412,7 +1742,9 @@ class UkIeD365LeadsTest(unittest.TestCase):
             url="https://dynamicssquare.co.uk/services/dynamics-365-support/",
         )
         vendor_record["candidate"]["source_type"] = "vendor_service_page"
-        vendor_record["candidate"]["deterministic_flags"] = ["vendor_page_without_named_customer"]
+        vendor_record["candidate"]["deterministic_flags"] = [
+            "vendor_page_without_named_customer"
+        ]
         good_record = self._vetting_record(
             company_name="Northstar Components",
             url="https://northstar-components.co.uk/news/dynamics-365-business-central",
@@ -1433,7 +1765,9 @@ class UkIeD365LeadsTest(unittest.TestCase):
                 output_dir=Path(tmp_dir),
                 final_count=1,
             )
-        self.assertEqual(package["final_output"]["leads"][0]["company_name"], "Northstar Components")
+        self.assertEqual(
+            package["final_output"]["leads"][0]["company_name"], "Northstar Components"
+        )
         self.assertTrue(
             any(
                 item["company_name"] == "Dynamics Square UK"
@@ -1501,7 +1835,9 @@ class UkIeD365LeadsTest(unittest.TestCase):
         self.assertEqual(output["summary"]["baseline_lead_count"], 1)
         self.assertEqual(output["summary"]["agent_request_failures"], 0)
         self.assertEqual(output["summary"]["material_issue_count"], 0)
-        self.assertEqual(output["summary"]["readiness_conclusion"], "ready_for_future_final_curation")
+        self.assertEqual(
+            output["summary"]["readiness_conclusion"], "ready_for_future_final_curation"
+        )
         self.assertTrue(secret["passed"])
         self.assertIn(result["json"], secret["scanned_files"])
 
@@ -1526,7 +1862,9 @@ class UkIeD365LeadsTest(unittest.TestCase):
             "board_relevance": "Operational finance platform stability.",
             "contact_target_roles": ["Head of IT", "Finance Systems Manager"],
             "do_not_claim_notes": ["Do not claim budget or dissatisfaction."],
-            "remaining_uncertainty": ["Current incumbent support partner is not public."],
+            "remaining_uncertainty": [
+                "Current incumbent support partner is not public."
+            ],
         }
 
     def test_report_composer_prompt_contains_evidence_and_safety_contract(self):
@@ -1538,7 +1876,9 @@ class UkIeD365LeadsTest(unittest.TestCase):
             requirement="Create an executive PDF for the saved leads.",
             output_basename="UNIT_REPORT",
         )
-        prompt = report_composer_tools.build_blueprint_prompt(request, inventory).lower()
+        prompt = report_composer_tools.build_blueprint_prompt(
+            request, inventory
+        ).lower()
         for phrase in (
             "use only supplied evidence",
             "do not invent companies",
@@ -1555,7 +1895,9 @@ class UkIeD365LeadsTest(unittest.TestCase):
         with self.assertRaises(report_composer_tools.SchemaValidationError):
             report_composer_tools.parse_report_blueprint("not json")
         with self.assertRaises(report_composer_tools.SchemaValidationError):
-            report_composer_tools.parse_report_blueprint(json.dumps({"title": "Missing fields"}))
+            report_composer_tools.parse_report_blueprint(
+                json.dumps({"title": "Missing fields"})
+            )
 
     def test_report_blueprint_allows_empty_missing_info_requests(self):
         request = report_composer_tools.build_document_request(
@@ -1605,7 +1947,9 @@ class UkIeD365LeadsTest(unittest.TestCase):
                     "signal_type": "business_central_rollout",
                     "strength": "strong",
                     "pitch_lane": "Post-rollout support",
-                    "evidence_refs": ["https://northstar-components.co.uk/news/dynamics-365-business-central"],
+                    "evidence_refs": [
+                        "https://northstar-components.co.uk/news/dynamics-365-business-central"
+                    ],
                 }
             ],
             "accounts": [self._composer_report_spec()["accounts"][0]],
@@ -1660,7 +2004,9 @@ class UkIeD365LeadsTest(unittest.TestCase):
             input_pack={"leads": [self._final_pack_lead()]},
             source_checks={},
         )
-        spec = report_composer_tools.validate_report_spec(self._composer_report_spec(), inventory)
+        spec = report_composer_tools.validate_report_spec(
+            self._composer_report_spec(), inventory
+        )
         with tempfile.TemporaryDirectory() as tmp_dir:
             artifacts = report_composer_tools.render_report_artifacts(
                 report_spec=spec,
@@ -1670,15 +2016,22 @@ class UkIeD365LeadsTest(unittest.TestCase):
                 browse_log=[{"kind": "unit", "status": "not_live"}],
             )
             secret_text = Path(artifacts["markdown"]).read_text(encoding="utf-8")
-            Path(artifacts["markdown"]).write_text(secret_text + "\nTest secret sk-unitsecret1234567890\n", encoding="utf-8")
+            Path(artifacts["markdown"]).write_text(
+                secret_text + "\nTest secret sk-unitsecret1234567890\n",
+                encoding="utf-8",
+            )
             secret_scan = report_composer_tools.scan_report_secrets(
                 [Path(artifacts["markdown"])]
             )
             html_exists = Path(artifacts["html"]).is_file()
             pdf_exists = Path(artifacts["pdf"]).is_file()
             pdf_size = Path(artifacts["pdf"]).stat().st_size
-            qa_passed = json.loads(Path(artifacts["qa"]).read_text(encoding="utf-8"))["passed"]
-            source_map = json.loads(Path(artifacts["source_map"]).read_text(encoding="utf-8"))
+            qa_passed = json.loads(Path(artifacts["qa"]).read_text(encoding="utf-8"))[
+                "passed"
+            ]
+            source_map = json.loads(
+                Path(artifacts["source_map"]).read_text(encoding="utf-8")
+            )
         self.assertTrue(html_exists)
         self.assertTrue(pdf_exists)
         self.assertGreater(pdf_size, 500)
@@ -1691,7 +2044,10 @@ class UkIeD365LeadsTest(unittest.TestCase):
     def test_report_composer_project_guard_aborts_wrong_project(self):
         with patch.dict(
             os.environ,
-            {"D365_GOOGLE_PROJECT": "wrong-project", "GOOGLE_CLOUD_PROJECT": "wrong-project"},
+            {
+                "D365_GOOGLE_PROJECT": "wrong-project",
+                "GOOGLE_CLOUD_PROJECT": "wrong-project",
+            },
             clear=False,
         ):
             with self.assertRaises(report_composer_tools.ProjectGuardError):
@@ -1700,43 +2056,55 @@ class UkIeD365LeadsTest(unittest.TestCase):
     def test_report_composer_workflow_with_stubbed_ai_and_followup(self):
         def fake_composer(prompt, stage, request_index):
             if stage == "blueprint":
-                return json.dumps(
-                    {
-                        "title": "Unit D365 Opportunity Report",
-                        "subtitle": "Evidence-led board brief",
-                        "audience": "1BT board and sales leadership",
-                        "board_purpose": "Prioritise named D365 opportunities.",
-                        "style_preset": "executive_landscape",
-                        "tone": "board-friendly and evidence-led",
-                        "section_plan": [
-                            "cover",
-                            "executive_snapshot",
-                            "at_a_glance_grid",
-                            "account_details",
-                            "evidence_notes",
-                        ],
-                        "account_detail_fields": [
-                            "opportunity_signal",
-                            "why_this_matters_to_1bt",
-                            "commercial_opening",
-                            "value_of_signal",
-                            "intelligence_reading",
-                            "board_relevance",
-                        ],
-                        "missing_info_requests": [
-                            {
-                                "target": "Northstar Components",
-                                "reason": "Confirm current public source availability.",
-                                "queries": ['"Northstar Components" "Dynamics 365"'],
-                                "max_searches": 1,
-                                "max_source_fetches": 1,
-                            }
-                        ],
-                        "caveats": ["Use as public-signal hypotheses only."],
-                        "do_not_claim_rules": ["Do not claim budget or dissatisfaction."],
-                    }
-                ), {"total_token_count": 10}, "unit"
-            return json.dumps(self._composer_report_spec()), {"total_token_count": 20}, "unit"
+                return (
+                    json.dumps(
+                        {
+                            "title": "Unit D365 Opportunity Report",
+                            "subtitle": "Evidence-led board brief",
+                            "audience": "1BT board and sales leadership",
+                            "board_purpose": "Prioritise named D365 opportunities.",
+                            "style_preset": "executive_landscape",
+                            "tone": "board-friendly and evidence-led",
+                            "section_plan": [
+                                "cover",
+                                "executive_snapshot",
+                                "at_a_glance_grid",
+                                "account_details",
+                                "evidence_notes",
+                            ],
+                            "account_detail_fields": [
+                                "opportunity_signal",
+                                "why_this_matters_to_1bt",
+                                "commercial_opening",
+                                "value_of_signal",
+                                "intelligence_reading",
+                                "board_relevance",
+                            ],
+                            "missing_info_requests": [
+                                {
+                                    "target": "Northstar Components",
+                                    "reason": "Confirm current public source availability.",
+                                    "queries": [
+                                        '"Northstar Components" "Dynamics 365"'
+                                    ],
+                                    "max_searches": 1,
+                                    "max_source_fetches": 1,
+                                }
+                            ],
+                            "caveats": ["Use as public-signal hypotheses only."],
+                            "do_not_claim_rules": [
+                                "Do not claim budget or dissatisfaction."
+                            ],
+                        }
+                    ),
+                    {"total_token_count": 10},
+                    "unit",
+                )
+            return (
+                json.dumps(self._composer_report_spec()),
+                {"total_token_count": 20},
+                "unit",
+            )
 
         def fake_source_fetch(url, request):
             return {
@@ -1751,7 +2119,9 @@ class UkIeD365LeadsTest(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as tmp_dir:
             input_pack = Path(tmp_dir) / "pack.json"
-            input_pack.write_text(json.dumps({"leads": [self._final_pack_lead()]}), encoding="utf-8")
+            input_pack.write_text(
+                json.dumps({"leads": [self._final_pack_lead()]}), encoding="utf-8"
+            )
             package = report_composer_tools.build_report_composer_package(
                 requirement="Create a board PDF for this saved lead pack.",
                 input_pack=input_pack,
@@ -1767,8 +2137,12 @@ class UkIeD365LeadsTest(unittest.TestCase):
         self.assertTrue(pdf_exists)
         self.assertTrue(secret_scan_exists)
         self.assertEqual(package["output"]["metadata"]["account_count"], 1)
-        self.assertEqual(package["output"]["metadata"]["style_preset"], "executive_landscape")
-        self.assertGreaterEqual(package["output"]["metadata"]["follow_up_record_count"], 1)
+        self.assertEqual(
+            package["output"]["metadata"]["style_preset"], "executive_landscape"
+        )
+        self.assertGreaterEqual(
+            package["output"]["metadata"]["follow_up_record_count"], 1
+        )
 
     def test_report_composer_runner_imports_and_exposes_parser(self):
         module = self.report_composer_module()
@@ -1786,12 +2160,17 @@ class UkIeD365LeadsTest(unittest.TestCase):
         self.assertEqual(args.output_basename, "UNIT")
 
     def test_vetting_json_parser_accepts_trailing_model_text(self):
-        parsed = opportunity_vetting_tools.parse_vetting_json('{"lead_status":"ready_to_contact"}\n\nExtra notes')
+        parsed = opportunity_vetting_tools.parse_vetting_json(
+            '{"lead_status":"ready_to_contact"}\n\nExtra notes'
+        )
         self.assertEqual(parsed["lead_status"], "ready_to_contact")
 
     def test_followup_search_errors_are_attached_not_raised(self):
         candidate = {"company_name": "Northstar Components", "evidence_urls": []}
-        review = {"lead_status": "source_cleanup_needed", "follow_up_queries": ["northstar dynamics 365"]}
+        review = {
+            "lead_status": "source_cleanup_needed",
+            "follow_up_queries": ["northstar dynamics 365"],
+        }
 
         def failing_search(query, candidate_record, review_record):
             raise RuntimeError("quota exhausted")
@@ -1814,7 +2193,9 @@ class UkIeD365LeadsTest(unittest.TestCase):
         }
 
         def failing_reviewer(record, stage, request_index):
-            raise RuntimeError("quota exhausted https://cloud.google.com/vertex-ai/generative-ai/docs/error-code-429")
+            raise RuntimeError(
+                "quota exhausted https://cloud.google.com/vertex-ai/generative-ai/docs/error-code-429"
+            )
 
         review, meta = opportunity_vetting_tools.run_vetter_request(
             record,
@@ -1828,7 +2209,9 @@ class UkIeD365LeadsTest(unittest.TestCase):
         self.assertEqual(review["signal_strength"], "weak")
         self.assertEqual(meta["request_error_type"], "RuntimeError")
         self.assertFalse(review["invented_candidate_facts_detected"])
-        self.assertIn("https://northstar-components.co.uk/d365", review["evidence_used"])
+        self.assertIn(
+            "https://northstar-components.co.uk/d365", review["evidence_used"]
+        )
 
     def test_extract_urls_stops_at_json_escaped_newline(self):
         urls = opportunity_vetting_tools.extract_urls(
@@ -1836,7 +2219,9 @@ class UkIeD365LeadsTest(unittest.TestCase):
         )
         self.assertEqual(
             urls,
-            ["https://www.avanade.com/en-us/insights/clients/ireland-dept-of-health-azure-dynamics-365"],
+            [
+                "https://www.avanade.com/en-us/insights/clients/ireland-dept-of-health-azure-dynamics-365"
+            ],
         )
 
     def test_effective_google_project_prefers_d365_override(self):
@@ -1850,6 +2235,39 @@ class UkIeD365LeadsTest(unittest.TestCase):
         ):
             project = lead_tools.effective_google_project({"project": "adc-project"})
         self.assertEqual(project, "business-intel-123")
+
+    def test_gcloud_account_credentials_are_command_scoped(self):
+        lead_tools.gcloud_account_credentials.cache_clear()
+        completed = type(
+            "Completed",
+            (),
+            {"returncode": 0, "stdout": "short-lived-token\n", "stderr": ""},
+        )()
+        with (
+            patch.dict(
+                os.environ, {"D365_GCLOUD_ACCOUNT": "agent@example.test"}, clear=False
+            ),
+            patch(
+                "uk_ie_d365_leads.tools.lead_tools.shutil.which",
+                return_value="gcloud.cmd",
+            ),
+            patch(
+                "uk_ie_d365_leads.tools.lead_tools.subprocess.run",
+                return_value=completed,
+            ) as run,
+        ):
+            credentials = lead_tools.gcloud_account_credentials()
+            credentials.refresh(None)
+        lead_tools.gcloud_account_credentials.cache_clear()
+
+        self.assertEqual(credentials.token, "short-lived-token")
+        self.assertIn("--account", run.call_args.args[0])
+        self.assertIn("agent@example.test", run.call_args.args[0])
+        self.assertNotIn("config", run.call_args.args[0])
+
+        self.assertEqual(run.call_count, 2)
+        self.assertIsNotNone(credentials.expiry)
+        self.assertIsNone(credentials.expiry.tzinfo)
 
     def test_fresh_curation_excludes_prior_accounts_and_writes_audit(self):
         new_record = self._vetting_record(
@@ -1881,8 +2299,12 @@ class UkIeD365LeadsTest(unittest.TestCase):
             )
             final_output = package["final_output"]
             self.assertTrue(Path(package["artifacts"]["secret_scan"]).is_file())
-            self.assertTrue(Path(package["artifacts"]["deterministic_audit_json"]).is_file())
-        self.assertEqual(final_output["leads"][0]["company_name"], "Northstar Components")
+            self.assertTrue(
+                Path(package["artifacts"]["deterministic_audit_json"]).is_file()
+            )
+        self.assertEqual(
+            final_output["leads"][0]["company_name"], "Northstar Components"
+        )
         self.assertTrue(final_output["metadata"]["deterministic_reject_audit_passed"])
         self.assertTrue(
             any(
@@ -1890,6 +2312,32 @@ class UkIeD365LeadsTest(unittest.TestCase):
                 and item["reason"] == "prior_or_parked_account_duplicate"
                 and item["retention_status"] == "duplicate_same_opportunity"
                 for item in final_output["selection_exclusions"]
+            )
+        )
+
+    def test_prior_account_blocklist_includes_all_published_batches(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            evidence_dir = Path(tmp_dir)
+            published_batches = {
+                "UK_IE_D365_USEFUL_LEADS_FRESH_20260612.json": "Moneypenny",
+                "UK_IE_D365_USEFUL_LEADS_NEXT_20260624_CURATED.json": "The Royal Mint",
+            }
+            for artifact_name, company_name in published_batches.items():
+                (evidence_dir / artifact_name).write_text(
+                    json.dumps({"leads": [{"company_name": company_name}]}),
+                    encoding="utf-8",
+                )
+
+            blocklist = opportunity_vetting_tools.build_prior_account_blocklist(
+                evidence_dir
+            )
+
+        self.assertIn("moneypenny", blocklist)
+        self.assertIn("the royal mint", blocklist)
+        self.assertTrue(
+            opportunity_vetting_tools.is_prior_or_parked_account(
+                "Health Service Executive",
+                blocklist,
             )
         )
 
@@ -1914,13 +2362,28 @@ class UkIeD365LeadsTest(unittest.TestCase):
             )
             self.assertTrue((Path(tmp_dir) / "UNIT_FRESH_FINAL.json").is_file())
             self.assertTrue((Path(tmp_dir) / "UNIT_DETERMINISTIC_AUDIT.json").is_file())
-            self.assertTrue((Path(tmp_dir) / "UNIT_FRESH_FINAL_CANDIDATE_LEDGER.json").is_file())
-            self.assertTrue((Path(tmp_dir) / "UNIT_FRESH_FINAL_SOURCE_CLEANUP_QUEUE.json").is_file())
-            self.assertTrue((Path(tmp_dir) / "UNIT_FRESH_FINAL_IDENTITY_RESOLUTION.json").is_file())
-            self.assertTrue((Path(tmp_dir) / "UNIT_FRESH_FINAL_DUPLICATE_AUDIT.json").is_file())
-            self.assertTrue((Path(tmp_dir) / "UNIT_FRESH_FINAL_SHORTAGE_REPORT.json").is_file())
-        self.assertEqual(Path(package["artifacts"]["json"]).name, "UNIT_FRESH_FINAL.json")
-        self.assertEqual(Path(package["artifacts"]["candidate_ledger"]).name, "UNIT_FRESH_FINAL_CANDIDATE_LEDGER.json")
+            self.assertTrue(
+                (Path(tmp_dir) / "UNIT_FRESH_FINAL_CANDIDATE_LEDGER.json").is_file()
+            )
+            self.assertTrue(
+                (Path(tmp_dir) / "UNIT_FRESH_FINAL_SOURCE_CLEANUP_QUEUE.json").is_file()
+            )
+            self.assertTrue(
+                (Path(tmp_dir) / "UNIT_FRESH_FINAL_IDENTITY_RESOLUTION.json").is_file()
+            )
+            self.assertTrue(
+                (Path(tmp_dir) / "UNIT_FRESH_FINAL_DUPLICATE_AUDIT.json").is_file()
+            )
+            self.assertTrue(
+                (Path(tmp_dir) / "UNIT_FRESH_FINAL_SHORTAGE_REPORT.json").is_file()
+            )
+        self.assertEqual(
+            Path(package["artifacts"]["json"]).name, "UNIT_FRESH_FINAL.json"
+        )
+        self.assertEqual(
+            Path(package["artifacts"]["candidate_ledger"]).name,
+            "UNIT_FRESH_FINAL_CANDIDATE_LEDGER.json",
+        )
         self.assertEqual(
             Path(package["artifacts"]["deterministic_audit_json"]).name,
             "UNIT_DETERMINISTIC_AUDIT.json",
@@ -1944,8 +2407,15 @@ class UkIeD365LeadsTest(unittest.TestCase):
                 final_count=2,
                 output_basename="UNIT_SHORTAGE",
             )
-            shortage = json.loads(Path(package["artifacts"]["shortage_report_json"]).read_text(encoding="utf-8"))
-        self.assertEqual(package["final_output"]["metadata"]["completion_status"], "insufficient_quality_new_leads")
+            shortage = json.loads(
+                Path(package["artifacts"]["shortage_report_json"]).read_text(
+                    encoding="utf-8"
+                )
+            )
+        self.assertEqual(
+            package["final_output"]["metadata"]["completion_status"],
+            "insufficient_quality_new_leads",
+        )
         self.assertEqual(shortage["shortage_count"], 1)
 
     def test_followup_final_url_is_valid_selection_evidence(self):
@@ -1953,9 +2423,16 @@ class UkIeD365LeadsTest(unittest.TestCase):
             company_name="Northstar Components",
             url="https://vertexaisearch.cloud.google.com/grounding-api-redirect/abc",
         )
-        final_url = "https://northstar-components.co.uk/news/dynamics-365-business-central"
-        record["candidate"]["evidence_urls"] = ["https://vertexaisearch.cloud.google.com/grounding-api-redirect/abc"]
-        record["final_review"]["evidence_used"] = [final_url, "UK manufacturer selected Dynamics 365 Business Central."]
+        final_url = (
+            "https://northstar-components.co.uk/news/dynamics-365-business-central"
+        )
+        record["candidate"]["evidence_urls"] = [
+            "https://vertexaisearch.cloud.google.com/grounding-api-redirect/abc"
+        ]
+        record["final_review"]["evidence_used"] = [
+            final_url,
+            "UK manufacturer selected Dynamics 365 Business Central.",
+        ]
         record["follow_up_evidence"] = [
             {
                 "kind": "source_fetch",
@@ -2001,7 +2478,9 @@ class UkIeD365LeadsTest(unittest.TestCase):
                 output_dir=Path(tmp_dir),
                 final_count=1,
             )
-        self.assertEqual(package["final_output"]["leads"][0]["company_name"], "Northstar Components")
+        self.assertEqual(
+            package["final_output"]["leads"][0]["company_name"], "Northstar Components"
+        )
         self.assertTrue(
             any(
                 item["company_name"] == "Dynamics 365 Support Analyst jobs"
@@ -2019,7 +2498,9 @@ class UkIeD365LeadsTest(unittest.TestCase):
                     "hard_rejection_reason": "missing_explicit_dynamics_365_or_business_app_evidence",
                     "country": "United Kingdom",
                     "evidence_urls": ["https://suspicious.example.co.uk/dynamics-365"],
-                    "evidence_snippets": ["United Kingdom company uses Dynamics 365 Business Central."],
+                    "evidence_snippets": [
+                        "United Kingdom company uses Dynamics 365 Business Central."
+                    ],
                 }
             ]
         }
@@ -2041,7 +2522,10 @@ class UkIeD365LeadsTest(unittest.TestCase):
                     final_count=1,
                 )
             audit = json.loads(
-                (Path(tmp_dir) / "UK_IE_D365_DETERMINISTIC_REJECT_AUDIT_20260612.json").read_text(encoding="utf-8")
+                (
+                    Path(tmp_dir)
+                    / "UK_IE_D365_DETERMINISTIC_REJECT_AUDIT_20260612.json"
+                ).read_text(encoding="utf-8")
             )
         self.assertFalse(audit["passed"])
         self.assertEqual(audit["suspicious_hard_reject_count"], 1)
@@ -2136,7 +2620,9 @@ class UkIeD365LeadsTest(unittest.TestCase):
         candidate = {
             "company_name": company_name,
             "evidence_urls": [url],
-            "evidence_snippets": ["UK manufacturer selected Dynamics 365 Business Central for finance and operations."],
+            "evidence_snippets": [
+                "UK manufacturer selected Dynamics 365 Business Central for finance and operations."
+            ],
             "source_channel": source_channel,
             "verified_live": source_channel == "public_web",
             "final_pdf_eligible": source_channel == "public_web",
@@ -2149,7 +2635,10 @@ class UkIeD365LeadsTest(unittest.TestCase):
             "lead_status": "ready_to_contact",
             "signal_strength": "strong",
             "signal_type": "business_central_rollout",
-            "evidence_used": [url, "UK manufacturer selected Dynamics 365 Business Central."],
+            "evidence_used": [
+                url,
+                "UK manufacturer selected Dynamics 365 Business Central.",
+            ],
             "evidence_gaps": [],
             "opportunity_signal": "Dynamics 365 Business Central rollout signal.",
             "why_this_matters_to_1bt": "Clear Microsoft business-app change creates support and optimisation needs.",
@@ -2159,14 +2648,22 @@ class UkIeD365LeadsTest(unittest.TestCase):
             "board_relevance": "Operational finance platform stability.",
             "contact_target_roles": ["Head of IT", "Finance Systems Manager"],
             "do_not_claim_notes": ["Do not claim budget or dissatisfaction."],
-            "remaining_uncertainty": ["Current incumbent support partner is not public."],
+            "remaining_uncertainty": [
+                "Current incumbent support partner is not public."
+            ],
             "final_rejection_reason": "",
             "deterministic_flags": [],
         }
-        return {"candidate": candidate, "final_review": final_review, "follow_up_evidence": []}
+        return {
+            "candidate": candidate,
+            "final_review": final_review,
+            "follow_up_evidence": [],
+        }
 
     def _composer_report_spec(self):
-        evidence_url = "https://northstar-components.co.uk/news/dynamics-365-business-central"
+        evidence_url = (
+            "https://northstar-components.co.uk/news/dynamics-365-business-central"
+        )
         return {
             "title": "Unit D365 Opportunity Report",
             "subtitle": "Evidence-led board brief",
@@ -2195,10 +2692,14 @@ class UkIeD365LeadsTest(unittest.TestCase):
                     "intelligence_reading": "Use supplied public evidence only.",
                     "board_relevance": "Operational finance platform stability.",
                     "do_not_claim_notes": ["Do not claim budget or dissatisfaction."],
-                    "remaining_uncertainty": ["Current incumbent support partner is not public."],
+                    "remaining_uncertainty": [
+                        "Current incumbent support partner is not public."
+                    ],
                 }
             ],
-            "caveats": ["Use as a public-signal hypothesis, not a buying-intent claim."],
+            "caveats": [
+                "Use as a public-signal hypothesis, not a buying-intent claim."
+            ],
             "appendix": ["Source map contains the evidence URL and excerpt."],
         }
 
@@ -2211,7 +2712,9 @@ class UkIeD365LeadsTest(unittest.TestCase):
         self.assertTrue(scan["findings"][0]["redacted"])
         self.assertNotIn("unitsecret", json.dumps(scan))
 
-    def test_tender_procurement_exclusion_still_untouched_after_review_tools_import(self):
+    def test_tender_procurement_exclusion_still_untouched_after_review_tools_import(
+        self,
+    ):
         decision = lead_tools.evaluate_search_result(
             lead_tools.SearchResult(
                 title="Dynamics 365 managed services tender",
@@ -2221,7 +2724,9 @@ class UkIeD365LeadsTest(unittest.TestCase):
             )
         )
         self.assertEqual(decision["lead"]["signal_tier"], "D")
-        self.assertEqual(decision["lead"]["rejection_reason"], "tender_or_procurement_out_of_scope")
+        self.assertEqual(
+            decision["lead"]["rejection_reason"], "tender_or_procurement_out_of_scope"
+        )
 
 
 if __name__ == "__main__":

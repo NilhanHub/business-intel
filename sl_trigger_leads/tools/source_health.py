@@ -54,15 +54,18 @@ def test_source_url(url: str, search_terms: list[str] | None = None, timeout_sec
                 "content_excerpt": plain[:240],
             }
     except urllib.error.HTTPError as exc:
-        return {
-            "url": url,
-            "ok": False,
-            "status_code": exc.code,
-            "error": f"HTTPError: {exc.reason}",
-            "elapsed_seconds": round(time.perf_counter() - started, 3),
-            "relevant_content": False,
-            "content_excerpt": "",
-        }
+        try:
+            return {
+                "url": url,
+                "ok": False,
+                "status_code": exc.code,
+                "error": f"HTTPError: {exc.reason}",
+                "elapsed_seconds": round(time.perf_counter() - started, 3),
+                "relevant_content": False,
+                "content_excerpt": "",
+            }
+        finally:
+            exc.close()
     except Exception as exc:
         return {
             "url": url,
