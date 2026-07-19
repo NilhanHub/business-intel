@@ -105,8 +105,8 @@ Rules:
 - For "run contact resolver smoke", use run_contact_resolver_smoke.
 - For "search runtime logs", use search_runtime_logs. If blocked, report the exact BLOCKED reason from the tool.
 - If asked whether Contact Resolver can send now, use refuse_contact_resolver_sending. The expected answer is: No. Contact Resolver only resolves contact routes. Sending to leads is still locked.
-- For "Show me the Hello Nilhan email dry run." or "Test Gmail sender.", use send_hello_nilhan_test_email with dry_run true unless the user explicitly says to send.
-- For exactly "Send the Hello Nilhan test email.", use send_hello_nilhan_test_email with dry_run false and confirm_send true. Send at most one email.
+- For "Show me the Hello Nilhan email dry run." or "Test Gmail sender.", use send_hello_nilhan_test_email with dry_run true.
+- For "Send the Hello Nilhan test email.", explain that real sending is disabled because the public mailbox values are reserved placeholders; the tool must return `real_send_disabled_no_verified_mailbox`.
 - For "What email sending restrictions are currently active?", use describe_email_sender_restrictions.
 - For any lead, company, prospect, scraped-contact, arbitrary-address, generated-sales-email, or bulk-email request, use refuse_lead_outreach_email or refuse in plain language. Lead outreach is not unlocked yet.
 - Never expose OAuth credential JSON, client secrets, access tokens, refresh tokens, or token file contents.

@@ -24,6 +24,7 @@ from sl_trigger_leads.tools.gmail_sender_tools import (
     GMAIL_SEND_SCOPE,
     GMAIL_TOKEN_PATH,
     HELLO_NILHAN_SUBJECT,
+    REAL_SEND_DISABLED_REFUSAL,
     TEST_SENDER,
     send_fixed_test_email,
     validate_oauth_client_file,
@@ -33,7 +34,6 @@ LOG_PATH = ROOT / "logs" / "PROMPT#08_gmail_sender_smoke.log"
 DRY_RUN_OUTPUT_PATH = ROOT / "outputs" / "PROMPT#08_gmail_sender_dry_run.json"
 
 BODY = "Hello Nilhan, this is a test email from the Business_Intel Gmail sender."
-CONFIRMATION_PHRASE = "SEND_TO_NILHAN"
 
 
 def utc_now() -> str:
@@ -75,7 +75,9 @@ def dry_run() -> int:
         "created_at": utc_now(),
     }
     DRY_RUN_OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    DRY_RUN_OUTPUT_PATH.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    DRY_RUN_OUTPUT_PATH.write_text(
+        json.dumps(payload, indent=2) + "\n", encoding="utf-8"
+    )
     log_safe(
         "dry_run_passed",
         recipient=ALLOWED_TEST_RECIPIENT,
@@ -89,57 +91,48 @@ def dry_run() -> int:
 
 
 def send() -> int:
-    print("About to send exactly one Gmail API test email.")
-    print(f"From: {TEST_SENDER}")
-    print(f"To: {ALLOWED_TEST_RECIPIENT}")
-    print(f"Subject: {HELLO_NILHAN_SUBJECT}")
-    print("Body:")
-    print(BODY)
-    try:
-        confirmation = input("Type SEND_TO_NILHAN to send this test email: ")
-    except EOFError:
-        confirmation = ""
-
-    if confirmation != CONFIRMATION_PHRASE:
-        log_safe(
-            "send_refused",
-            recipient=ALLOWED_TEST_RECIPIENT,
-            subject=HELLO_NILHAN_SUBJECT,
-            reason="missing_or_incorrect_confirmation",
-            send_attempted=False,
-        )
-        print("Confirmation not provided exactly. No email sent.")
-        return 2
-
     result = send_fixed_test_email(body=BODY, dry_run=False, confirm_send=True)
-    if not result["sent"]:
+    if result["error"]:
         log_safe(
             "send_failed",
             recipient=ALLOWED_TEST_RECIPIENT,
             subject=HELLO_NILHAN_SUBJECT,
-            error=result["error"],
             refusal_reason=result["refusal_reason"],
             send_attempted=False,
         )
-        print(f"SEND FAILED: {result['error'] or result['refusal_reason']}")
+        print(f"ERROR: {result['error']}", file=sys.stderr)
         return 1
-
+    if result["sent"] or result["refusal_reason"] != REAL_SEND_DISABLED_REFUSAL:
+        log_safe(
+            "unexpected_send_result",
+            recipient=ALLOWED_TEST_RECIPIENT,
+            subject=HELLO_NILHAN_SUBJECT,
+            sent=result["sent"],
+            refusal_reason=result["refusal_reason"],
+            send_attempted=False,
+        )
+        print("ERROR: Gmail sender returned an unexpected result.", file=sys.stderr)
+        return 1
     log_safe(
-        "send_passed",
+        "send_refused",
         recipient=ALLOWED_TEST_RECIPIENT,
         subject=HELLO_NILHAN_SUBJECT,
-        send_attempted=True,
-        gmail_message_id=result["gmail_message_id"],
+        refusal_reason=result["refusal_reason"],
+        send_attempted=False,
     )
-    print(f"SEND OK: Gmail message ID {result['gmail_message_id']}")
-    return 0
+    print(
+        "Real Gmail sending is disabled; the public mailbox values are reserved placeholders."
+    )
+    return 2
 
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="PROMPT#08 Gmail sender smoke test")
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument("--dry-run", action="store_true", help="Validate without sending")
-    mode.add_argument("--send", action="store_true", help="Send after exact confirmation")
+    mode.add_argument(
+        "--send", action="store_true", help="Send after exact confirmation"
+    )
     return parser.parse_args(argv)
 
 

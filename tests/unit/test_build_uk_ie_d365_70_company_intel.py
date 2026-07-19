@@ -21,7 +21,17 @@ sys.modules[SPEC.name] = MODULE
 SPEC.loader.exec_module(MODULE)
 
 
+def require_private_evidence() -> None:
+    required = [
+        MODULE.DEFAULT_CANONICAL_RESEARCH,
+        *[MODULE.EVIDENCE_DIR / pack.source_filename for pack in MODULE.PACKS],
+    ]
+    if not all(path.is_file() for path in required):
+        pytest.skip("requires ignored private UK/IE Evidence fixtures")
+
+
 def test_five_packs_cover_the_canonical_70_without_duplicates() -> None:
+    require_private_evidence()
     records = MODULE.load_records(MODULE.EVIDENCE_DIR)
     research = MODULE.json.loads(
         MODULE.DEFAULT_CANONICAL_RESEARCH.read_text(encoding="utf-8")
@@ -62,6 +72,7 @@ def test_sheet_summary_retains_fact_and_action() -> None:
 
 
 def test_validate_rejects_duplicate_canonical_research_names() -> None:
+    require_private_evidence()
     records = MODULE.load_records(MODULE.EVIDENCE_DIR)
     canonical = [record["canonical_company_name"] for record in records]
     canonical[-1] = canonical[0]
@@ -72,6 +83,7 @@ def test_validate_rejects_duplicate_canonical_research_names() -> None:
 def test_payload_metrics_are_derived_from_ordered_records(
     monkeypatch, tmp_path: Path
 ) -> None:
+    require_private_evidence()
     records = MODULE.load_records(MODULE.EVIDENCE_DIR)
     canonical = [record["canonical_company_name"] for record in records]
     research = tmp_path / "research.json"

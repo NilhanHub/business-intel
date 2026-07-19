@@ -1,5 +1,13 @@
 # Business Intel
 
+<!-- portfolio-flagship -->
+<p align="center"><img src="docs/social-preview.png" alt="Business Intel social preview" width="100%"></p>
+
+> **Portfolio review path:** Start with the capabilities and architecture below, then reproduce the documented verification commands. See [SECURITY.md](SECURITY.md), [CONTRIBUTING.md](CONTRIBUTING.md), and [RIGHTS.md](RIGHTS.md) for the project's operating and reuse boundaries.
+
+> [!TIP]
+> Start with [ENGINEERING_OVERVIEW.md](ENGINEERING_OVERVIEW.md) for the architecture, agent lanes, trust model, verification evidence, and implementation boundaries.
+
 Business Intel is a local-only Google ADK and FastAPI workspace for Sri Lanka public-signal lead intelligence. Runtime leads are accepted only when they retain genuine public evidence, and tender/procurement-only signals are rejected.
 
 ## Local setup on Windows
@@ -57,6 +65,8 @@ node --check frontend\static\js\app.js
 node --check frontend\static\js\login.js
 uv run --with pip-audit pip-audit --skip-editable
 ```
+
+When ignored private `Evidence/` replay fixtures are absent, evidence-replay cases report explicit skips rather than reading or inventing operational data. They run automatically in the private workspace when the named fixtures are present.
 
 The local runtime is locked to Google ADK `2.4.0`, FastAPI `0.139.0`, and Starlette `1.3.1`. The ordinary dependency audit must exit cleanly without ignored vulnerabilities. See [docs/dependency-security.md](docs/dependency-security.md) for the exact release gate and all-extras audit.
 

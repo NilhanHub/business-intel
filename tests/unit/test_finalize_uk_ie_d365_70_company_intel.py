@@ -18,6 +18,8 @@ SPEC.loader.exec_module(MODULE)
 
 
 def base_companies():
+    if not MODULE.DEFAULT_BASE.is_file():
+        pytest.skip("requires ignored private UK/IE Evidence fixtures")
     return json.loads(MODULE.DEFAULT_BASE.read_text(encoding="utf-8"))["companies"]
 
 
@@ -153,6 +155,11 @@ def test_merge_supplies_actionable_role_and_board_fallbacks() -> None:
 
 
 def test_validation_allows_explicitly_empty_remaining_uncertainty() -> None:
+    if (
+        not MODULE.DEFAULT_PREFIX.with_suffix(".json").is_file()
+        or not MODULE.DEFAULT_CRM_PROFILE.is_file()
+    ):
+        pytest.skip("requires ignored private UK/IE Evidence fixtures")
     payload = json.loads(
         MODULE.DEFAULT_PREFIX.with_suffix(".json").read_text(encoding="utf-8")
     )

@@ -65,16 +65,12 @@ class GmailSenderToolsTest(unittest.TestCase):
         ):
             os.environ.pop("BT_SECRETS_DIR", None)
             expected = (
-                expected_home
-                / ".local"
-                / "share"
-                / "1bt-business-intel"
-                / "secrets"
+                expected_home / ".local" / "share" / "1bt-business-intel" / "secrets"
             )
             self.assertEqual(tools._secrets_dir(), expected)
 
     def test_only_nilhan_gmail_is_allowed(self):
-        tools.validate_allowed_recipient("nilhan@gmail.com")
+        tools.validate_allowed_recipient("portfolio-owner@example.test")
 
     def test_other_recipients_are_refused(self):
         with self.assertRaises(ValueError):
@@ -107,7 +103,9 @@ class GmailSenderToolsTest(unittest.TestCase):
         )
         self.assertFalse(result["sent"])
         self.assertFalse(result["dry_run"])
-        self.assertEqual(result["refusal_reason"], "confirmation_required_for_real_send")
+        self.assertEqual(
+            result["refusal_reason"], "confirmation_required_for_real_send"
+        )
 
     def test_mime_message_is_built_correctly(self):
         message = tools.build_plain_text_mime(
@@ -130,25 +128,32 @@ class GmailSenderToolsTest(unittest.TestCase):
         )
         raw = tools.encode_message_base64url(message)
         decoded = base64.urlsafe_b64decode(raw.encode("ascii")).decode("utf-8")
-        self.assertIn("To: nilhan@gmail.com", decoded)
+        self.assertIn("To: portfolio-owner@example.test", decoded)
         self.assertIn("Subject: Hello Nilhan from Business Intel", decoded)
 
-    def test_token_and_secret_values_are_never_returned(self):
+    def test_confirmed_send_is_disabled_before_oauth_or_gmail(self):
         fake_service = _FakeGmailService()
 
-        with patch.object(tools, "validate_oauth_client_file", return_value="installed"):
-            result = tools.send_fixed_test_email(
-                body=tools.HELLO_NILHAN_ADK_BODY,
-                dry_run=False,
-                confirm_send=True,
-                credentials_loader=lambda: object(),
-                gmail_service_factory=lambda _credentials: fake_service,
-            )
+        result = tools.send_fixed_test_email(
+            body=tools.HELLO_NILHAN_ADK_BODY,
+            dry_run=False,
+            confirm_send=True,
+            credentials_loader=lambda: self.fail("OAuth must not load"),
+            gmail_service_factory=lambda _credentials: fake_service,
+        )
 
-        self.assertTrue(result["sent"])
-        self.assertEqual(result["gmail_message_id"], "fake-message-id")
+        self.assertFalse(result["sent"])
+        self.assertEqual(
+            result["refusal_reason"], "real_send_disabled_no_verified_mailbox"
+        )
+        self.assertEqual(fake_service.messages_resource.sent_payloads, [])
         serialized = json.dumps(result).lower()
-        for forbidden in ("access_token", "refresh_token", "client_secret", "token_uri"):
+        for forbidden in (
+            "access_token",
+            "refresh_token",
+            "client_secret",
+            "token_uri",
+        ):
             self.assertNotIn(forbidden, serialized)
 
 

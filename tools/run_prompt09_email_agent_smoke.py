@@ -13,12 +13,14 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from sl_trigger_leads.tools.gmail_sender_tools import send_hello_nilhan_test_email
+from sl_trigger_leads.tools.gmail_sender_tools import (
+    REAL_SEND_DISABLED_REFUSAL,
+    send_hello_nilhan_test_email,
+)
 
 LOG_PATH = ROOT / "logs" / "PROMPT#09_email_agent.log"
 DRY_RUN_OUTPUT_PATH = ROOT / "outputs" / "PROMPT#09_email_agent_dry_run.json"
 SEND_RESULT_OUTPUT_PATH = ROOT / "outputs" / "PROMPT#09_email_agent_send_result.json"
-CONFIRMATION_PHRASE = "SEND_TO_NILHAN_ADK"
 
 
 def utc_now() -> str:
@@ -57,54 +59,56 @@ def run_dry_run() -> int:
 
 
 def run_send() -> int:
-    print("About to send the ADK Hello Nilhan test email.")
-    print("From: nilhan.d@1billiontech.com")
-    print("To: nilhan@gmail.com")
-    print("Subject: Hello Nilhan from Business Intel")
-    print("Body:")
-    print("Hello Nilhan, this is a test email from the Business_Intel ADK email sender agent.")
-    try:
-        confirmation = input("Type SEND_TO_NILHAN_ADK to send this test email: ")
-    except EOFError:
-        confirmation = ""
-    if confirmation != CONFIRMATION_PHRASE:
-        result = send_hello_nilhan_test_email(dry_run=False, confirm_send=False)
+    result = send_hello_nilhan_test_email(dry_run=False, confirm_send=True)
+    write_json(SEND_RESULT_OUTPUT_PATH, result)
+    if result["error"]:
         log_safe(
-            "send_refused",
+            "send_failed",
             recipient=result["recipient"],
             subject=result["subject"],
             sent=result["sent"],
             dry_run=result["dry_run"],
-            refusal_reason="missing_or_incorrect_terminal_confirmation",
+            refusal_reason=result["refusal_reason"],
+            output=str(SEND_RESULT_OUTPUT_PATH),
         )
-        print("Confirmation not provided exactly. No email sent.")
-        return 2
-
-    result = send_hello_nilhan_test_email(dry_run=False, confirm_send=True)
-    if result["sent"]:
-        write_json(SEND_RESULT_OUTPUT_PATH, result)
+        print(f"SEND FAILED: {result['error']}", file=sys.stderr)
+        return 1
+    if result["sent"] or result["refusal_reason"] != REAL_SEND_DISABLED_REFUSAL:
+        log_safe(
+            "unexpected_send_result",
+            recipient=result["recipient"],
+            subject=result["subject"],
+            sent=result["sent"],
+            dry_run=result["dry_run"],
+            refusal_reason=result["refusal_reason"],
+            output=str(SEND_RESULT_OUTPUT_PATH),
+        )
+        print("SEND FAILED: Gmail sender returned an unexpected result.", file=sys.stderr)
+        return 1
     log_safe(
-        "send_result",
+        "send_refused",
         recipient=result["recipient"],
         subject=result["subject"],
         sent=result["sent"],
         dry_run=result["dry_run"],
-        gmail_message_id=result["gmail_message_id"],
         refusal_reason=result["refusal_reason"],
-        output=str(SEND_RESULT_OUTPUT_PATH) if result["sent"] else None,
+        output=str(SEND_RESULT_OUTPUT_PATH),
     )
-    if not result["sent"]:
-        print(f"SEND FAILED: {result['error'] or result['refusal_reason']}", file=sys.stderr)
-        return 1
-    print(f"SEND OK: Gmail message ID {result['gmail_message_id']}")
-    return 0
+    print(
+        "Real Gmail sending is disabled; the public mailbox values are reserved placeholders."
+    )
+    return 2
 
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="PROMPT#09 ADK email tool smoke")
     mode = parser.add_mutually_exclusive_group()
-    mode.add_argument("--dry-run", action="store_true", help="Dry-run the ADK test email")
-    mode.add_argument("--send", action="store_true", help="Send after exact confirmation")
+    mode.add_argument(
+        "--dry-run", action="store_true", help="Dry-run the ADK test email"
+    )
+    mode.add_argument(
+        "--send", action="store_true", help="Send after exact confirmation"
+    )
     return parser.parse_args(argv)
 
 

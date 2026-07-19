@@ -16,6 +16,8 @@ SPEC.loader.exec_module(MODULE)
 
 
 def test_query_overrides_cover_guarded_refresh_queue() -> None:
+    if not MODULE.DEFAULT_QUEUE.is_file():
+        pytest.skip("requires ignored private UK/IE Evidence fixtures")
     queue = MODULE.json.loads(MODULE.DEFAULT_QUEUE.read_text(encoding="utf-8"))
     names = {row["canonical_company_name"] for row in queue["companies"]}
     assert names == set(MODULE.QUERY_OVERRIDES)
