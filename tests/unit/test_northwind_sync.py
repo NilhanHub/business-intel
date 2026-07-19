@@ -44,11 +44,16 @@ def test_pack_validation_and_existing_company_shape() -> None:
     assert payload["createdBy"] == "agent:Intel-Pipeline"
     assert payload["status"] == "New"
     assert payload["activity"] == []
+    assert payload["lastContactAt"] == ""
     assert payload["intel"]["evidenceUrl"].startswith("https://")
     assert payload["intel"]["evidenceExcerpt"] == "Northstar uses Dynamics 365 Business Central."
     assert payload["intel"]["contactTargetRoles"] == ["CIO", "Head of Business Applications"]
     assert payload["intel"]["verifiedLive"] is True
     assert payload["intel"]["report"]["round"] == 5
+
+
+def test_company_query_key_matches_northwind_apostrophe_rules() -> None:
+    assert MODULE.crm_normalized_name("Domino's Pizza UK & Ireland") == "dominos pizza uk and ireland"
 
 
 def test_match_existing_docs_requires_one_exact_company() -> None:

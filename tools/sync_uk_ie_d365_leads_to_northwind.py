@@ -6,6 +6,7 @@ import argparse
 import hashlib
 import json
 import re
+import unicodedata
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -55,9 +56,11 @@ def enforce_target(project: str, database: str, workspace: str) -> None:
 
 
 def crm_normalized_name(name: Any) -> str:
-    text = str(name or "").lower().replace("&", " and ")
-    text = re.sub(r"[^a-z0-9]+", " ", text)
-    return re.sub(r"\s+", " ", text).strip()
+    text = unicodedata.normalize("NFKD", str(name or ""))
+    text = "".join(character for character in text if not unicodedata.combining(character))
+    text = re.sub(r"[\u2019'`]", "", text).replace("&", " and ")
+    text = "".join(character if character.isalnum() else " " for character in text)
+    return re.sub(r"\s+", " ", text).strip().lower()
 
 
 def company_document_id(name: str) -> str:
@@ -146,7 +149,7 @@ def company_payload(lead: dict[str, Any], *, timestamp: str) -> dict[str, Any]:
         "id": doc_id,
         "industry": "",
         "intel": intel_payload(lead),
-        "lastContactAt": None,
+        "lastContactAt": "",
         "name": name,
         "nextStep": {"type": "email", "note": ""},
         "normalizedName": crm_normalized_name(name),
