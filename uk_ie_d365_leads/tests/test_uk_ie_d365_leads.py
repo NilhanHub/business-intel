@@ -1914,6 +1914,7 @@ class UkIeD365LeadsTest(unittest.TestCase):
 
         self.assertEqual(run.call_count, 2)
         self.assertIsNotNone(credentials.expiry)
+        self.assertIsNone(credentials.expiry.tzinfo)
 
     def test_fresh_curation_excludes_prior_accounts_and_writes_audit(self):
         new_record = self._vetting_record(

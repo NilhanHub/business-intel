@@ -5,8 +5,14 @@ from pathlib import Path
 
 import pytest
 
-SCRIPT = Path(__file__).resolve().parents[2] / "tools" / "sync_uk_ie_d365_leads_to_northwind.py"
-SPEC = importlib.util.spec_from_file_location("sync_uk_ie_d365_leads_to_northwind", SCRIPT)
+SCRIPT = (
+    Path(__file__).resolve().parents[2]
+    / "tools"
+    / "sync_uk_ie_d365_leads_to_northwind.py"
+)
+SPEC = importlib.util.spec_from_file_location(
+    "sync_uk_ie_d365_leads_to_northwind", SCRIPT
+)
 MODULE = importlib.util.module_from_spec(SPEC)
 assert SPEC.loader is not None
 SPEC.loader.exec_module(MODULE)
@@ -46,14 +52,50 @@ def test_pack_validation_and_existing_company_shape() -> None:
     assert payload["activity"] == []
     assert payload["lastContactAt"] == ""
     assert payload["intel"]["evidenceUrl"].startswith("https://")
-    assert payload["intel"]["evidenceExcerpt"] == "Northstar uses Dynamics 365 Business Central."
-    assert payload["intel"]["contactTargetRoles"] == ["CIO", "Head of Business Applications"]
+    assert (
+        payload["intel"]["evidenceExcerpt"]
+        == "Northstar uses Dynamics 365 Business Central."
+    )
+    assert payload["intel"]["contactTargetRoles"] == [
+        "CIO",
+        "Head of Business Applications",
+    ]
     assert payload["intel"]["verifiedLive"] is True
     assert payload["intel"]["report"]["round"] == 5
 
 
+def test_intel_payload_preserves_per_lead_report_and_specific_summary() -> None:
+    record = {
+        **lead(),
+        "specific_evidence": "A specific Dynamics 365 workflow.",
+        "sheet_summary": "Concise account summary.",
+        "opportunity_status": "partner_capacity",
+        "report": {
+            "round": 2,
+            "title": "Second PDF batch",
+            "pdfFilename": "batch-2.pdf",
+            "evidencePackFilename": "batch-2.json",
+            "leadCount": 12,
+        },
+    }
+    intel = MODULE.intel_payload(record)
+    assert intel["specificEvidence"] == "A specific Dynamics 365 workflow."
+    assert intel["sheetSummary"] == "Concise account summary."
+    assert intel["opportunityStatus"] == "partner_capacity"
+    assert intel["report"] == {
+        "round": 2,
+        "title": "Second PDF batch",
+        "pdfFilename": "batch-2.pdf",
+        "evidencePackFilename": "batch-2.json",
+        "leadCount": 12,
+    }
+
+
 def test_company_query_key_matches_northwind_apostrophe_rules() -> None:
-    assert MODULE.crm_normalized_name("Domino's Pizza UK & Ireland") == "dominos pizza uk and ireland"
+    assert (
+        MODULE.crm_normalized_name("Domino's Pizza UK & Ireland")
+        == "dominos pizza uk and ireland"
+    )
 
 
 def test_match_existing_docs_requires_one_exact_company() -> None:
@@ -83,3 +125,13 @@ def test_pack_validation_rejects_duplicate_and_unverified_rows() -> None:
     invalid = dict(lead(), verified_live=False)
     with pytest.raises(RuntimeError, match="not verified"):
         MODULE.validate_pack({"leads": [invalid]}, expected_count=1)
+
+
+def test_pack_validation_rejects_malformed_per_lead_report() -> None:
+    malformed_object = {**lead(), "report": []}
+    with pytest.raises(RuntimeError, match=r"Lead 1.*report object"):
+        MODULE.validate_pack({"leads": [malformed_object]}, expected_count=1)
+
+    malformed_count = {**lead(), "report": {"round": 5, "leadCount": "20"}}
+    with pytest.raises(RuntimeError, match=r"Lead 1.*report\.leadCount"):
+        MODULE.validate_pack({"leads": [malformed_count]}, expected_count=1)

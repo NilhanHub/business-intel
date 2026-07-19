@@ -3150,7 +3150,9 @@ class _GcloudAccountCredentials:
                 self.token = _gcloud_access_token(self._selected_account)
                 # gcloud user/service-account access tokens normally last an hour.
                 # Refresh early so long scans do not fail between candidate batches.
-                self.expiry = datetime.now(UTC) + timedelta(minutes=50)
+                # google-auth compares credential expiry with a timezone-naive
+                # UTC value internally, so preserve that contract here.
+                self.expiry = datetime.now(UTC).replace(tzinfo=None) + timedelta(minutes=50)
 
         return RefreshableCredentials(account)
 

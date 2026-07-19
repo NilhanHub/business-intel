@@ -38,8 +38,15 @@ def parser() -> argparse.ArgumentParser:
     p.add_argument("--database", default=APPROVED_DATABASE)
     p.add_argument("--workspace", default=APPROVED_WORKSPACE)
     p.add_argument("--expected-count", type=int, default=20)
-    p.add_argument("--output", default=str(EVIDENCE_DIR / "UK_IE_D365_RUN5_20260716_NORTHWIND_SYNC.json"))
-    p.add_argument("--apply", action="store_true", help="Apply one atomic Firestore transaction after preflight.")
+    p.add_argument(
+        "--output",
+        default=str(EVIDENCE_DIR / "UK_IE_D365_RUN5_20260716_NORTHWIND_SYNC.json"),
+    )
+    p.add_argument(
+        "--apply",
+        action="store_true",
+        help="Apply one atomic Firestore transaction after preflight.",
+    )
     p.add_argument(
         "--enrich-existing",
         action="store_true",
@@ -52,12 +59,16 @@ def enforce_target(project: str, database: str, workspace: str) -> None:
     expected = (APPROVED_PROJECT, APPROVED_DATABASE, APPROVED_WORKSPACE)
     actual = (project, database, workspace)
     if actual != expected:
-        raise RuntimeError(f"Refusing Northwind target drift: expected {expected!r}, received {actual!r}.")
+        raise RuntimeError(
+            f"Refusing Northwind target drift: expected {expected!r}, received {actual!r}."
+        )
 
 
 def crm_normalized_name(name: Any) -> str:
     text = unicodedata.normalize("NFKD", str(name or ""))
-    text = "".join(character for character in text if not unicodedata.combining(character))
+    text = "".join(
+        character for character in text if not unicodedata.combining(character)
+    )
     text = re.sub(r"[\u2019'`]", "", text).replace("&", " and ")
     text = "".join(character if character.isalnum() else " " for character in text)
     return re.sub(r"\s+", " ", text).strip().lower()
@@ -70,10 +81,14 @@ def company_document_id(name: str) -> str:
     return f"{slug}-{suffix}"
 
 
-def validate_pack(payload: dict[str, Any], *, expected_count: int) -> list[dict[str, Any]]:
+def validate_pack(
+    payload: dict[str, Any], *, expected_count: int
+) -> list[dict[str, Any]]:
     leads = list(payload.get("leads") or [])
     if len(leads) != expected_count:
-        raise RuntimeError(f"Expected exactly {expected_count} leads, found {len(leads)}.")
+        raise RuntimeError(
+            f"Expected exactly {expected_count} leads, found {len(leads)}."
+        )
     required = (
         "company_name",
         "country",
@@ -93,41 +108,71 @@ def validate_pack(payload: dict[str, Any], *, expected_count: int) -> list[dict[
             raise RuntimeError(f"Lead {index} is missing required fields: {missing}")
         normalized = normalize_company_for_match(lead["company_name"])
         if not normalized or normalized in names:
-            raise RuntimeError(f"Lead {index} has a missing or duplicate company identity.")
+            raise RuntimeError(
+                f"Lead {index} has a missing or duplicate company identity."
+            )
         names.add(normalized)
-        if lead.get("verified_live") is not True or lead.get("source_channel") != "public_web":
+        if (
+            lead.get("verified_live") is not True
+            or lead.get("source_channel") != "public_web"
+        ):
             raise RuntimeError(f"Lead {index} is not verified public-web evidence.")
         if not str(lead["evidence_url"]).lower().startswith(("https://", "http://")):
             raise RuntimeError(f"Lead {index} has an unsafe evidence URL.")
+        supplied_report = lead.get("report")
+        if supplied_report is not None and not isinstance(supplied_report, dict):
+            raise RuntimeError(f"Lead {index} has a malformed report object.")
+        if supplied_report:
+            for field in ("round", "leadCount"):
+                value = supplied_report.get(field)
+                if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
+                    raise RuntimeError(
+                        f"Lead {index} has a malformed report.{field} value."
+                    )
     return leads
 
 
 def intel_payload(lead: dict[str, Any]) -> dict[str, Any]:
-    remaining_uncertainty = [str(item) for item in lead.get("remaining_uncertainty") or []]
+    remaining_uncertainty = [
+        str(item) for item in lead.get("remaining_uncertainty") or []
+    ]
     uncertainty = "; ".join(remaining_uncertainty)
     do_not_claim = [str(item) for item in lead.get("do_not_claim_notes") or []]
+    supplied_report = lead.get("report") or {}
+    report = {
+        "evidencePackFilename": str(
+            supplied_report.get("evidencePackFilename") or RUN5_EVIDENCE_PACK
+        ),
+        "leadCount": int(supplied_report.get("leadCount") or 20),
+        "pdfFilename": str(supplied_report.get("pdfFilename") or RUN5_REPORT_PDF),
+        "round": int(supplied_report.get("round") or 5),
+        "title": str(supplied_report.get("title") or RUN5_REPORT_TITLE),
+    }
     return {
         "boardRelevance": str(lead.get("board_relevance") or ""),
         "commercialOpening": str(lead.get("commercial_opening") or ""),
-        "contactTargetRoles": [str(item) for item in lead.get("contact_target_roles") or []],
+        "contactTargetRoles": [
+            str(item) for item in lead.get("contact_target_roles") or []
+        ],
         "doNotClaim": do_not_claim,
         "evidenceExcerpt": str(lead.get("evidence_excerpt") or ""),
         "evidenceUrl": str(lead.get("evidence_url") or ""),
         "fetchedAt": str(lead.get("fetched_at") or ""),
         "intelligenceReading": str(lead.get("intelligence_reading") or ""),
+        "opportunityStatus": str(
+            lead.get("opportunity_status") or "actionable_hypothesis"
+        ),
         "remainingUncertainty": remaining_uncertainty,
-        "report": {
-            "evidencePackFilename": RUN5_EVIDENCE_PACK,
-            "leadCount": 20,
-            "pdfFilename": RUN5_REPORT_PDF,
-            "round": 5,
-            "title": RUN5_REPORT_TITLE,
-        },
+        "report": report,
+        "sheetSummary": str(lead.get("sheet_summary") or ""),
         "signal": str(lead.get("opportunity_signal") or ""),
         "signalTier": str(lead.get("signal_strength") or "").title(),
         "signalType": str(lead.get("signal_type") or ""),
         "sourceChannel": str(lead.get("source_channel") or ""),
         "sourceName": str(lead.get("source_name") or ""),
+        "specificEvidence": str(
+            lead.get("specific_evidence") or lead.get("opportunity_signal") or ""
+        ),
         "uncertainty": uncertainty,
         "valueOfSignal": str(lead.get("value_of_signal") or ""),
         "verifiedLive": lead.get("verified_live") is True,
@@ -175,10 +220,14 @@ def find_duplicates(leads: list[dict[str, Any]], existing_docs: list[Any]) -> li
     ]
 
 
-def match_existing_docs(leads: list[dict[str, Any]], existing_docs: list[Any]) -> dict[str, Any]:
+def match_existing_docs(
+    leads: list[dict[str, Any]], existing_docs: list[Any]
+) -> dict[str, Any]:
     by_name: dict[str, list[Any]] = {}
     for doc in existing_docs:
-        normalized = normalize_company_for_match((doc.to_dict() or {}).get("name") or "")
+        normalized = normalize_company_for_match(
+            (doc.to_dict() or {}).get("name") or ""
+        )
         if normalized:
             by_name.setdefault(normalized, []).append(doc)
     matched: dict[str, Any] = {}
@@ -210,9 +259,13 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     companies_ref = workspace_ref.collection("companies")
     existing_before = list(companies_ref.stream())
     duplicates = find_duplicates(leads, existing_before)
-    existing_matches = match_existing_docs(leads, existing_before) if args.enrich_existing else {}
+    existing_matches = (
+        match_existing_docs(leads, existing_before) if args.enrich_existing else {}
+    )
     if duplicates and not args.enrich_existing:
-        raise RuntimeError(f"Northwind already contains matching companies: {duplicates}")
+        raise RuntimeError(
+            f"Northwind already contains matching companies: {duplicates}"
+        )
 
     timestamp = now_utc()
     prepared = [company_payload(lead, timestamp=timestamp) for lead in leads]
@@ -245,11 +298,17 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             else:
                 live_duplicates = find_duplicates(leads, live_docs)
                 if live_duplicates:
-                    raise RuntimeError(f"Northwind changed after preflight; duplicate companies: {live_duplicates}")
+                    raise RuntimeError(
+                        f"Northwind changed after preflight; duplicate companies: {live_duplicates}"
+                    )
                 live_ids = {doc.id for doc in live_docs}
-                live_collisions = [item["id"] for item in prepared if item["id"] in live_ids]
+                live_collisions = [
+                    item["id"] for item in prepared if item["id"] in live_ids
+                ]
                 if live_collisions:
-                    raise RuntimeError(f"Northwind changed after preflight; document ID collision: {live_collisions}")
+                    raise RuntimeError(
+                        f"Northwind changed after preflight; document ID collision: {live_collisions}"
+                    )
                 for item in prepared:
                     txn.create(companies_ref.document(item["id"]), item)
             workspace_data = workspace_snapshot.to_dict() or {}
@@ -270,25 +329,34 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         verified_ids = [
             existing_matches[str(lead["company_name"])].id
             for lead in leads
-            if after_by_id.get(existing_matches[str(lead["company_name"])].id, {}).get("intel")
+            if after_by_id.get(existing_matches[str(lead["company_name"])].id, {}).get(
+                "intel"
+            )
             == intel_payload(lead)
         ]
     else:
         verified_ids = [
-            item["id"] for item in prepared if after_by_id.get(item["id"], {}).get("name") == item["name"]
+            item["id"]
+            for item in prepared
+            if after_by_id.get(item["id"], {}).get("name") == item["name"]
         ]
-    expected_after = len(existing_before) + (len(prepared) if applied and not args.enrich_existing else 0)
+    expected_after = len(existing_before) + (
+        len(prepared) if applied and not args.enrich_existing else 0
+    )
     if len(existing_after) != expected_after:
         raise RuntimeError(
             f"Northwind count verification failed: expected {expected_after}, found {len(existing_after)}."
         )
     if applied and len(verified_ids) != len(prepared):
-        raise RuntimeError("Northwind post-write verification did not find every inserted company.")
+        raise RuntimeError(
+            "Northwind post-write verification did not find every inserted company."
+        )
 
     result = {
         "artifact_type": "uk_ie_d365_northwind_crm_sync",
         "generated_at": now_utc(),
-        "mode": ("apply" if applied else "dry_run") + ("_enrich_existing" if args.enrich_existing else ""),
+        "mode": ("apply" if applied else "dry_run")
+        + ("_enrich_existing" if args.enrich_existing else ""),
         "target": {
             "project": args.project,
             "database": args.database,
@@ -304,7 +372,12 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "inserted_count": 0 if args.enrich_existing else len(verified_ids),
         "enriched_count": len(verified_ids) if args.enrich_existing else 0,
         "prepared_companies": [
-            {"id": item["id"], "name": item["name"], "country": item["country"], "sector": item["sector"]}
+            {
+                "id": item["id"],
+                "name": item["name"],
+                "country": item["country"],
+                "sector": item["sector"],
+            }
             for item in prepared
         ],
         "verified_inserted_ids": [] if args.enrich_existing else verified_ids,
@@ -316,7 +389,9 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     }
     output_path = Path(args.output).resolve()
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(json.dumps(result, indent=2, ensure_ascii=False), encoding="utf-8")
+    output_path.write_text(
+        json.dumps(result, indent=2, ensure_ascii=False), encoding="utf-8"
+    )
     print(json.dumps(result, indent=2, ensure_ascii=False))
     return result
 

@@ -417,9 +417,32 @@ def map_personas_for_bucket(bucket: str | None) -> list[dict[str, Any]]:
 
 
 def merge_personas_for_lead(lead: dict[str, Any]) -> list[dict[str, Any]]:
-    buckets = _lead_buckets(lead)
     merged: list[dict[str, Any]] = []
     seen: set[str] = set()
+    explicit_roles = (
+        lead.get("contact_target_roles")
+        or lead.get("contactTargetRoles")
+        or lead.get("target_roles")
+        or []
+    )
+    if isinstance(explicit_roles, str):
+        explicit_roles = [part.strip() for part in explicit_roles.split(",") if part.strip()]
+    for role in explicit_roles if isinstance(explicit_roles, list) else []:
+        clean_role = re.sub(r"\s+", " ", str(role or "").strip())
+        key = clean_role.lower()
+        if not clean_role or key in seen:
+            continue
+        seen.add(key)
+        merged.append(
+            {
+                "persona": clean_role,
+                "why_relevant": "Explicit buyer role from the verified lead evidence pack.",
+                "priority": len(merged) + 1,
+            }
+        )
+        if len(merged) >= 8:
+            return merged
+    buckets = _lead_buckets(lead)
     for bucket in buckets:
         for persona in map_personas_for_bucket(bucket):
             key = persona["persona"].lower()
@@ -592,7 +615,12 @@ def _extract_name_near_role(line: str, role: str) -> str | None:
         if match:
             groups = [group for group in match.groups() if group and group != role]
             if groups:
-                name = groups[-1].strip()
+                name = re.sub(
+                    r"^(?:Mr|Mrs|Ms|Miss|Dr|Prof)\.?\s+",
+                    "",
+                    groups[-1].strip(),
+                    flags=re.I,
+                )
                 return name if _is_plausible_person_name(name) else None
     return None
 
@@ -625,6 +653,9 @@ PERSON_NAME_STOPWORDS = {
     "former",
     "founder",
     "leaders",
+    "leadership",
+    "management",
+    "executive",
     "news",
     "practical",
     "report",
@@ -1403,8 +1434,12 @@ def _resolve_contact_route_for_lead(
                 normalized=normalized,
                 target_personas=target_personas,
                 provider=provider,
-                route_hint="job_post_apply",
-                source_kind="job_post",
+                route_hint=_route_hint_for_url(page.url),
+                source_kind=(
+                    "job_post"
+                    if _route_hint_for_url(page.url) == "job_post_apply"
+                    else "public_web"
+                ),
             )
             _apply_hunter_enrichment(
                 candidates=candidates,
@@ -2360,6 +2395,11 @@ def _inspect_public_text_for_candidates(
         candidates.append(scored)
 
     for email in emails:
+        # A public page can mention a partner, implementation vendor, recruiter,
+        # or similarly named business. Do not turn those addresses into the
+        # target company's contact route unless the page belongs to the target.
+        if not page_is_official:
+            continue
         filtered, risk_notes = filter_public_email(email, official_context=page_is_official)
         if not filtered:
             continue
@@ -2537,15 +2577,86 @@ def is_likely_official_company_url(url: str, company: str) -> bool:
     host = urlparse(normalized_url).netloc.lower().removeprefix("www.")
     if not host:
         return False
-    if "linkedin.com" in host or "facebook.com" in host:
+    if any(
+        blocked in host
+        for blocked in (
+            "facebook.com",
+            "google.com",
+            "linkedin.com",
+            "microsoft.com",
+        )
+    ):
         return False
+    host_parts = host.split(".")
+    second_level_suffixes = {
+        "ie": {"ac", "co", "edu", "gov", "org"},
+        "uk": {"ac", "co", "gov", "org"},
+    }
+    if (
+        len(host_parts) >= 3
+        and host_parts[-1] in second_level_suffixes
+        and host_parts[-2] in second_level_suffixes[host_parts[-1]]
+    ):
+        host_label = host_parts[-3]
+    elif len(host_parts) >= 2:
+        host_label = host_parts[-2]
+    else:
+        host_label = host_parts[0]
+    host_label = re.sub(r"[^a-z0-9]", "", host_label)
+    if not host_label:
+        return False
+
+    company_stopwords = {
+        "and",
+        "group",
+        "homes",
+        "housing",
+        "ireland",
+        "limited",
+        "ltd",
+        "mutual",
+        "plc",
+        "private",
+        "pvt",
+        "the",
+        "uk",
+        "university",
+    }
     company_tokens = [
         token
         for token in re.findall(r"[a-z0-9]+", company.lower())
-        if token not in {"pvt", "ltd", "limited", "private", "the", "and"}
+        if token not in company_stopwords
     ]
-    host_flat = host.replace("-", "").replace(".", "")
-    return any(token in host_flat for token in company_tokens[:3])
+    first_word = re.split(r"\s+", company.strip(), maxsplit=1)[0] if company.strip() else ""
+    first_word_flat = re.sub(r"[^a-z0-9]", "", first_word.lower())
+    acronym = "".join(token[0] for token in company_tokens if token)
+    parenthetical_brands = {
+        re.sub(r"[^a-z0-9]", "", value.lower())
+        for value in re.findall(r"\(([^)]+)\)", company)
+    }
+    brand_candidates = {
+        token for token in company_tokens if len(token) >= 3
+    }
+    if len(first_word_flat) >= 2 and first_word.lower() not in company_stopwords:
+        brand_candidates.add(first_word_flat)
+    if len(acronym) >= 2:
+        brand_candidates.add(acronym)
+    brand_candidates.update(value for value in parenthetical_brands if len(value) >= 2)
+
+    matched = next(
+        (brand for brand in sorted(brand_candidates, key=len, reverse=True) if host_label.startswith(brand)),
+        None,
+    )
+    if not matched:
+        return False
+    # These suffixes strongly indicate a different regional/legal entity when
+    # they are absent from the requested company identity.
+    company_flat = re.sub(r"[^a-z0-9]", "", company.lower())
+    if host_label.endswith("llc") and "llc" not in company_flat:
+        return False
+    if host_label.endswith("nw") and not company_flat.endswith("nw"):
+        return False
+    return True
 
 
 def _candidate_to_dict(candidate: dict[str, Any] | CandidatePerson) -> dict[str, Any]:

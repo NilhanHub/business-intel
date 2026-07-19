@@ -16,6 +16,8 @@ from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any, Protocol
 
+from uk_ie_d365_leads.tools.lead_tools import gcloud_account_credentials
+
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 LOCAL_ADK_ENV_PATH = PROJECT_ROOT / "sl_trigger_leads" / ".env"
 
@@ -601,6 +603,25 @@ def page_fetch_to_dict(result: PageFetchResult) -> dict[str, Any]:
     return asdict(result)
 
 
+def contact_search_model() -> Any:
+    """Build the ADK search model with optional refreshable command-scoped auth."""
+    from google.adk.models.google_llm import Gemini
+
+    credentials = gcloud_account_credentials()
+    client_kwargs: dict[str, Any] | None = None
+    if credentials:
+        project = os.environ.get("D365_GOOGLE_PROJECT") or os.environ.get("GOOGLE_CLOUD_PROJECT")
+        if not project:
+            raise RuntimeError("Google project is unclear for command-scoped Contact Resolver credentials.")
+        client_kwargs = {
+            "vertexai": True,
+            "project": project,
+            "location": os.environ.get("GOOGLE_CLOUD_LOCATION") or "global",
+            "credentials": credentials,
+        }
+    return Gemini(model="gemini-2.5-flash", client_kwargs=client_kwargs)
+
+
 async def _run_contact_search_agent(prompt: str) -> str:
     from google.adk.agents import Agent
     from google.adk.runners import Runner
@@ -609,8 +630,9 @@ async def _run_contact_search_agent(prompt: str) -> str:
     from google.genai import types
 
     load_local_adk_env()
+    model = await asyncio.to_thread(contact_search_model)
     contact_search_agent = Agent(
-        model="gemini-2.5-flash",
+        model=model,
         name="contact_search_agent_runtime",
         instruction=(
             "You are a search-only public web specialist. Use only Google Search. "
@@ -875,7 +897,12 @@ def _extract_name_near_role(line: str, role: str) -> str | None:
         if match:
             groups = [group for group in match.groups() if group and group != role]
             if groups:
-                name = groups[-1].strip()
+                name = re.sub(
+                    r"^(?:Mr|Mrs|Ms|Miss|Dr|Prof)\.?\s+",
+                    "",
+                    groups[-1].strip(),
+                    flags=re.I,
+                )
                 return name if _is_plausible_person_name(name) else None
     return None
 
@@ -908,6 +935,9 @@ PERSON_NAME_STOPWORDS = {
     "former",
     "founder",
     "leaders",
+    "leadership",
+    "management",
+    "executive",
     "news",
     "practical",
     "report",

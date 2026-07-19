@@ -1,9 +1,33 @@
+import inspect
 import unittest
+from unittest.mock import patch
 
 from sl_trigger_leads.tools import live_contact_search_tools as live_tools
 
 
 class LiveContactSearchToolsTest(unittest.TestCase):
+    def test_contact_search_model_is_built_off_the_async_event_loop(self):
+        source = inspect.getsource(live_tools._run_contact_search_agent)
+        self.assertIn("await asyncio.to_thread(contact_search_model)", source)
+
+    def test_contact_search_agent_uses_command_scoped_credentials(self):
+        credentials = object()
+        with (
+            patch.dict(
+                "os.environ",
+                {
+                    "D365_GOOGLE_PROJECT": "business-intel-123",
+                    "GOOGLE_CLOUD_LOCATION": "global",
+                },
+                clear=False,
+            ),
+            patch.object(live_tools, "gcloud_account_credentials", return_value=credentials),
+        ):
+            model = live_tools.contact_search_model()
+
+        self.assertEqual(model.client_kwargs["credentials"], credentials)
+        self.assertEqual(model.client_kwargs["project"], "business-intel-123")
+
     def test_adk_google_search_provider_discovery(self):
         discovery = live_tools.adk_google_search_discovery()
         self.assertIn("available", discovery)

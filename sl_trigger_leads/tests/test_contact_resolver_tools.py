@@ -93,6 +93,26 @@ def hunter_record(
 
 
 class ContactResolverToolsTest(unittest.TestCase):
+    def test_explicit_contact_target_roles_take_priority(self):
+        personas = tools.merge_personas_for_lead(
+            {
+                "company": "Northstar Housing",
+                "contact_target_roles": [
+                    "Chief Information Officer",
+                    "Head of Business Applications",
+                    "Chief Information Officer",
+                ],
+                "opportunity_bucket_primary": "Custom Software Development",
+            }
+        )
+
+        self.assertEqual(
+            [item["persona"] for item in personas[:2]],
+            ["Chief Information Officer", "Head of Business Applications"],
+        )
+        self.assertEqual(personas[0]["priority"], 1)
+        self.assertIn("verified lead", personas[0]["why_relevant"])
+
     def test_persona_mapping_per_bucket(self):
         self.assertEqual(
             tools.map_personas_for_bucket("Staff Augmentation / Delivery Capacity")[0]["persona"],
@@ -210,6 +230,22 @@ class ContactResolverToolsTest(unittest.TestCase):
             ["CTO"],
         )
         self.assertEqual(people, [])
+
+    def test_leadership_phrase_is_not_promoted_as_named_contact(self):
+        people = tools.extract_people_roles(
+            "VIVID's Leadership - Chief Information Officer",
+            "VIVID",
+            ["Chief Information Officer"],
+        )
+        self.assertEqual(people, [])
+
+    def test_person_honorific_is_removed_from_named_contact(self):
+        people = tools.extract_people_roles(
+            "Mr Manpreet Dillon - Director of Housing Services",
+            "Origin Housing",
+            ["Director of Housing Services"],
+        )
+        self.assertEqual(people[0].name, "Manpreet Dillon")
 
     def test_no_invented_emails_when_search_provider_missing(self):
         result = tools.resolve_contact_route_for_lead(sample_lead(), dry_run=True)
@@ -699,6 +735,89 @@ class ContactResolverToolsTest(unittest.TestCase):
         )
         self.assertEqual(result["best_contact_route"]["type"], "generic_company")
         self.assertEqual(result["candidate_contacts"][0]["email_type"], "public_generic")
+
+    def test_partner_page_email_is_not_used_as_target_company_inbox(self):
+        lead = sample_lead(
+            company="Octavia Housing",
+            evidence_url="https://veriland.co.uk/insights/case-studies/octavia-housing-crm-mobile-app",
+        )
+        first_query = tools.build_live_search_queries(
+            lead,
+            tools.merge_personas_for_lead(lead),
+            max_search_queries=1,
+        )[0]
+        provider = FakeSearchProvider(
+            {
+                first_query: {
+                    "url": "https://veriland.co.uk/insights/case-studies/octavia-housing-crm-mobile-app",
+                    "text": "For enquiries contact enquiries@veriland.co.uk",
+                }
+            }
+        )
+
+        result = tools._resolve_contact_route_for_lead(
+            lead,
+            provider=provider,
+            dry_run=False,
+            max_search_queries=1,
+            max_pages_to_fetch=2,
+            max_candidate_contacts=5,
+            max_runtime_seconds=90,
+        )
+
+        self.assertFalse(any(item.get("email") for item in result["candidate_contacts"]))
+
+    def test_case_study_seed_is_not_promoted_to_job_apply_route(self):
+        lead = sample_lead(
+            company="Billi UK",
+            evidence_url="https://tecvia.co.uk/blog/case-study/billi-uk-business-central-case-study/",
+        )
+        provider = FakeSearchProvider(
+            {
+                "unused": {
+                    "url": lead["evidence_url"],
+                    "text": "Billi UK replaced a legacy ERP. This case study describes the project.",
+                }
+            }
+        )
+
+        result = tools._resolve_contact_route_for_lead(
+            lead,
+            provider=provider,
+            dry_run=False,
+            max_search_queries=1,
+            max_pages_to_fetch=1,
+            max_candidate_contacts=5,
+            max_runtime_seconds=90,
+        )
+
+        self.assertNotEqual(result["best_contact_route"]["type"], "job_post_apply")
+
+    def test_official_company_url_matching_rejects_similar_foreign_entities(self):
+        self.assertFalse(
+            tools.is_likely_official_company_url("https://thrivehomesllc.com/contact", "Thrive Homes")
+        )
+        self.assertFalse(
+            tools.is_likely_official_company_url("https://www.sagehomesnw.com/contact", "Sage Homes")
+        )
+        self.assertTrue(
+            tools.is_likely_official_company_url("https://www.thrivehomes.org.uk/contact-us", "Thrive Homes")
+        )
+        self.assertTrue(
+            tools.is_likely_official_company_url("https://www.eonenergy.com/contact", "E.ON UK")
+        )
+        self.assertTrue(
+            tools.is_likely_official_company_url("https://www.lqgroup.org.uk/contact", "London & Quadrant (L&Q)")
+        )
+        self.assertTrue(
+            tools.is_likely_official_company_url("https://www.ntu.ac.uk/about-us", "Nottingham Trent University")
+        )
+        self.assertTrue(
+            tools.is_likely_official_company_url("https://tourismni.gov.ie/about", "Tourism NI")
+        )
+        self.assertFalse(
+            tools.is_likely_official_company_url("https://thecompetitor.ie", "The National Museum")
+        )
 
     def test_named_person_search_recorded_before_generic_fallback(self):
         first_queries = tools.build_live_search_queries(
