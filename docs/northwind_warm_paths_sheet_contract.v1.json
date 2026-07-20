@@ -1,7 +1,8 @@
 {
   "contract_type": "google_sheets_layout_contract",
-  "schema_version": "1.0.0",
+  "schema_version": "1.1.0",
   "captured_date": "2026-07-20",
+  "last_amended_date": "2026-07-20",
   "canonical": true,
   "workbook": {
     "spreadsheet_id": "1nikwNWJ3N5622S_a8l9YQsP_pTLxCLtmezgNmBq4abs",
@@ -135,15 +136,23 @@
         {"range": "379:379", "role": "blank_row_with_preserved_custom_height"},
         {"range": "380:1294", "role": "unused_blank_grid"}
       ],
-      "row_heights_px": [
+      "fixed_row_heights_px": [
         {"range": "1:4", "pixel_size": 20},
         {"range": "5:5", "pixel_size": 42},
-        {"range": "6:75", "pixel_size": 72},
-        {"range": "76:110", "pixel_size": 20},
-        {"range": "111:378", "pixel_size": 21},
+        {"range": "376:378", "pixel_size": 21},
         {"range": "379:379", "pixel_size": 38},
         {"range": "380:1294", "pixel_size": 21}
       ],
+      "data_row_height_policy": {
+        "range": "6:375",
+        "mode": "FIT_TO_DATA",
+        "sheets_api_request": "autoResizeDimensions",
+        "vertical_alignment": "TOP",
+        "wrap": "WRAP",
+        "rule": "Each populated row must be tall enough to display its longest wrapped cell clearly; taller rows are preferred to clipped or compressed content.",
+        "after_content_edit": "Auto-resize only the affected populated rows, then inspect them in the native Google Sheets renderer.",
+        "forbidden": "Do not force populated data rows to a blanket 21 px height and do not autofit the whole sheet."
+      },
       "column_widths_px": {
         "A": 191,
         "B": 191,
@@ -267,6 +276,7 @@
         {"range": "A3:Y3", "background": "#FFFFFF", "font_family": "Carlito", "font_size": 10, "bold": true, "font_color": "#000000", "horizontal_alignment": "LEFT", "vertical_alignment": "BOTTOM", "wrap": "OVERFLOW_CELL"},
         {"range": "A4:Y4", "background": "#FFFFFF", "font_family": "Carlito", "font_size": 11, "font_color": "#000000", "horizontal_alignment": "LEFT", "vertical_alignment": "BOTTOM", "wrap": "OVERFLOW_CELL"},
         {"range": "A5:Y5", "underlying_user_entered_background": "#7A1730", "effective_rendered_background": "#156082", "font_family": "Carlito", "font_size": 11, "bold": true, "font_color": "#FFFFFF", "horizontal_alignment": "CENTER", "vertical_alignment": "MIDDLE", "wrap": "WRAP"},
+        {"range": "A6:Y375", "vertical_alignment": "TOP", "wrap": "WRAP", "row_height": "FIT_TO_DATA"},
         {"row_type": "target_person", "range": "A:Y", "font_family": "Carlito", "font_size": 11, "vertical_alignment": "TOP", "wrap": "WRAP"},
         {"row_type": "company_summary", "range": "A", "font_family": "Carlito", "font_size": 11, "bold": true, "font_color": "#1F2937", "bottom_border": "#E0DBD6", "vertical_alignment": "TOP", "wrap": "WRAP"},
         {"row_type": "company_summary", "range": "B", "font_family": "Carlito", "font_size": 11, "bold": true, "font_color": "#771630", "bottom_border": "#E0DBD6", "horizontal_alignment": "CENTER", "vertical_alignment": "TOP", "wrap": "WRAP"},
@@ -307,7 +317,8 @@
     "A mutual-note cell must not be populated when its paired mutual-name cell is blank.",
     "The same normalized mutual contact must not appear twice on one target-person row.",
     "Rows 376:378 follow the last company block and must move down atomically when the data region grows.",
-    "A1:Y headers, merged ranges, column widths, row-height runs, colours, validations, banding, and conditional formats must not drift during content edits.",
+    "A1:Y headers, merged ranges, column widths, row-height policy, colours, validations, banding, and conditional formats must not drift during content edits.",
+    "Every populated cell in A6:Y375 is vertically top-aligned and every affected data row is fitted to its wrapped content after an edit.",
     "Search!A8 must read the complete Warm Paths data region and the Search grid and banding must be tall enough for the maximum spill result.",
     "Column Z on Warm Paths remains blank and reserved."
   ],
@@ -317,8 +328,21 @@
     "Read metadata and the exact affected CellData immediately before writing.",
     "Never use a values-only append for populated company data; copy the complete native row structure and overwrite only planned row-specific fields.",
     "Insert or move complete company blocks only; never sort individual rows across company boundaries.",
+    "After changing wrapped content, use autoResizeDimensions only on the affected populated rows; never apply a fixed 21 px height to the data region.",
     "When the data region changes, update the Warm Paths banding, Y conditional-format ranges, Search formula source range, Search spill capacity, footer position, and displayed counts in the same controlled change.",
     "After writing, prove that all non-targeted values and user-entered formats are byte-for-byte unchanged, all PF feedback is exact, every company is contiguous, all counts reconcile, and the rendered sheet has no format boundary."
+  ],
+  "change_log": [
+    {
+      "version": "1.1.0",
+      "date": "2026-07-20",
+      "change": "Replaced misleading exported fixed-height runs for rows 6:375 with the native rendered FIT_TO_DATA rule; mandated TOP vertical alignment throughout A6:Y375."
+    },
+    {
+      "version": "1.0.0",
+      "date": "2026-07-20",
+      "change": "Initial workbook structure, formatting, data-integrity, and change-control contract."
+    }
   ],
   "unsupported_structures": {
     "native_tables": false,

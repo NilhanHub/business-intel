@@ -1,6 +1,6 @@
 # Northwind Warm Paths spreadsheet contract
 
-Version: **1.0.0**
+Version: **1.1.0**
 
 Captured and repaired: **2026-07-20**
 
@@ -33,6 +33,9 @@ unless a deliberate schema-version change is reviewed and recorded.
 9. Column `Z` on `Warm Paths` is reserved and must remain blank.
 10. After every edit, prove that unrelated values and user-entered formats are
     unchanged and all counts reconcile.
+11. Every populated cell in `Warm Paths!A6:Y375` is vertically top-aligned.
+    Populated rows are fitted to their wrapped content; clarity takes priority,
+    and taller rows are preferred to clipped or compressed text.
 
 ## Workbook structure
 
@@ -62,16 +65,18 @@ atomically and the contract version must be reviewed.
 | 3 | Snapshot line | `A3:Y3` merged; Carlito 10 bold |
 | 4 | Spacer | Blank |
 | 5 | Headers | `A5:Y5`, effective teal `#156082`, white Carlito 11 bold, centred, wrapped, 42 px |
-| 6–375 | Company blocks | Alternating blue `#C1E4F5` and white, with no gaps |
+| 6–375 | Company blocks | Alternating blue `#C1E4F5` and white; wrapped, top-aligned, and fitted to content |
 | 376–378 | Portfolio footer | Fixed dark/light summary treatment; not part of table banding |
 | 379 | Preserved blank row | Blank; custom 38 px height |
 | 380–1294 | Unused grid | Blank; 21 px height |
 
-The current stored row-height runs are exact: rows 1–4 are 20 px, row 5 is
-42 px, rows 6–75 are 72 px, rows 76–110 are 20 px, rows 111–378 are 21 px,
-row 379 is 38 px, and rows 380–1294 are 21 px. Do not autofit the sheet or
-casually normalize these ranges. All populated table cells remain wrap-enabled,
-so also inspect the native Google-rendered result after a change.
+Rows 1–4 are fixed at 20 px and row 5 is fixed at 42 px. Rows 6–375 do not
+have one fixed height: each row must fit its longest wrapped cell. Always use
+top vertical alignment across `A:Y`, and prefer a taller readable row to clipped
+or compressed content. After changing content, auto-resize only the affected
+populated rows and inspect them in native Google Sheets. Never force the data
+region to a blanket 21 px. Footer rows 376–378 remain 21 px, blank row 379 is
+38 px, and unused rows 380–1294 remain 21 px.
 
 The table banding range is exactly `A5:Y375`. Its active header treatment
 renders teal `#156082`; the underlying user-entered header fill remains burgundy
@@ -101,10 +106,11 @@ The Current Stage dropdown values are fixed: `Found route`, `Mutual friend to
 contact`, `Intro requested`, `Intro agreed`, `Target contacted`, `Meeting / reply`,
 `Won`, and `Dead / no route`.
 
-Target-person rows use Carlito 11, top alignment, and wrapping across `A:Y`.
-Summary rows use a bold dark `A`, centred bold burgundy count in `B`, grey
-intelligence text in `C`, and a `#E0DBD6` bottom border. Columns `D:Y` must be
-blank on summary rows.
+All data cells `A6:Y375`, including empty cells inside a populated row, use top
+vertical alignment and wrapping. Target-person rows use Carlito 11. Summary
+rows use a bold dark `A`, centred bold burgundy count in `B`, grey intelligence
+text in `C`, and a `#E0DBD6` bottom border. Columns `D:Y` must be blank on
+summary rows.
 
 Rows 1–3 have a white background, left alignment, bottom vertical alignment,
 and overflow-cell text. The portfolio footer uses dark `#1F2937` with white
@@ -139,16 +145,19 @@ formula are controlled structure.
 6. Update dependent ranges and totals when the data boundary changes.
 7. Re-read the full affected area and compare values, formulas, validation,
    user-entered formats, row/column dimensions, banding, and conditional rules.
-8. Verify that the current company count (70 in version 1.0.0) is represented by
+8. Verify that the current company count (70 in version 1.1.0) is represented by
    contiguous blocks, each summary count matches, company/person pairs and
    per-row mutuals are unique, and every `PF...` value is unchanged.
-9. Inspect the native Google-rendered sheet at normal zoom.
-10. Record evidence and update the contract version only for an intentional
+9. Auto-resize only rows whose wrapped content changed; every populated row
+   must show its complete content and remain vertically top-aligned.
+10. Inspect the native Google-rendered sheet at normal zoom.
+11. Record evidence and update the contract version only for an intentional
     schema change.
 
 ## Prohibited shortcuts
 
 - Whole-sheet restyling or autofit.
+- Forcing populated data rows to a blanket 21 px or another uniform height.
 - Sorting the complete row set without company-block semantics.
 - Appending values without native formats and validation.
 - Copying a summary row as a target row, or vice versa.
