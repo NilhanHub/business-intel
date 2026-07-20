@@ -13,3 +13,9 @@ Use the installed Google agents-cli skills from `C:\Users\Nilhan.dev\.agents\ski
 Do not build tender intelligence unless explicitly requested. Tender/procurement-only signals should be parked or rejected by default.
 
 Runtime real-data rule: never return synthetic/sample/demo companies, fake URLs, `example.test` URLs, or simulated evidence as leads. Every runtime lead must trace to live public evidence with `evidence_url`, `evidence_excerpt`, `source_name`, `fetched_at`, and `verified_live: true`.
+
+Before any edit to the `Northwind CRM Warm Paths Tracker` Google Sheet, read and
+follow `docs/northwind_warm_paths_sheet_contract.md` and the canonical machine
+contract `docs/northwind_warm_paths_sheet_contract.v1.json`. Preserve complete
+company blocks, formatting, dimensions, validation, formulas, and all `PF...`
+feedback; create a dated workbook backup and verify the contract after writing.

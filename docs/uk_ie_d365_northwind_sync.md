@@ -1,5 +1,10 @@
 # UK/IE D365 Northwind Sync
 
+Google Sheet changes are governed separately by
+[`northwind_warm_paths_sheet_contract.md`](northwind_warm_paths_sheet_contract.md)
+and its canonical machine-readable contract. Read them before changing the
+`Northwind CRM Warm Paths Tracker` workbook.
+
 `tools/sync_uk_ie_d365_leads_to_northwind.py` imports a completed UK/Ireland
 lead pack into the existing Northwind CRM company collection. It does not
 create contacts, activities, routes, schemas, or outreach.

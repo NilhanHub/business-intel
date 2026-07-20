@@ -1,0 +1,330 @@
+{
+  "contract_type": "google_sheets_layout_contract",
+  "schema_version": "1.0.0",
+  "captured_date": "2026-07-20",
+  "canonical": true,
+  "workbook": {
+    "spreadsheet_id": "1nikwNWJ3N5622S_a8l9YQsP_pTLxCLtmezgNmBq4abs",
+    "title": "Northwind CRM Warm Paths Tracker",
+    "locale": "en_GB",
+    "time_zone": "America/Los_Angeles",
+    "tabs_in_order": [
+      "Search",
+      "Warm Paths"
+    ]
+  },
+  "current_snapshot": {
+    "company_count": 70,
+    "targetable_company_count": 52,
+    "company_count_without_target_people": 18,
+    "target_person_count": 300,
+    "company_summary_row_count": 70,
+    "mutual_contact_placement_count": 434,
+    "unique_mutual_contact_count": 194,
+    "explicit_pf_feedback_cell_count": 10
+  },
+  "palette": {
+    "warm_paths_header_user_entered": "#7A1730",
+    "warm_paths_header_effective": "#156082",
+    "warm_paths_first_band": "#C1E4F5",
+    "warm_paths_second_band": "#FFFFFF",
+    "warm_paths_default_text": "#000000",
+    "search_burgundy": "#8C1433",
+    "search_title_background": "#F9F4EA",
+    "search_subtitle_text": "#595959",
+    "search_helper_text": "#727272",
+    "search_first_band": "#FFFFFF",
+    "search_second_band": "#F9F7EF",
+    "summary_dark": "#1F2937",
+    "summary_burgundy": "#771630",
+    "summary_text": "#444F59",
+    "summary_border": "#E0DBD6",
+    "footer_light": "#F8F3EF",
+    "conditional_already": "#E8F5E9",
+    "conditional_needs": "#FFF7ED",
+    "white": "#FFFFFF"
+  },
+  "tabs": {
+    "Search": {
+      "sheet_id": 2026070601,
+      "index": 0,
+      "grid": {
+        "row_count": 400,
+        "column_count": 25,
+        "frozen_row_count": 7
+      },
+      "tab_color": "#8C1433",
+      "used_static_range": "A1:Y8",
+      "dynamic_result_range": "A8:Y400",
+      "merged_ranges": [
+        "A1:Y1",
+        "A2:Y2",
+        "C3:K3",
+        "C4:K4"
+      ],
+      "row_heights_px": [
+        {"range": "1:1", "pixel_size": 42},
+        {"range": "2:2", "pixel_size": 20},
+        {"range": "3:3", "pixel_size": 48},
+        {"range": "4:6", "pixel_size": 20},
+        {"range": "7:7", "pixel_size": 42},
+        {"range": "8:400", "pixel_size": 20}
+      ],
+      "column_widths_px": {
+        "A": 210,
+        "B": 190,
+        "C": 420,
+        "D:M": 150,
+        "N:Y": 170
+      },
+      "fixed_cells": {
+        "A1": "Northwind CRM Warm Paths Search",
+        "A2": "Type a company, target person, mutual contact, role, stage, source email, or note. Matching rows appear below.",
+        "B3": "SEARCH",
+        "C4": "Click the large white box above and type. Clear it to reset the results.",
+        "A6": "Search results"
+      },
+      "mutable_cells": {
+        "C3": {
+          "purpose": "user search input",
+          "note": "Type your search here. Examples: Biffa, Jodie, Tony Brown, Moneypenny, Found route, Already in CRM."
+        }
+      },
+      "formula_cells": {
+        "A8": "=IF($C$3=\"\",\"Type a company, target person, mutual contact, role, stage, source email, or note above.\",IFNA(FILTER('Warm Paths'!A6:Y375,BYROW('Warm Paths'!A6:Y375,LAMBDA(row,ISNUMBER(SEARCH(LOWER($C$3),LOWER(TEXTJOIN(\" \",TRUE,row))))))),\"No matching rows found.\"))"
+      },
+      "banding": {
+        "range": "A8:Y400",
+        "first_band_color": "#FFFFFF",
+        "second_band_color": "#F9F7EF"
+      },
+      "format_rules": [
+        {"range": "A1:Y1", "background": "#F9F4EA", "font_size": 20, "bold": true, "horizontal_alignment": "CENTER", "vertical_alignment": "MIDDLE"},
+        {"range": "A2:Y2", "background": "#F9F4EA", "font_size": 11, "italic": true, "font_color": "#595959", "horizontal_alignment": "CENTER", "vertical_alignment": "MIDDLE"},
+        {"range": "B3", "font_size": 13, "bold": true, "font_color": "#8C1433", "horizontal_alignment": "RIGHT", "vertical_alignment": "MIDDLE"},
+        {"range": "C3:K3", "background": "#FFFFFF", "font_size": 18, "border_color": "#8C1433", "border_style": "SOLID_THICK", "border_width": 3, "horizontal_alignment": "LEFT", "vertical_alignment": "MIDDLE"},
+        {"range": "C4:K4", "font_size": 10, "italic": true, "font_color": "#727272", "horizontal_alignment": "CENTER", "vertical_alignment": "MIDDLE"},
+        {"range": "A6", "font_size": 13, "bold": true, "font_color": "#8C1433"},
+        {"range": "A7:Y7", "background": "#8C1433", "font_size": 10, "bold": true, "font_color": "#FFFFFF", "horizontal_alignment": "CENTER", "vertical_alignment": "MIDDLE", "wrap": "WRAP"},
+        {"range": "A8:Y400", "font_size": 10, "vertical_alignment": "TOP", "wrap": "WRAP"}
+      ]
+    },
+    "Warm Paths": {
+      "sheet_id": 1104927941,
+      "index": 1,
+      "grid": {
+        "row_count": 1294,
+        "column_count": 26,
+        "frozen_row_count": 0
+      },
+      "used_range": "A1:Y378",
+      "reserved_blank_column": "Z",
+      "merged_ranges": [
+        "A1:Y1",
+        "A2:Y2",
+        "A3:Y3"
+      ],
+      "row_regions": [
+        {"range": "1:1", "role": "title"},
+        {"range": "2:2", "role": "usage_instruction"},
+        {"range": "3:3", "role": "snapshot_line"},
+        {"range": "4:4", "role": "blank_spacer"},
+        {"range": "5:5", "role": "column_header"},
+        {"range": "6:375", "role": "contiguous_company_blocks"},
+        {"range": "376:378", "role": "portfolio_footer"},
+        {"range": "379:379", "role": "blank_row_with_preserved_custom_height"},
+        {"range": "380:1294", "role": "unused_blank_grid"}
+      ],
+      "row_heights_px": [
+        {"range": "1:4", "pixel_size": 20},
+        {"range": "5:5", "pixel_size": 42},
+        {"range": "6:75", "pixel_size": 72},
+        {"range": "76:110", "pixel_size": 20},
+        {"range": "111:378", "pixel_size": 21},
+        {"range": "379:379", "pixel_size": 38},
+        {"range": "380:1294", "pixel_size": 21}
+      ],
+      "column_widths_px": {
+        "A": 191,
+        "B": 191,
+        "C": 335,
+        "D": 175,
+        "E": 191,
+        "F": 175,
+        "G": 191,
+        "H": 175,
+        "I": 191,
+        "J": 175,
+        "K": 191,
+        "L": 175,
+        "M": 191,
+        "N": 159,
+        "O:T": 223,
+        "U": 175,
+        "V": 207,
+        "W": 271,
+        "X": 239,
+        "Y": 223,
+        "Z": 68
+      },
+      "fixed_cells": {
+        "A1": "Northwind CRM Warm Paths Tracker",
+        "A2": "One row per target person. Mutual contacts sit beside the target. Use Current Stage and the stage note columns to mirror CRM progress.",
+        "A3": "Current research tracker: 70 companies | 300 target people | updated from Paul Fryer's LinkedIn mutual-contact research",
+        "A376": "Portfolio Summary",
+        "B376": "70 Companies",
+        "C376": "300 Target People",
+        "A377": "Coverage",
+        "B377": "70 contiguous company blocks",
+        "C377": "Every contact and intelligence summary for a company is kept together.",
+        "A378": "Ordering",
+        "B378": "Paul-feedback companies first",
+        "C378": "All remaining companies follow alphabetically."
+      },
+      "headers": [
+        "Company",
+        "Target Person",
+        "Target Role",
+        "Mutual 1",
+        "Mutual 1 Notes",
+        "Mutual 2",
+        "Mutual 2 Notes",
+        "Mutual 3",
+        "Mutual 3 Notes",
+        "Mutual 4",
+        "Mutual 4 Notes",
+        "Mutual 5",
+        "Mutual 5 Notes",
+        "Current Stage",
+        "Found Route Notes",
+        "Mutual Friend Contact Notes",
+        "Intro Requested Notes",
+        "Intro Agreed Notes",
+        "Target Contacted Notes",
+        "Meeting / Reply Notes",
+        "Won Notes",
+        "Dead / No Route Notes",
+        "Final Notes",
+        "Source Email",
+        "CRM Status"
+      ],
+      "columns": {
+        "A": {"name": "Company", "target_row": "required string", "summary_row": "required matching company string"},
+        "B": {"name": "Target Person", "target_row": "required string", "summary_row": "integer-like string equal to target-row count"},
+        "C": {"name": "Target Role", "target_row": "required specific role and current-role/location context", "summary_row": "required evidence-grounded company intelligence and opportunity summary"},
+        "D": {"name": "Mutual 1", "type": "optional person name"},
+        "E": {"name": "Mutual 1 Notes", "type": "optional text; explicit Paul feedback beginning PF must be preserved verbatim"},
+        "F": {"name": "Mutual 2", "type": "optional person name"},
+        "G": {"name": "Mutual 2 Notes", "type": "optional text"},
+        "H": {"name": "Mutual 3", "type": "optional person name"},
+        "I": {"name": "Mutual 3 Notes", "type": "optional text"},
+        "J": {"name": "Mutual 4", "type": "optional person name"},
+        "K": {"name": "Mutual 4 Notes", "type": "optional text"},
+        "L": {"name": "Mutual 5", "type": "optional person name"},
+        "M": {"name": "Mutual 5 Notes", "type": "optional text"},
+        "N": {"name": "Current Stage", "type": "required dropdown on target rows; blank and unvalidated on summary rows"},
+        "O": {"name": "Found Route Notes", "type": "optional text"},
+        "P": {"name": "Mutual Friend Contact Notes", "type": "optional text"},
+        "Q": {"name": "Intro Requested Notes", "type": "optional text"},
+        "R": {"name": "Intro Agreed Notes", "type": "optional text"},
+        "S": {"name": "Target Contacted Notes", "type": "optional text"},
+        "T": {"name": "Meeting / Reply Notes", "type": "optional text"},
+        "U": {"name": "Won Notes", "type": "optional text"},
+        "V": {"name": "Dead / No Route Notes", "type": "optional text"},
+        "W": {"name": "Final Notes", "type": "optional text"},
+        "X": {"name": "Source Email", "type": "optional provenance or source-email text"},
+        "Y": {"name": "CRM Status", "type": "optional status text with conditional formatting"}
+      },
+      "stage_dropdown": {
+        "target_column": "N",
+        "apply_to": "all and only target-person rows",
+        "show_custom_ui": true,
+        "allowed_values": [
+          "Found route",
+          "Mutual friend to contact",
+          "Intro requested",
+          "Intro agreed",
+          "Target contacted",
+          "Meeting / reply",
+          "Won",
+          "Dead / no route"
+        ]
+      },
+      "banding": {
+        "range": "A5:Y375",
+        "effective_rendered_header_color": "#156082",
+        "underlying_user_entered_header_color": "#7A1730",
+        "first_band_color": "#C1E4F5",
+        "second_band_color": "#FFFFFF"
+      },
+      "conditional_formatting": [
+        {"range": "Y6:Y375", "formula": "=ISNUMBER(SEARCH(\"Already\",Y6))", "background": "#E8F5E9"},
+        {"range": "Y6:Y375", "formula": "=ISNUMBER(SEARCH(\"needs\",Y6))", "background": "#FFF7ED"}
+      ],
+      "format_rules": [
+        {"range": "A1:Y1", "background": "#FFFFFF", "font_family": "Carlito", "font_size": 16, "bold": true, "font_color": "#000000", "horizontal_alignment": "LEFT", "vertical_alignment": "BOTTOM", "wrap": "OVERFLOW_CELL"},
+        {"range": "A2:Y2", "background": "#FFFFFF", "font_family": "Carlito", "font_size": 10, "italic": true, "font_color": "#000000", "horizontal_alignment": "LEFT", "vertical_alignment": "BOTTOM", "wrap": "OVERFLOW_CELL"},
+        {"range": "A3:Y3", "background": "#FFFFFF", "font_family": "Carlito", "font_size": 10, "bold": true, "font_color": "#000000", "horizontal_alignment": "LEFT", "vertical_alignment": "BOTTOM", "wrap": "OVERFLOW_CELL"},
+        {"range": "A4:Y4", "background": "#FFFFFF", "font_family": "Carlito", "font_size": 11, "font_color": "#000000", "horizontal_alignment": "LEFT", "vertical_alignment": "BOTTOM", "wrap": "OVERFLOW_CELL"},
+        {"range": "A5:Y5", "underlying_user_entered_background": "#7A1730", "effective_rendered_background": "#156082", "font_family": "Carlito", "font_size": 11, "bold": true, "font_color": "#FFFFFF", "horizontal_alignment": "CENTER", "vertical_alignment": "MIDDLE", "wrap": "WRAP"},
+        {"row_type": "target_person", "range": "A:Y", "font_family": "Carlito", "font_size": 11, "vertical_alignment": "TOP", "wrap": "WRAP"},
+        {"row_type": "company_summary", "range": "A", "font_family": "Carlito", "font_size": 11, "bold": true, "font_color": "#1F2937", "bottom_border": "#E0DBD6", "vertical_alignment": "TOP", "wrap": "WRAP"},
+        {"row_type": "company_summary", "range": "B", "font_family": "Carlito", "font_size": 11, "bold": true, "font_color": "#771630", "bottom_border": "#E0DBD6", "horizontal_alignment": "CENTER", "vertical_alignment": "TOP", "wrap": "WRAP"},
+        {"row_type": "company_summary", "range": "C", "font_family": "Carlito", "font_size": 11, "font_color": "#444F59", "bottom_border": "#E0DBD6", "vertical_alignment": "TOP", "wrap": "WRAP"},
+        {"range": "A376", "background": "#1F2937", "font_family": "Carlito", "font_size": 12, "bold": true, "font_color": "#FFFFFF", "horizontal_alignment": "LEFT", "vertical_alignment": "MIDDLE", "wrap": "WRAP"},
+        {"range": "B376:C376", "background": "#1F2937", "font_family": "Carlito", "font_size": 12, "bold": true, "font_color": "#FFFFFF", "horizontal_alignment": "CENTER", "vertical_alignment": "MIDDLE", "wrap": "WRAP"},
+        {"range": "A377", "background": "#F8F3EF", "font_family": "Carlito", "font_size": 10, "bold": true, "font_color": "#771630", "horizontal_alignment": "LEFT", "vertical_alignment": "MIDDLE", "wrap": "WRAP"},
+        {"range": "B377:C377", "background": "#F8F3EF", "font_family": "Carlito", "font_size": 10, "italic": true, "font_color": "#444F59", "horizontal_alignment": "LEFT", "vertical_alignment": "MIDDLE", "wrap": "WRAP"},
+        {"range": "A378:C378", "background": "#1F2937", "font_family": "Carlito", "font_size": 11, "bold": true, "font_color": "#FFFFFF", "horizontal_alignment": "CENTER", "vertical_alignment": "MIDDLE", "wrap": "WRAP"}
+      ],
+      "company_block_rules": {
+        "one_contiguous_block_per_company": true,
+        "blank_rows_inside_data_region": false,
+        "target_rows_precede_summary_row": true,
+        "exactly_one_summary_row_per_company": true,
+        "summary_row_is_last_in_block": true,
+        "summary_columns_D_through_Y_are_blank": true,
+        "feedback_rows_first_within_feedback_company": true,
+        "feedback_companies_first": [
+          "Glenveagh Properties plc",
+          "Audio-Technica",
+          "Uniphar Medtech",
+          "Moneypenny",
+          "Weetabix Food Company",
+          "London Borough of Harrow"
+        ],
+        "remaining_company_order": "alphabetical by normalized company name"
+      }
+    }
+  },
+  "integrity_rules": [
+    "Never modify, normalize, spell-correct, or relocate an explicit PF feedback value except as part of moving its complete company block.",
+    "A company name must occur in exactly one contiguous block.",
+    "The final row in every company block must be its company-summary row.",
+    "The summary count in column B must equal the number of preceding target-person rows in that block.",
+    "Each target-person row must have a unique normalized Company plus Target Person pair.",
+    "Each target-person row must have at least one named mutual contact in D, F, H, J, or L.",
+    "A mutual-note cell must not be populated when its paired mutual-name cell is blank.",
+    "The same normalized mutual contact must not appear twice on one target-person row.",
+    "Rows 376:378 follow the last company block and must move down atomically when the data region grows.",
+    "A1:Y headers, merged ranges, column widths, row-height runs, colours, validations, banding, and conditional formats must not drift during content edits.",
+    "Search!A8 must read the complete Warm Paths data region and the Search grid and banding must be tall enough for the maximum spill result.",
+    "Column Z on Warm Paths remains blank and reserved."
+  ],
+  "change_protocol": [
+    "Read this contract and docs/northwind_warm_paths_sheet_contract.md before every edit.",
+    "Create a dated Drive copy of the entire workbook before changing rows, formats, formulas, or dimensions.",
+    "Read metadata and the exact affected CellData immediately before writing.",
+    "Never use a values-only append for populated company data; copy the complete native row structure and overwrite only planned row-specific fields.",
+    "Insert or move complete company blocks only; never sort individual rows across company boundaries.",
+    "When the data region changes, update the Warm Paths banding, Y conditional-format ranges, Search formula source range, Search spill capacity, footer position, and displayed counts in the same controlled change.",
+    "After writing, prove that all non-targeted values and user-entered formats are byte-for-byte unchanged, all PF feedback is exact, every company is contiguous, all counts reconcile, and the rendered sheet has no format boundary."
+  ],
+  "unsupported_structures": {
+    "native_tables": false,
+    "basic_filters": false,
+    "charts": false,
+    "protected_ranges": false,
+    "smart_chips": false
+  }
+}
