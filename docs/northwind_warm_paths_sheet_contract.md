@@ -1,8 +1,10 @@
 # Northwind Warm Paths spreadsheet contract
 
-Version: **1.2.0**
+Version: **1.3.0**
 
 Captured and repaired: **2026-07-20**
+
+Last amended: **2026-07-22**
 
 Canonical machine-readable contract: [`northwind_warm_paths_sheet_contract.v1.json`](northwind_warm_paths_sheet_contract.v1.json)
 
@@ -85,7 +87,8 @@ or compressed content. After changing content, auto-resize only the affected
 populated rows and inspect them in native Google Sheets. Never force the data
 region to a blanket 21 px.
 
-The version 1.2.0 insertion/summary region uses deliberate presentation heights:
+The insertion/summary region introduced in version 1.2.0 and retained in
+version 1.3.0 uses deliberate presentation heights:
 row 376 is 48 px; row 377 is 14 px; row 378 is 42 px; row 379 is 62 px;
 row 380 is 36 px; rows 381–390 are 56 px; and row 391 is 56 px. Unused rows
 392–1294 remain 21 px. These heights are fixed presentation rules rather than
@@ -146,15 +149,17 @@ cell-level format rules are normative in the JSON contract.
 
 ## `Search` layout
 
-- Grid: 400 rows × 25 columns; rows 1–7 frozen.
+- Grid: 2,000 rows × 25 columns; rows 1–7 frozen.
 - Merges: `A1:Y1`, `A2:Y2`, `C3:K3`, and `C4:K4`.
 - Search input: merged `C3:K3`, white with a thick `#8C1433` border.
 - Header: `A7:Y7`, `#8C1433` with white bold text.
-- Result area: `A8:Y400`, alternating white and `#F9F7EF`.
+- Result area: `A8:Y2000`, alternating white and `#F9F7EF`.
 - `A8` is the only result formula. It must search the complete current data
   region, presently `Warm Paths!A6:Y375`.
 - Search formula output must preserve all 25 source columns and must never be
-  allowed to spill beyond the Search grid.
+  allowed to spill beyond the Search grid. The result area has capacity for
+  1,993 rows; at the version 1.3.0 snapshot of 370 data rows, 1,623 rows remain
+  available for growth.
 
 `C3` is user input and is intentionally mutable. All other labels and the `A8`
 formula are controlled structure.
@@ -170,7 +175,7 @@ formula are controlled structure.
 6. Update dependent ranges and totals when the data boundary changes.
 7. Re-read the full affected area and compare values, formulas, validation,
    user-entered formats, row/column dimensions, banding, and conditional rules.
-8. Verify that the current company count (70 in version 1.2.0) is represented by
+8. Verify that the current company count (70 in version 1.3.0) is represented by
    contiguous blocks, each summary count matches, company/person pairs and
    per-row mutuals are unique, and every `PF...` value is unchanged.
 9. Auto-resize only rows whose wrapped content changed; every populated row
