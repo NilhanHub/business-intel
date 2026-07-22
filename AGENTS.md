@@ -19,3 +19,9 @@ follow `docs/northwind_warm_paths_sheet_contract.md` and the canonical machine
 contract `docs/northwind_warm_paths_sheet_contract.v1.json`. Preserve complete
 company blocks, formatting, dimensions, validation, formulas, and all `PF...`
 feedback; create a dated workbook backup and verify the contract after writing.
+
+Before any edit to the `Sam Dharmasiri` tab, also read and follow the dedicated
+human contract `docs/northwind_sam_dharmasiri_sheet_contract.md` and canonical
+machine contract `docs/northwind_sam_dharmasiri_sheet_contract.v1.json`. Preserve
+Sam-first route ordering, stable-ID evidence, atomic checkpoint recovery,
+complete company blocks, source provenance, and all exact formatting rules.

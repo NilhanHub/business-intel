@@ -1,6 +1,6 @@
 {
   "contract_type": "google_sheets_layout_contract",
-  "schema_version": "1.4.0",
+  "schema_version": "1.5.0",
   "captured_date": "2026-07-20",
   "last_amended_date": "2026-07-22",
   "canonical": true,
@@ -14,6 +14,14 @@
       "Warm Paths",
       "Sam Dharmasiri"
     ]
+  },
+  "related_contracts": {
+    "Sam Dharmasiri": {
+      "human": "docs/northwind_sam_dharmasiri_sheet_contract.md",
+      "machine": "docs/northwind_sam_dharmasiri_sheet_contract.v1.json",
+      "schema_version": "1.0.0",
+      "normative_for": "Exact Sam-tab fields, row types, source evidence, formatting, dimensions, validations, insertion procedure and verification gates."
+    }
   },
   "current_snapshot": {
     "company_count": 70,
@@ -412,6 +420,7 @@
       "sheet_id": 1390832825,
       "index": 2,
       "template_tab": "Warm Paths",
+      "dedicated_contract": "docs/northwind_sam_dharmasiri_sheet_contract.v1.json",
       "purpose": "A separate, company-grouped tracker for the 149 CTO-type Sales Navigator contacts returned by the Connections of Sam Dharmasiri filter in Paul Fryer's verified session.",
       "grid": {
         "row_count": 1294,
@@ -518,6 +527,7 @@
   ],
   "change_protocol": [
     "Read this contract and docs/northwind_warm_paths_sheet_contract.md before every edit.",
+    "Before editing the Sam Dharmasiri tab, also read docs/northwind_sam_dharmasiri_sheet_contract.md and docs/northwind_sam_dharmasiri_sheet_contract.v1.json; those files are normative for the complete tab schema.",
     "Create a dated Drive copy of the entire workbook before changing rows, formats, formulas, or dimensions.",
     "Read metadata and the exact affected CellData immediately before writing.",
     "Never use a values-only append for populated company data; copy the complete native row structure and overwrite only planned row-specific fields.",
@@ -528,6 +538,11 @@
     "After writing, prove that all non-targeted values and user-entered formats are byte-for-byte unchanged, all PF feedback is exact, every company is contiguous, all counts reconcile, and the rendered sheet has no format boundary."
   ],
   "change_log": [
+    {
+      "version": "1.5.0",
+      "date": "2026-07-22",
+      "change": "Added and linked the standalone complete human-readable and machine-readable schema for the Sam Dharmasiri tab. No live sheet values or formats changed."
+    },
     {
       "version": "1.4.0",
       "date": "2026-07-22",

@@ -1,12 +1,17 @@
 # Northwind Warm Paths spreadsheet contract
 
-Version: **1.4.0**
+Version: **1.5.0**
 
 Captured and repaired: **2026-07-20**
 
 Last amended: **2026-07-22**
 
 Canonical machine-readable contract: [`northwind_warm_paths_sheet_contract.v1.json`](northwind_warm_paths_sheet_contract.v1.json)
+
+Dedicated `Sam Dharmasiri` contract:
+[`northwind_sam_dharmasiri_sheet_contract.md`](northwind_sam_dharmasiri_sheet_contract.md)
+and
+[`northwind_sam_dharmasiri_sheet_contract.v1.json`](northwind_sam_dharmasiri_sheet_contract.v1.json)
 
 This document is the mandatory change-control contract for the Google Sheet
 `Northwind CRM Warm Paths Tracker`. Future edits must preserve this structure
@@ -53,6 +58,9 @@ unless a deliberate schema-version change is reviewed and recorded.
     lead ID. Treat browser memory and page numbering as disposable; after a
     pause or restart, validate the checkpoint and resume by missing stable IDs
     rather than recollecting completed contacts.
+16. Before editing the `Sam Dharmasiri` tab, read and follow its dedicated human
+    and machine contracts. They are normative for its exact fields, values,
+    formatting, dimensions, evidence, insertion procedure, and verification.
 
 ## Workbook structure
 
@@ -173,6 +181,13 @@ cell-level format rules are normative in the JSON contract.
 
 ## `Sam Dharmasiri` layout
 
+The dedicated
+[`northwind_sam_dharmasiri_sheet_contract.md`](northwind_sam_dharmasiri_sheet_contract.md)
+and
+[`northwind_sam_dharmasiri_sheet_contract.v1.json`](northwind_sam_dharmasiri_sheet_contract.v1.json)
+are the complete normative schema for this tab. The summary below is retained
+only for workbook-level orientation.
+
 This tab is a purpose-built duplicate of the `Warm Paths` native-cell template,
 not an extension of the main 70-company tracker and not a source for `Search`.
 Its company blocks are alphabetical; target people are alphabetical within each
@@ -231,6 +246,8 @@ formula are controlled structure.
 ## Safe edit procedure
 
 1. Read the JSON contract and this document.
+   For a `Sam Dharmasiri` edit, also read both dedicated Sam contracts before
+   inspecting or changing the live tab.
 2. Create a dated copy of the entire workbook.
 3. Read current spreadsheet metadata and exact affected cells.
 4. Build one narrowly scoped, atomic batch.
@@ -270,6 +287,9 @@ checkpoint, because live result ordering and page membership may change.
 
 ## Schema history
 
+- **1.5.0 — 2026-07-22:** Added and linked the standalone complete human and
+  machine schema for the `Sam Dharmasiri` tab. No live sheet values or formats
+  changed.
 - **1.4.0 — 2026-07-22:** Added the independent `Sam Dharmasiri` tab contract,
   its 149-contact/126-company snapshot, live-evidence mutual-route rules, and
   atomic stable-ID checkpoint/resume procedure. `Search` and `Warm Paths`
