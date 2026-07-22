@@ -1,6 +1,6 @@
 # Northwind Warm Paths spreadsheet contract
 
-Version: **1.3.0**
+Version: **1.4.0**
 
 Captured and repaired: **2026-07-20**
 
@@ -41,12 +41,24 @@ unless a deliberate schema-version change is reviewed and recorded.
 12. Every populated cell in `Warm Paths!A6:Y375` is vertically top-aligned.
     Populated rows are fitted to their wrapped content; clarity takes priority,
     and taller rows are preferred to clipped or compressed text.
+13. `Sam Dharmasiri` is an independent network tab. It must retain exactly one
+    contiguous block per company, with target rows first and exactly one summary
+    row last. It must not alter `Search` or `Warm Paths`.
+14. Every target row on `Sam Dharmasiri` must contain `Sam Dharmasiri` in Mutual
+    1 (`D`), followed by no more than four additional named mutuals in
+    `F`, `H`, `J`, and `L`. Never infer a name that was not visible in the live
+    Sales Navigator evidence.
+15. Sales Navigator collection must be recoverable: write each completed contact
+    immediately to an atomic local evidence checkpoint keyed by stable LinkedIn
+    lead ID. Treat browser memory and page numbering as disposable; after a
+    pause or restart, validate the checkpoint and resume by missing stable IDs
+    rather than recollecting completed contacts.
 
 ## Workbook structure
 
 The workbook ID is `1nikwNWJ3N5622S_a8l9YQsP_pTLxCLtmezgNmBq4abs`. Its tab
-order is fixed: `Search`, then `Warm Paths`. Locale is `en_GB`; timezone is
-`America/Los_Angeles`.
+order is fixed: `Search`, `Warm Paths`, then `Sam Dharmasiri`. Locale is
+`en_GB`; timezone is `America/Los_Angeles`.
 
 Current controlled snapshot:
 
@@ -60,6 +72,18 @@ Current controlled snapshot:
 These totals describe the current version. A future authorized data addition
 may change them, but every mirrored total and insertion-marker/summary position
 must be updated atomically and the contract version must be reviewed.
+
+The independent `Sam Dharmasiri` snapshot contains:
+
+- 149 unique Sales Navigator contacts keyed by stable LinkedIn lead ID.
+- 126 companies in 126 contiguous blocks.
+- 149 target rows and 126 company-summary rows, totalling 275 data rows.
+- 149 primary Sam routes, 511 additional named-mutual placements, and 660 total
+  named route placements.
+- 207 distinct additional mutuals; 141 contacts have at least one additional
+  named mutual.
+- One privacy-limited contact whose employer was not visible. The tab records
+  that limitation explicitly and does not infer an employer.
 
 ## `Warm Paths` layout
 
@@ -147,6 +171,46 @@ Columns `D:Y` are blank throughout the summary table.
 Exact column widths, insertion/summary cell text, colours, merged ranges, and
 cell-level format rules are normative in the JSON contract.
 
+## `Sam Dharmasiri` layout
+
+This tab is a purpose-built duplicate of the `Warm Paths` native-cell template,
+not an extension of the main 70-company tracker and not a source for `Search`.
+Its company blocks are alphabetical; target people are alphabetical within each
+block. The explicit privacy-limited company block appears last.
+
+| Rows | Role | Required treatment |
+| --- | --- | --- |
+| 1 | Title | `A1:Y1` merged; names the Sam Dharmasiri tracker |
+| 2 | Usage instruction | `A2:Y2` merged; defines contiguous blocks and mutual ordering |
+| 3 | Snapshot line | `A3:Y3` merged; records the current live-evidence totals |
+| 4 | Spacer | Blank |
+| 5 | Headers | Same premium native header treatment as `Warm Paths`; `X5` is `Source / Profile` |
+| 6–280 | Company blocks | 149 target rows and 126 final summary rows in 126 contiguous blocks |
+| 281 | Permanent insertion marker | Add each complete future company block immediately above it |
+| 282 | Spacer | Blank |
+| 283 | Summary title | `A283:C283` merged; premium dark title treatment |
+| 284 | Executive summary | `A284:C284` merged |
+| 285 | Summary headers | `A285:C285` |
+| 286–295 | Network metric table | Ten current-snapshot metrics |
+| 296 | Usage guidance | `A296:C296` merged |
+| 297–1294 | Unused grid | Blank |
+
+The data banding range is exactly `A5:Y280`, alternating blue `#C1E4F5` and
+white. Conditional CRM-status formatting covers `Y6:Y280`. Every populated
+data-row cell is wrapped and top-aligned, and rows are fitted to their content.
+Target rows alone carry the inherited Current Stage dropdown in `N`, with
+`Found route` as the current value. Summary rows keep `D:Y` blank.
+
+Mutual columns use the same pairs as `Warm Paths`: names in `D/F/H/J/L` and
+paired notes in `E/G/I/K/M`. `D` is always `Sam Dharmasiri`. Each additional
+mutual must be a named, live-observed Sales Navigator route; the visible mutual
+count alone is not a substitute for a name.
+
+The source proof for every target belongs in `X`. The permanent insertion
+marker and compact premium summary are controlled structure. Exact fixed text,
+counts, formats, conditional rules, provenance, and backup ID are normative in
+the JSON contract.
+
 ## `Search` layout
 
 - Grid: 2,000 rows × 25 columns; rows 1–7 frozen.
@@ -184,6 +248,10 @@ formula are controlled structure.
 11. Record evidence and update the contract version only for an intentional
     schema change.
 
+For a Sales Navigator network tab, checkpoint each completed contact atomically
+before continuing. On restart, reconcile stable lead IDs against the validated
+checkpoint, because live result ordering and page membership may change.
+
 ## Prohibited shortcuts
 
 - Whole-sheet restyling or autofit.
@@ -196,3 +264,17 @@ formula are controlled structure.
 - Overwriting, deleting, moving data below, or otherwise bypassing the permanent
   insertion marker.
 - Replacing native formulas or dropdowns with displayed text.
+- Resuming a Sales Navigator run from a remembered page number without first
+  reconciling the validated stable-ID checkpoint.
+- Treating browser memory as the authoritative collection ledger.
+
+## Schema history
+
+- **1.4.0 — 2026-07-22:** Added the independent `Sam Dharmasiri` tab contract,
+  its 149-contact/126-company snapshot, live-evidence mutual-route rules, and
+  atomic stable-ID checkpoint/resume procedure. `Search` and `Warm Paths`
+  remain unchanged.
+- **1.3.0 — 2026-07-22:** Expanded Search to 2,000 rows and documented the
+  content-fitted, top-aligned data-row policy.
+- **1.2.0 — 2026-07-20:** Added the permanent insertion marker and premium
+  portfolio summary.

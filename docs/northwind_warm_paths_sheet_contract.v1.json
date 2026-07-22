@@ -1,6 +1,6 @@
 {
   "contract_type": "google_sheets_layout_contract",
-  "schema_version": "1.3.0",
+  "schema_version": "1.4.0",
   "captured_date": "2026-07-20",
   "last_amended_date": "2026-07-22",
   "canonical": true,
@@ -11,7 +11,8 @@
     "time_zone": "America/Los_Angeles",
     "tabs_in_order": [
       "Search",
-      "Warm Paths"
+      "Warm Paths",
+      "Sam Dharmasiri"
     ]
   },
   "current_snapshot": {
@@ -406,6 +407,94 @@
         ],
         "remaining_company_order": "alphabetical by normalized company name"
       }
+    },
+    "Sam Dharmasiri": {
+      "sheet_id": 1390832825,
+      "index": 2,
+      "template_tab": "Warm Paths",
+      "purpose": "A separate, company-grouped tracker for the 149 CTO-type Sales Navigator contacts returned by the Connections of Sam Dharmasiri filter in Paul Fryer's verified session.",
+      "grid": {
+        "row_count": 1294,
+        "column_count": 26,
+        "used_columns": "A:Y",
+        "reserved_blank_column": "Z"
+      },
+      "current_snapshot": {
+        "contact_count": 149,
+        "unique_lead_id_count": 149,
+        "company_block_count": 126,
+        "company_summary_row_count": 126,
+        "data_row_count": 275,
+        "primary_sam_route_count": 149,
+        "additional_mutual_placement_count": 511,
+        "distinct_additional_mutual_count": 207,
+        "total_named_route_placement_count": 660,
+        "contacts_with_additional_mutuals": 141,
+        "privacy_limited_company_count": 1
+      },
+      "layout": [
+        {"range": "1:1", "role": "title"},
+        {"range": "2:2", "role": "instructions"},
+        {"range": "3:3", "role": "snapshot"},
+        {"range": "4:4", "role": "blank_spacer"},
+        {"range": "5:5", "role": "column_header"},
+        {"range": "6:280", "role": "126_contiguous_company_blocks_with_149_target_rows_and_126_summary_rows"},
+        {"range": "281:281", "role": "permanent_new_company_insertion_marker"},
+        {"range": "282:282", "role": "summary_spacer"},
+        {"range": "283:283", "role": "network_summary_title"},
+        {"range": "284:284", "role": "network_executive_summary"},
+        {"range": "285:285", "role": "network_summary_headers"},
+        {"range": "286:295", "role": "network_summary_metrics"},
+        {"range": "296:296", "role": "network_usage_guidance"},
+        {"range": "297:1294", "role": "unused_blank_grid"}
+      ],
+      "fixed_cells": {
+        "A1": "Northwind CRM Warm Paths Tracker — Sam Dharmasiri",
+        "A2": "One row per target person. Companies stay in contiguous blocks; Mutual 1 is always Sam Dharmasiri, followed by up to four additional named mutuals visible to Paul Fryer.",
+        "A3": "Current Sam network tracker: 126 companies | 149 target people | 660 named route placements | live Sales Navigator DOM research",
+        "X5": "Source / Profile",
+        "A281": "NEW COMPANY INSERTION POINT — Insert every complete new Sam-connected company block immediately above this row. Keep each company contiguous; never overwrite or delete this marker.",
+        "A283": "Sam Dharmasiri Network Summary"
+      },
+      "company_block_rules": {
+        "one_contiguous_block_per_company": true,
+        "target_rows_precede_summary_row": true,
+        "exactly_one_summary_row_per_company": true,
+        "summary_row_is_last_in_block": true,
+        "summary_columns_D_through_Y_are_blank": true,
+        "company_order": "alphabetical; the explicit Company not shown on Sales Navigator block is last",
+        "target_order_within_company": "alphabetical by target name"
+      },
+      "mutual_route_rules": {
+        "mutual_1_column": "D",
+        "mutual_1_required_value": "Sam Dharmasiri",
+        "additional_mutual_columns": ["F", "H", "J", "L"],
+        "maximum_named_mutuals_per_target": 5,
+        "source": "live LinkedIn Sales Navigator DOM in Paul Fryer's verified Chrome session",
+        "deduplication_key": "stable LinkedIn lead ID"
+      },
+      "format_contract": {
+        "inherits": "Warm Paths typography, column widths, target-row structure, company-summary treatment, premium insertion marker, and premium A:C summary table",
+        "data_range": "A6:Y280",
+        "banding_range": "A5:Y280",
+        "first_band_color": "#C1E4F5",
+        "second_band_color": "#FFFFFF",
+        "vertical_alignment": "TOP",
+        "wrap": "WRAP",
+        "row_height": "FIT_TO_DATA",
+        "target_stage_validation": "Warm Paths N-column dropdown on target rows only",
+        "conditional_formatting": [
+          {"range": "Y6:Y280", "formula": "=ISNUMBER(SEARCH(\"Already\",Y6))", "background": "#E8F5E9"},
+          {"range": "Y6:Y280", "formula": "=ISNUMBER(SEARCH(\"needs\",Y6))", "background": "#FFF7ED"}
+        ]
+      },
+      "provenance": {
+        "backup_spreadsheet_id": "18PkfX93HHJLZ19JddA7HCxa2wVA5LYvTz1HppCDZuWg",
+        "evidence_directory": "Evidence/2026-07-22_sam-dharmasiri-149",
+        "dom_evidence_record_count": 149,
+        "full_data_cell_comparison_count": 6875,
+        "original_warm_paths_comparison_count": 9775
+      }
     }
   },
   "integrity_rules": [
@@ -423,7 +512,9 @@
     "A1:Y headers, merged ranges, column widths, row-height policy, colours, validations, banding, and conditional formats must not drift during content edits.",
     "Every populated cell in A6:Y375 is vertically top-aligned and every affected data row is fitted to its wrapped content after an edit.",
     "Search!A8 must read the complete Warm Paths data region and the Search grid and banding must be tall enough for the maximum spill result.",
-    "Column Z on Warm Paths remains blank and reserved."
+    "Column Z on Warm Paths remains blank and reserved.",
+    "The Sam Dharmasiri tab contains exactly 149 unique target rows in 126 contiguous company blocks, and every target row has Sam Dharmasiri in Mutual 1.",
+    "The Sam Dharmasiri tab is independent of Search and Warm Paths; changes to it must not alter either existing tab unless a later reviewed schema explicitly authorizes that dependency."
   ],
   "change_protocol": [
     "Read this contract and docs/northwind_warm_paths_sheet_contract.md before every edit.",
@@ -437,6 +528,11 @@
     "After writing, prove that all non-targeted values and user-entered formats are byte-for-byte unchanged, all PF feedback is exact, every company is contiguous, all counts reconcile, and the rendered sheet has no format boundary."
   ],
   "change_log": [
+    {
+      "version": "1.4.0",
+      "date": "2026-07-22",
+      "change": "Added the independent Sam Dharmasiri tab by duplicating the Warm Paths visual/native-cell template, then populated 149 unique Sales Navigator contacts in 126 contiguous company blocks with Sam fixed as Mutual 1, up to four additional named mutuals, a permanent row-281 insertion marker, and a premium network summary at rows 283:296. Search and Warm Paths remain unchanged."
+    },
     {
       "version": "1.3.0",
       "date": "2026-07-22",
