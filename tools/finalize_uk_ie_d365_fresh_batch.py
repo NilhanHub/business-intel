@@ -13,12 +13,13 @@ import html
 import json
 import re
 import shutil
+import urllib.request
 from collections import Counter
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-import requests
+from business_intel.public_http import PublicHTTPError, fetch_public_http
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 EVIDENCE_DIR = PROJECT_ROOT / "Evidence"
@@ -378,17 +379,20 @@ def fetch_source_checks(leads: list[dict[str, Any]], artifact_texts: dict[str, s
         }
         record["supplemental_live_check_required"] = not record["raw_artifact_hits"]
         try:
-            response = requests.get(
-                url,
-                headers={"User-Agent": "Mozilla/5.0 Codex Evidence Check"},
-                timeout=30,
-                allow_redirects=True,
+            response = fetch_public_http(
+                urllib.request.Request(
+                    url, headers={"User-Agent": "Business_Intel/1.0 evidence check"}
+                ),
+                timeout_seconds=30,
+                max_body_bytes=500_000,
             )
             content_type = response.headers.get("content-type", "")
+            raw_body = response.body
+            decoded = raw_body.decode("utf-8", errors="replace")
             source_text = (
-                plain_text_from_html(response.text)
+                plain_text_from_html(decoded)
                 if "html" in content_type.lower() or "text" in content_type.lower()
-                else response.content[:500_000].decode("latin-1", errors="ignore")
+                else raw_body.decode("latin-1", errors="ignore")
             )
             matched_terms = [term for term in terms if term.lower() in source_text.lower()]
             record.update(
@@ -396,7 +400,7 @@ def fetch_source_checks(leads: list[dict[str, Any]], artifact_texts: dict[str, s
                     "status_code": response.status_code,
                     "final_url": response.url,
                     "content_type": content_type,
-                    "bytes_fetched": len(response.content),
+                    "bytes_fetched": len(raw_body),
                     "matched_source_terms": matched_terms,
                     "source_text_extractable": bool(matched_terms),
                 }
@@ -405,15 +409,16 @@ def fetch_source_checks(leads: list[dict[str, Any]], artifact_texts: dict[str, s
                 response.status_code < 400
                 and record["public_url_clean"]
                 and not any(part in response.url.lower() for part in FORBIDDEN_URL_PARTS)
+                and bool(matched_terms)
             )
-        except requests.RequestException as exc:
+        except (PublicHTTPError, OSError, UnicodeError) as exc:
             record.update({"error": f"{type(exc).__name__}: {exc}", "source_text_extractable": False})
 
         if company_name in PDF_VISUAL_SOURCE_NOTES:
             record["manual_visual_source_note"] = PDF_VISUAL_SOURCE_NOTES[company_name]
 
-        if record["supplemental_live_check_required"] and not record["verified_live"]:
-            raise SystemExit(f"Supplemental source check failed for {company_name}: {url}")
+        if not record["verified_live"]:
+            raise SystemExit(f"Live source check failed for {company_name}: {url}")
         records.append(record)
 
     supplemental = [record for record in records if record["supplemental_live_check_required"]]
@@ -699,6 +704,10 @@ def main() -> int:
                 "raw_artifact_hits": source_record["raw_artifact_hits"],
                 "supplemental_live_check_required": source_record["supplemental_live_check_required"],
                 "source_check_verified_live": source_record["verified_live"],
+                "verified_live": source_record["verified_live"],
+                "source_fetch_status": "fetched",
+                "source_fetch_url": source_record["evidence_url"],
+                "fetched_at": source_record["fetched_at"],
                 "final_evidence_url_after_redirect": source_record.get("final_url", lead["evidence_url"]),
             }
         )

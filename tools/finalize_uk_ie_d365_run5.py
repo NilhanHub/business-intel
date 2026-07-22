@@ -359,24 +359,9 @@ def finalize() -> dict[str, Any]:
     validate_catalog()
     fetcher = lead_tools.SourceFetcher(parse_pdfs=True, timeout=30)
     started = now_utc()
-    existing_path = EVIDENCE_DIR / f"{OUTPUT_BASENAME}.json"
     cached_fetches: dict[str, dict[str, Any]] = {}
-    if existing_path.is_file():
-        existing = json.loads(existing_path.read_text(encoding="utf-8"))
-        for lead in existing.get("leads") or []:
-            url = str(lead.get("evidence_url") or "")
-            key = lead_tools.canonical_url_key(url)
-            if key and lead.get("verified_live"):
-                cached_fetches[key] = {
-                    "url": url,
-                    "final_url": url,
-                    "source_name": lead.get("source_name"),
-                    "fetched_at": lead.get("fetched_at"),
-                    "verified_live": True,
-                    "source_fetch_status": "fetched",
-                    "text_excerpt": lead.get("evidence_excerpt"),
-                    "resumed_from_existing_verified_pack": True,
-                }
+    # Verification is intentionally current-run only.  A prior pack is useful
+    # history, but it must not turn a failed refresh into fresh live evidence.
     records = [
         build_record(
             item,

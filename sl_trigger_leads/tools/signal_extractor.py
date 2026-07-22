@@ -75,7 +75,16 @@ def _evidence_items_from_links(source_result: dict[str, Any]) -> list[dict[str, 
         lowered = text.lower()
         if terms and not any(term in lowered for term in terms):
             continue
-        items.append({"text": text, "url": link.get("url") or source_result.get("resolved_url")})
+        # Anchor text is evidence from the page that was actually fetched.  The
+        # linked destination has not been fetched yet and must not be promoted
+        # as independently verified evidence.
+        items.append(
+            {
+                "text": text,
+                "url": source_result.get("resolved_url") or source_meta.get("base_url"),
+                "related_url": link.get("url") or "",
+            }
+        )
     return items
 
 
@@ -97,20 +106,37 @@ def _evidence_items_from_text(source_result: dict[str, Any]) -> list[dict[str, s
 
 
 def extract_public_signals(html_or_text: str, source_meta: dict[str, Any]) -> list[dict[str, Any]]:
-    """Extract source-backed candidate public signals from text for a single source."""
-    pseudo_result = {
-        "source_meta": source_meta,
-        "text": html_or_text,
-        "links": [],
-        "resolved_url": source_meta.get("base_url"),
-        "fetched_at": source_meta.get("fetched_at"),
-    }
-    return extract_public_signals_from_source(pseudo_result)
+    """Refetch the declared public source before treating supplied text as evidence.
+
+    The model-facing argument is retained for API compatibility, but untrusted
+    caller text is never promoted as live evidence.  Extraction uses only the
+    bounded response returned by the hardened public fetcher.
+    """
+    del html_or_text
+    from .source_fetcher import extract_links, fetch_url, strip_html
+
+    source_url = clean_text(source_meta.get("base_url"))
+    fetched = fetch_url(source_url)
+    if not fetched.get("ok"):
+        return []
+    raw_text = fetched.get("text", "")
+    resolved_url = fetched.get("url") or source_url
+    return extract_public_signals_from_source(
+        {
+            "ok": True,
+            "fetch_status": "success",
+            "source_meta": source_meta,
+            "text": strip_html(raw_text),
+            "links": extract_links(raw_text, resolved_url),
+            "resolved_url": resolved_url,
+            "fetched_at": fetched.get("fetched_at"),
+        }
+    )
 
 
 def extract_public_signals_from_source(source_result: dict[str, Any]) -> list[dict[str, Any]]:
     source_meta = source_result["source_meta"]
-    if not source_result.get("ok"):
+    if not source_result.get("ok") or not source_result.get("resolved_url"):
         return []
 
     raw_items = _evidence_items_from_links(source_result) + _evidence_items_from_text(source_result)
@@ -149,6 +175,8 @@ def extract_public_signals_from_source(source_result: dict[str, Any]) -> list[di
                 "published_or_seen_date": _extract_date(excerpt) or source_result.get("fetched_at", "")[:10],
                 "fetched_at": source_result.get("fetched_at"),
                 "verified_live": True,
+                "source_fetch_status": source_result.get("fetch_status") or "fetched",
+                "source_fetch_url": source_result.get("resolved_url"),
                 "1bt_fit": fit,
                 "limits": "Source page was fetched live, but company/contact details may require manual verification before outreach.",
             }

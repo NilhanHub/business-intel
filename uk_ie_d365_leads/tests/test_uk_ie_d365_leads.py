@@ -4,7 +4,6 @@ import os
 import tempfile
 import unittest
 from pathlib import Path
-from typing import ClassVar
 from unittest.mock import patch
 
 from hello_cloud_agent.hello_cloud_agent.agent import root_agent as hello_root_agent
@@ -253,22 +252,21 @@ class UkIeD365LeadsTest(unittest.TestCase):
         self.assertTrue(result["provider_errors"])
 
     def test_source_fetcher_follows_redirect_and_records_final_url(self):
-        class FakeResponse:
-            url = "https://customer.example.co.uk/canonical-d365"
-            status_code = 200
-            ok = True
-            headers: ClassVar[dict[str, str]] = {
-                "content-type": "text/html; charset=utf-8"
-            }
-            encoding = "utf-8"
-            apparent_encoding = "utf-8"
-            content = (
+        response = lead_tools.PublicHttpResponse(
+            final_url="https://customer.example.co.uk/canonical-d365",
+            status_code=200,
+            headers={"content-type": "text/html; charset=utf-8"},
+            encoding="utf-8",
+            body=(
                 b"<html><head><title>Customer D365 story</title>"
                 b'<link rel="canonical" href="/canonical-d365"></head>'
                 b"<body>UK customer implemented Dynamics 365 Business Central.</body></html>"
-            )
+            ),
+        )
 
-        with patch.object(lead_tools.requests, "get", return_value=FakeResponse()):
+        with patch.object(
+            lead_tools, "fetch_public_url_requests", return_value=response
+        ):
             fetched = lead_tools.SourceFetcher().fetch(
                 "https://redirect.example.co.uk/story", provider="unit"
             )
@@ -297,19 +295,18 @@ class UkIeD365LeadsTest(unittest.TestCase):
                 self.assertFalse(fetched["verified_live"])
 
     def test_source_fetcher_parses_public_text_pdf_when_enabled(self):
-        class FakeResponse:
-            url = "https://customer.co.uk/case-study.pdf"
-            status_code = 200
-            ok = True
-            headers: ClassVar[dict[str, str]] = {"content-type": "application/pdf"}
-            encoding = None
-            apparent_encoding = None
-            content = None
-
-        FakeResponse.content = self._minimal_text_pdf(
-            "Contoso Retail Ltd implemented Dynamics 365 Business Central for UK finance operations."
+        response = lead_tools.PublicHttpResponse(
+            final_url="https://customer.co.uk/case-study.pdf",
+            status_code=200,
+            headers={"content-type": "application/pdf"},
+            encoding=None,
+            body=self._minimal_text_pdf(
+                "Contoso Retail Ltd implemented Dynamics 365 Business Central for UK finance operations."
+            ),
         )
-        with patch.object(lead_tools.requests, "get", return_value=FakeResponse()):
+        with patch.object(
+            lead_tools, "fetch_public_url_requests", return_value=response
+        ):
             fetched = lead_tools.SourceFetcher(parse_pdfs=True).fetch(
                 "https://customer.co.uk/case-study.pdf",
                 provider="unit",
@@ -320,16 +317,16 @@ class UkIeD365LeadsTest(unittest.TestCase):
         self.assertIn("pdf_", fetched["pdf_parser_status"])
 
     def test_source_fetcher_keeps_image_heavy_pdf_for_cleanup(self):
-        class FakeResponse:
-            url = "https://customer.co.uk/image-only-case-study.pdf"
-            status_code = 200
-            ok = True
-            headers: ClassVar[dict[str, str]] = {"content-type": "application/pdf"}
-            encoding = None
-            apparent_encoding = None
-            content = b"%PDF-1.4\n1 0 obj << /Type /Catalog >> endobj\n%%EOF\n"
-
-        with patch.object(lead_tools.requests, "get", return_value=FakeResponse()):
+        response = lead_tools.PublicHttpResponse(
+            final_url="https://customer.co.uk/image-only-case-study.pdf",
+            status_code=200,
+            headers={"content-type": "application/pdf"},
+            encoding=None,
+            body=b"%PDF-1.4\n1 0 obj << /Type /Catalog >> endobj\n%%EOF\n",
+        )
+        with patch.object(
+            lead_tools, "fetch_public_url_requests", return_value=response
+        ):
             fetched = lead_tools.SourceFetcher(parse_pdfs=True).fetch(
                 "https://customer.co.uk/image-only-case-study.pdf",
                 provider="unit",
@@ -1548,6 +1545,68 @@ class UkIeD365LeadsTest(unittest.TestCase):
             merged["vetting_output"]["counts"]["candidates_loaded_for_vetting"], 2
         )
         self.assertEqual(merged["vetting_output"]["metadata"]["merged_batch_count"], 2)
+        self.assertFalse(merged["vetting_output"]["metadata"]["live_llm_used"])
+        with self.assertRaisesRegex(ValueError, "saved live Vertex vetting provenance"):
+            opportunity_vetting_tools.require_live_vetting_for_final_pack(
+                merged["vetting_output"]
+            )
+
+    def test_final_pack_accepts_legacy_live_vetting_provenance(self):
+        live_output = {
+            "metadata": {
+                "provider_path": opportunity_vetting_tools.GEMINI_AGENT_PLATFORM_PROVIDER_PATH,
+                "auth_mode": "ADC",
+            },
+            "llm_request_records": [
+                {"request_index": 1, "model_version": "unit-live-model"}
+            ],
+        }
+
+        opportunity_vetting_tools.require_live_vetting_for_final_pack(live_output)
+        provenance = opportunity_vetting_tools.vetting_review_provenance(live_output)
+
+        self.assertTrue(provenance["live_vetting_verified"])
+        self.assertEqual(provenance["review_mode"], "legacy_provider_metadata")
+
+    def test_final_pack_rejects_explicit_dry_run_provenance(self):
+        dry_run_output = {
+            "metadata": {
+                "provider_path": opportunity_vetting_tools.GEMINI_AGENT_PLATFORM_PROVIDER_PATH,
+                "auth_mode": "ADC",
+                "review_mode": "dry_run",
+                "live_llm_used": False,
+            },
+            "llm_request_records": [
+                {"request_index": 1, "model_version": "dry-run"}
+            ],
+        }
+
+        with self.assertRaisesRegex(ValueError, "explicitly_records_non_live_review"):
+            opportunity_vetting_tools.require_live_vetting_for_final_pack(
+                dry_run_output
+            )
+
+    def test_final_pack_rejects_failed_live_model_request(self):
+        failed_output = {
+            "metadata": {
+                "provider_path": opportunity_vetting_tools.GEMINI_AGENT_PLATFORM_PROVIDER_PATH,
+                "auth_mode": "gcloud_short_lived_access_token",
+                "review_mode": opportunity_vetting_tools.LIVE_VETTING_REVIEW_MODE,
+                "live_llm_used": True,
+            },
+            "llm_request_records": [
+                {
+                    "request_index": 1,
+                    "request_error_type": "RuntimeError",
+                    "model_version": None,
+                }
+            ],
+        }
+
+        with self.assertRaisesRegex(ValueError, "failed_model_requests"):
+            opportunity_vetting_tools.require_live_vetting_for_final_pack(
+                failed_output
+            )
 
     def test_ai_vetter_provider_label_uses_agent_platform_branding(self):
         def fake_factory(model_override=None):
@@ -1853,6 +1912,10 @@ class UkIeD365LeadsTest(unittest.TestCase):
             "signal_strength": "strong",
             "signal_type": "business_central_rollout",
             "evidence_url": evidence_url,
+            "verified_live": True,
+            "source_fetch_status": "fetched",
+            "source_fetch_url": evidence_url,
+            "fetched_at": "2026-06-14T00:00:00+00:00",
             "evidence_excerpt": "UK manufacturer selected Dynamics 365 Business Central for finance and operations.",
             "opportunity_signal": "Dynamics 365 Business Central rollout signal.",
             "why_this_matters_to_1bt": "Clear Microsoft business-app change creates support and optimisation needs.",
@@ -2113,6 +2176,7 @@ class UkIeD365LeadsTest(unittest.TestCase):
                 "final_url": url,
                 "source_name": "Northstar Components public news",
                 "verified_live": True,
+                "source_fetch_status": "fetched",
                 "fetched_at": "2026-06-14T00:00:00+00:00",
                 "text_excerpt": "Northstar selected Dynamics 365 Business Central for finance and operations.",
             }
@@ -2377,6 +2441,16 @@ class UkIeD365LeadsTest(unittest.TestCase):
             self.assertTrue(
                 (Path(tmp_dir) / "UNIT_FRESH_FINAL_SHORTAGE_REPORT.json").is_file()
             )
+            ledger = json.loads(
+                (Path(tmp_dir) / "UNIT_FRESH_FINAL_CANDIDATE_LEDGER.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            self.assertEqual(ledger[0]["source_fetch_status"], "fetched")
+            self.assertEqual(
+                ledger[0]["evidence_url"],
+                "https://northstar-components.co.uk/news/dynamics-365-business-central",
+            )
         self.assertEqual(
             Path(package["artifacts"]["json"]).name, "UNIT_FRESH_FINAL.json"
         )
@@ -2440,6 +2514,7 @@ class UkIeD365LeadsTest(unittest.TestCase):
                 "final_url": final_url,
                 "source_name": "Northstar Components",
                 "verified_live": True,
+                "source_fetch_status": "fetched",
                 "fetched_at": "2026-06-24T00:00:00+00:00",
                 "text_excerpt": "UK manufacturer selected Dynamics 365 Business Central.",
             }
@@ -2564,8 +2639,22 @@ class UkIeD365LeadsTest(unittest.TestCase):
 
     def test_final_selection_requires_verified_live_public_evidence(self):
         record = self._vetting_record()
-        record["candidate"]["verified_live"] = False
-        record["final_review"]["verified_live"] = False
+        record["candidate"]["source_fetch"]["verified_live"] = False
+        record["candidate"]["source_fetch"]["source_fetch_status"] = "unverified"
+        reason = opportunity_vetting_tools.exclusion_reason_for_review(
+            record["final_review"],
+            record["candidate"],
+            record["candidate"]["company_name"],
+            duplicate_blocklist=set(),
+            follow_up=[],
+        )
+        self.assertEqual(reason, "missing_verified_live_public_evidence")
+
+    def test_self_attested_verified_flags_do_not_replace_fetch_proof(self):
+        record = self._vetting_record()
+        record["candidate"].pop("source_fetch")
+        record["candidate"]["verified_live"] = True
+        record["final_review"]["verified_live"] = True
         reason = opportunity_vetting_tools.exclusion_reason_for_review(
             record["final_review"],
             record["candidate"],
@@ -2617,6 +2706,21 @@ class UkIeD365LeadsTest(unittest.TestCase):
         url: str = "https://northstar-components.co.uk/news/dynamics-365-business-central",
         source_channel: str = "public_web",
     ):
+        source_fetch = {
+            "kind": "source_fetch",
+            "url": url,
+            "final_url": url,
+            "source_name": company_name,
+            "verified_live": source_channel == "public_web",
+            "source_fetch_status": (
+                "fetched" if source_channel == "public_web" else "unverified"
+            ),
+            "fetched_at": "2026-06-24T00:00:00+00:00",
+            "text_excerpt": (
+                "UK manufacturer selected Dynamics 365 Business Central for "
+                "finance and operations."
+            ),
+        }
         candidate = {
             "company_name": company_name,
             "evidence_urls": [url],
@@ -2626,6 +2730,7 @@ class UkIeD365LeadsTest(unittest.TestCase):
             "source_channel": source_channel,
             "verified_live": source_channel == "public_web",
             "final_pdf_eligible": source_channel == "public_web",
+            "source_fetch": source_fetch,
         }
         final_review = {
             "company_name": company_name,

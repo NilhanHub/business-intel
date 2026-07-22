@@ -16,6 +16,7 @@ from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any, Protocol
 
+from business_intel.public_http import fetch_public_http
 from uk_ie_d365_leads.tools.lead_tools import gcloud_account_credentials
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -293,10 +294,13 @@ class HunterContactEnrichmentProvider:
             },
         )
         try:
-            with urllib.request.urlopen(request, timeout=self.timeout_seconds) as response:
-                raw = response.read()
-                charset = response.headers.get_content_charset() or "utf-8"
-                return json.loads(raw.decode(charset, errors="replace"))
+            response = fetch_public_http(
+                request,
+                timeout_seconds=self.timeout_seconds,
+                max_body_bytes=1_000_000,
+            )
+            charset = response.headers.get_content_charset() or "utf-8"
+            return json.loads(response.body.decode(charset, errors="replace"))
         except urllib.error.HTTPError as exc:
             try:
                 raise RuntimeError(f"Hunter API HTTP {exc.code}") from exc
@@ -791,15 +795,18 @@ def _http_get_text(url: str, *, timeout: int) -> _HTTPText:
     }
     request = urllib.request.Request(normalized_url, headers=headers)
     try:
-        with urllib.request.urlopen(request, timeout=timeout) as response:
-            raw = response.read()
-            charset = response.headers.get_content_charset() or "utf-8"
-            return _HTTPText(
-                url=response.geturl(),
-                status_code=response.status,
-                text=raw.decode(charset, errors="replace"),
-                error=None,
-            )
+        response = fetch_public_http(
+            request,
+            timeout_seconds=timeout,
+            max_body_bytes=1_000_000,
+        )
+        charset = response.headers.get_content_charset() or "utf-8"
+        return _HTTPText(
+            url=response.url,
+            status_code=response.status_code,
+            text=response.body.decode(charset, errors="replace"),
+            error=None,
+        )
     except urllib.error.HTTPError as exc:
         try:
             return _HTTPText(url=normalized_url, status_code=exc.code, text="", error=str(exc))
@@ -828,6 +835,8 @@ def normalize_public_url(url: Any) -> str | None:
             return None
     parsed = urllib.parse.urlparse(value)
     if parsed.scheme not in {"http", "https"} or not parsed.netloc or "." not in parsed.netloc:
+        return None
+    if parsed.username is not None or parsed.password is not None:
         return None
     try:
         host = parsed.netloc.encode("idna").decode("ascii").lower()

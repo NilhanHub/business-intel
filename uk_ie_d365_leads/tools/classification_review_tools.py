@@ -462,6 +462,8 @@ def write_phase1_artifacts(
     paths["report"].write_text(render_report(review_output, command_log, paths), encoding="utf-8")
     scan = scan_secret_patterns([paths["input_batch"], paths["review_json"], paths["review_md"], paths["rule_plan"], paths["report"]])
     write_json(paths["secret_scan"], scan)
+    if scan["result"] != "PASS":
+        raise RuntimeError(f"Secret scan failed; refusing evidence ZIP: {paths['secret_scan']}")
     manifest = build_manifest(paths, scan)
     write_json(paths["manifest"], manifest)
     manifest = build_manifest(paths, scan)
@@ -793,6 +795,7 @@ def build_live_review_package(
     live_records = []
     requests = []
     for request_index, record in enumerate(selected_records, start=1):
+        assert_secret_free_payload(record, context=f"classification candidate {request_index}")
         prompt = build_live_review_prompt(record)
         if reviewer_call is None:
             response_text, usage, model_version = call_vertex_reviewer(
@@ -894,6 +897,16 @@ def build_live_review_prompt(record: dict[str, Any]) -> str:
         "one review object for the provided candidate.\n\n"
         + json.dumps(payload, indent=2, sort_keys=True, ensure_ascii=True)
     )
+
+
+def assert_secret_free_payload(value: Any, *, context: str) -> None:
+    """Fail before external model calls when supplied evidence resembles a secret."""
+    text = json.dumps(value, ensure_ascii=False, sort_keys=True)
+    matches = sorted(name for name, pattern in SECRET_PATTERNS.items() if pattern.search(text))
+    if matches:
+        raise RuntimeError(
+            f"Secret scan failed for {context}; external model call refused ({', '.join(matches)})."
+        )
 
 
 def call_vertex_reviewer(*, client: Any, model: str, prompt: str) -> tuple[str, dict[str, Any], str | None]:
@@ -1347,6 +1360,8 @@ def write_phase2_artifacts(
         ]
     )
     write_json(paths["secret_scan"], scan)
+    if scan["result"] != "PASS":
+        raise RuntimeError(f"Secret scan failed; refusing evidence ZIP: {paths['secret_scan']}")
     manifest = build_phase2_manifest(paths, scan)
     write_json(paths["manifest"], manifest)
     create_phase2_evidence_zip(paths)

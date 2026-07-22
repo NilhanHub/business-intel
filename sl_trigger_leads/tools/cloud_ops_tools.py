@@ -258,13 +258,16 @@ def search_runtime_logs(query: str = "HUNTER", limit: int = 20) -> dict[str, Any
         }
     entries = (response.get("payload") or {}).get("entries") or []
     safe_entries = []
+    severity_counts: dict[str, int] = {}
     for entry in entries[: max(1, min(int(limit or 20), 50))]:
+        severity = str(entry.get("severity") or "DEFAULT")
+        severity_counts[severity] = severity_counts.get(severity, 0) + 1
         safe_entries.append(
             {
                 "timestamp": entry.get("timestamp"),
                 "logName": entry.get("logName"),
                 "resource_type": (entry.get("resource") or {}).get("type"),
-                "text_preview": _sanitize_text(json.dumps(entry.get("jsonPayload") or entry.get("textPayload") or ""))[:500],
+                "severity": severity,
             }
         )
     return _assert_no_secret_output(
@@ -273,6 +276,8 @@ def search_runtime_logs(query: str = "HUNTER", limit: int = 20) -> dict[str, Any
             "status": "OK",
             "query": query,
             "result_count": len(entries),
+            "returned_count": len(safe_entries),
+            "severity_counts": severity_counts,
             "entries": safe_entries,
         }
     )

@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import csv
 import json
+import os
+import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -50,6 +52,7 @@ def find_live_leads(max_results: int = 10, source_limit: int = 4, write_outputs:
     rejected = []
     for candidate in candidates:
         try:
+            assert_no_simulation_data([candidate], require_fetch_proof=True)
             scored = score_live_lead(candidate)
             if scored["score"]["verdict"] == "Park" and scored["trigger_type"] == "tender_or_procurement":
                 rejected.append({"company": scored.get("company"), "reason": "Tender/procurement-only signal"})
@@ -127,15 +130,14 @@ def create_live_account_pack(lead: dict[str, Any]) -> dict[str, Any]:
 
 def export_live_leads_csv(output_json_path: str = "", output_csv_path: str = "") -> dict[str, Any]:
     """Export the most recent live leads JSON to CSV."""
-    json_path = Path(output_json_path) if output_json_path else OUTPUT_DIR / "PROMPT#04_live_leads.json"
-    csv_path = Path(output_csv_path) if output_csv_path else OUTPUT_DIR / "PROMPT#04_live_leads.csv"
+    json_path = _resolve_output_path(output_json_path, "PROMPT#04_live_leads.json")
+    csv_path = _resolve_output_path(output_csv_path, "PROMPT#04_live_leads.csv")
     if not json_path.exists():
         return {"ok": False, "error": f"JSON output not found: {json_path}"}
     data = json.loads(json_path.read_text(encoding="utf-8"))
     leads = data.get("leads", [])
     if leads:
         assert_no_simulation_data(leads)
-    csv_path.parent.mkdir(parents=True, exist_ok=True)
     fields = [
         "company",
         "country",
@@ -149,25 +151,23 @@ def export_live_leads_csv(output_json_path: str = "", output_csv_path: str = "")
         "outreach_angle",
         "limits",
     ]
-    with csv_path.open("w", encoding="utf-8", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=fields)
-        writer.writeheader()
-        for lead in leads:
-            writer.writerow(
-                {
-                    "company": lead.get("company"),
-                    "country": lead.get("country"),
-                    "sector": lead.get("sector"),
-                    "trigger_type": lead.get("trigger_type"),
-                    "evidence_url": lead.get("evidence_url"),
-                    "source_name": lead.get("source_name"),
-                    "published_or_seen_date": lead.get("published_or_seen_date"),
-                    "score_total": (lead.get("score") or {}).get("total"),
-                    "verdict": (lead.get("score") or {}).get("verdict"),
-                    "outreach_angle": lead.get("outreach_angle"),
-                    "limits": lead.get("limits"),
-                }
-            )
+    rows = [
+        {
+            "company": lead.get("company"),
+            "country": lead.get("country"),
+            "sector": lead.get("sector"),
+            "trigger_type": lead.get("trigger_type"),
+            "evidence_url": lead.get("evidence_url"),
+            "source_name": lead.get("source_name"),
+            "published_or_seen_date": lead.get("published_or_seen_date"),
+            "score_total": (lead.get("score") or {}).get("total"),
+            "verdict": (lead.get("score") or {}).get("verdict"),
+            "outreach_angle": lead.get("outreach_angle"),
+            "limits": lead.get("limits"),
+        }
+        for lead in leads
+    ]
+    _atomic_write_csv(csv_path, fields, rows)
     return {"ok": True, "csv_path": str(csv_path), "row_count": len(leads)}
 
 
@@ -225,6 +225,73 @@ def _write_live_run(result: dict[str, Any]) -> None:
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     LIVE_RUN_DIR.mkdir(parents=True, exist_ok=True)
     payload = json.dumps(result, indent=2, ensure_ascii=False)
-    (OUTPUT_DIR / "PROMPT#04_live_leads.json").write_text(payload, encoding="utf-8")
+    _atomic_write_text(OUTPUT_DIR / "PROMPT#04_live_leads.json", payload)
     safe_ts = result["fetched_at"].replace(":", "-")
-    (LIVE_RUN_DIR / f"{safe_ts}_live_leads.json").write_text(payload, encoding="utf-8")
+    _atomic_write_text(LIVE_RUN_DIR / f"{safe_ts}_live_leads.json", payload)
+
+
+def _resolve_output_path(value: str, default_name: str) -> Path:
+    root = OUTPUT_DIR.resolve()
+    candidate = Path(value) if value else root / default_name
+    if not candidate.is_absolute():
+        candidate = root / candidate
+    resolved = candidate.resolve(strict=False)
+    if not resolved.is_relative_to(root):
+        raise ValueError(f"Export path must stay within the outputs directory: {root}")
+    return resolved
+
+
+def _escape_csv_formula(value: Any) -> Any:
+    if isinstance(value, str) and value.lstrip().startswith(("=", "+", "-", "@")):
+        return f"'{value}"
+    return value
+
+
+def _atomic_write_csv(
+    path: Path,
+    fields: list[str],
+    rows: list[dict[str, Any]],
+) -> None:
+    path = _resolve_output_path(str(path), path.name)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temp_path: Path | None = None
+    try:
+        fd, raw_temp_path = tempfile.mkstemp(
+            dir=path.parent,
+            prefix=f".{path.stem}-",
+            suffix=".tmp",
+        )
+        temp_path = Path(raw_temp_path)
+        with os.fdopen(fd, "w", encoding="utf-8", newline="") as handle:
+            writer = csv.DictWriter(handle, fieldnames=fields)
+            writer.writeheader()
+            for row in rows:
+                writer.writerow({key: _escape_csv_formula(value) for key, value in row.items()})
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temp_path, path)
+        temp_path = None
+    finally:
+        if temp_path is not None:
+            temp_path.unlink(missing_ok=True)
+
+
+def _atomic_write_text(path: Path, payload: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temp_path: Path | None = None
+    try:
+        fd, raw_temp_path = tempfile.mkstemp(
+            dir=path.parent,
+            prefix=f".{path.stem}-",
+            suffix=".tmp",
+        )
+        temp_path = Path(raw_temp_path)
+        with os.fdopen(fd, "w", encoding="utf-8", newline="\n") as handle:
+            handle.write(payload)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temp_path, path)
+        temp_path = None
+    finally:
+        if temp_path is not None:
+            temp_path.unlink(missing_ok=True)

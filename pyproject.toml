@@ -73,7 +73,7 @@ select = [
 ignore = ["E501", "C901", "B006"] # ignore line too long, too complex
 
 [tool.ruff.lint.isort]
-known-first-party = ["sl_trigger_leads", "uk_ie_d365_leads", "frontend"]
+known-first-party = ["business_intel", "sl_trigger_leads", "uk_ie_d365_leads", "frontend"]
 
 [tool.ruff.lint.per-file-ignores]
 "tools/*.py" = ["E402"]
@@ -139,7 +139,7 @@ exclude = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["sl_trigger_leads", "uk_ie_d365_leads", "frontend"]
+packages = ["business_intel", "sl_trigger_leads", "uk_ie_d365_leads", "frontend"]
 
 [tool.agents-cli]
 # Generation metadata - enables CLI commands to understand project context

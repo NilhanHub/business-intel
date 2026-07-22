@@ -4,14 +4,13 @@ from __future__ import annotations
 
 import argparse
 import subprocess
-import urllib.error
-import urllib.request
 from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
 import pytest
 
+from business_intel import public_http
 from sl_trigger_leads.tools import (
     live_contact_search_tools,
     source_fetcher,
@@ -264,15 +263,23 @@ def test_post_update_requires_preserved_state_and_no_fifth_runtime() -> None:
         deploy.validate_post_update_snapshot(after, state, 5)
 
 
-class TrackingHTTPError(urllib.error.HTTPError):
+class TrackingHTTPResponse:
+    status = 404
+    reason = "Not Found"
+
     def __init__(self) -> None:
-        super().__init__(
-            "https://public.example.invalid/resource",
-            404,
-            "Not Found",
-            hdrs=None,
-            fp=None,
-        )
+        self.headers: dict[str, str] = {}
+        self.was_closed = False
+
+    def close(self) -> None:
+        self.was_closed = True
+
+    def getheader(self, _name: str) -> None:
+        return None
+
+
+class TrackingHTTPConnection:
+    def __init__(self) -> None:
         self.was_closed = False
 
     def close(self) -> None:
@@ -282,13 +289,13 @@ class TrackingHTTPError(urllib.error.HTTPError):
 @pytest.mark.parametrize(
     "call",
     [
-        lambda: source_health.test_source_url("https://public.example.invalid"),
-        lambda: source_fetcher.fetch_url("https://public.example.invalid"),
+        lambda: source_health.test_source_url("https://example.com"),
+        lambda: source_fetcher.fetch_url("https://example.com"),
         lambda: live_contact_search_tools.HunterContactEnrichmentProvider(
             api_key="test-only"
         )._request_json("domain-search", {"domain": "example.invalid"}),
         lambda: live_contact_search_tools._http_get_text(
-            "https://public.example.invalid", timeout=1
+            "https://example.com", timeout=1
         ),
     ],
 )
@@ -296,15 +303,27 @@ def test_all_http_error_paths_close_responses(
     call: Any,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    error = TrackingHTTPError()
+    response = TrackingHTTPResponse()
+    connection = TrackingHTTPConnection()
 
-    def raise_error(*_args: Any, **_kwargs: Any) -> Any:
-        raise error
+    monkeypatch.setattr(
+        public_http,
+        "resolve_public_url",
+        lambda url, **_kwargs: (
+            url,
+            (public_http.ipaddress.ip_address("93.184.216.34"),),
+        ),
+    )
+    monkeypatch.setattr(
+        public_http,
+        "_open_pinned_response",
+        lambda *_args, **_kwargs: (response, connection),
+    )
 
-    monkeypatch.setattr(urllib.request, "urlopen", raise_error)
     try:
         call()
     except RuntimeError:
         pass
 
-    assert error.was_closed is True
+    assert response.was_closed is True
+    assert connection.was_closed is True

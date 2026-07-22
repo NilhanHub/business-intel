@@ -589,6 +589,11 @@ def render_report(data: dict[str, Any]) -> str:
 
 
 def main() -> int:
+    raise SystemExit(
+        "This archived snapshot generator is disabled because its embedded June 2026 "
+        "records are not current live-fetch proof. Use run_uk_ie_d365_ai_vetting.py "
+        "with live source verification instead."
+    )
     for label, path in INPUT_FILES.items():
         if not path.exists():
             raise SystemExit(f"Missing required evidence input {label}: {path}")

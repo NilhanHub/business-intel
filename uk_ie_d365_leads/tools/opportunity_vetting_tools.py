@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import re
@@ -19,6 +20,8 @@ DEFAULT_OUTPUT_BASENAME = "UK_IE_D365_AI_VETTING"
 FRESH_LEADS_BASENAME = "UK_IE_D365_USEFUL_LEADS_FRESH_20260612"
 DETERMINISTIC_AUDIT_BASENAME = "UK_IE_D365_DETERMINISTIC_REJECT_AUDIT_20260612"
 GEMINI_AGENT_PLATFORM_PROVIDER_PATH = "google-genai Gemini Enterprise Agent Platform / Vertex AI API via ADC"
+LIVE_VETTING_REVIEW_MODE = "live_vertex_ai"
+NON_LIVE_REVIEW_MARKERS = ("dry-run", "dry_run", "deterministic", "synthetic", "simulated", "injected")
 
 VALID_LEAD_STATUSES = {
     "ready_to_contact",
@@ -712,6 +715,8 @@ def build_vetting_package(
             "project": client_info["project"],
             "location": client_info["location"],
             "auth_mode": client_info["auth_mode"],
+            "review_mode": LIVE_VETTING_REVIEW_MODE if reviewer_call is None else "injected_reviewer",
+            "live_llm_used": reviewer_call is None,
             "candidate_offset": candidate_offset,
             "max_candidates": max_candidates,
             "max_followup_searches_per_candidate": max_followup_searches,
@@ -737,6 +742,63 @@ def build_vetting_package(
     }
     artifacts = write_vetting_artifacts(output, output_dir=output_dir, output_basename=output_basename)
     return {"vetting_output": output, "artifacts": artifacts}
+
+
+def vetting_review_provenance(output: dict[str, Any]) -> dict[str, Any]:
+    """Classify whether a saved vetting artifact proves a live Vertex review.
+
+    Older live artifacts predate the explicit ``review_mode`` fields, so the
+    exact provider and authentication metadata remain a supported legacy proof.
+    Caller flags are intentionally ignored: the saved artifact is authoritative.
+    """
+    metadata = dict(output.get("metadata") or {})
+    requests = list(output.get("llm_request_records") or [])
+    provider_path = str(metadata.get("provider_path") or "").strip()
+    review_mode = str(metadata.get("review_mode") or "").strip().lower()
+    auth_mode = str(metadata.get("auth_mode") or "").strip()
+    explicit_live = metadata.get("live_llm_used")
+    searchable = " ".join(
+        [
+            provider_path,
+            review_mode,
+            *(str(request.get("model_version") or "") for request in requests),
+        ]
+    ).lower()
+
+    reason = "verified_live_vertex_review"
+    if explicit_live is False:
+        reason = "artifact_explicitly_records_non_live_review"
+    elif any(marker in searchable for marker in NON_LIVE_REVIEW_MARKERS):
+        reason = "artifact_records_dry_run_or_injected_review"
+    elif provider_path != GEMINI_AGENT_PLATFORM_PROVIDER_PATH:
+        reason = "artifact_does_not_record_the_live_vertex_provider"
+    elif auth_mode not in {"ADC", "gcloud_short_lived_access_token"}:
+        reason = "artifact_does_not_record_live_google_authentication"
+    elif not requests:
+        reason = "artifact_has_no_recorded_model_requests"
+    elif any(request.get("request_error_type") for request in requests):
+        reason = "artifact_contains_failed_model_requests"
+    elif explicit_live not in {None, True}:
+        reason = "artifact_live_review_flag_is_invalid"
+
+    return {
+        "live_vetting_verified": reason == "verified_live_vertex_review",
+        "reason": reason,
+        "provider_path": provider_path,
+        "review_mode": review_mode or "legacy_provider_metadata",
+        "auth_mode": auth_mode,
+        "request_count": len(requests),
+    }
+
+
+def require_live_vetting_for_final_pack(output: dict[str, Any]) -> None:
+    """Refuse publication unless the saved vetting artifact proves live review."""
+    provenance = vetting_review_provenance(output)
+    if not provenance["live_vetting_verified"]:
+        raise ValueError(
+            "Final-pack publication requires saved live Vertex vetting provenance; "
+            f"refusing artifact: {provenance['reason']}."
+        )
 
 
 def merge_vetting_outputs(
@@ -786,6 +848,8 @@ def merge_vetting_outputs(
     useful_statuses = {"ready_to_contact", "provisional_contact_now", "source_cleanup_needed"}
     useful_leads = [review for review in final_reviews if review.get("lead_status") in useful_statuses]
     rejected_reviews = [review for review in final_reviews if review.get("lead_status") == "reject"]
+    batch_provenance = [vetting_review_provenance(item) for item in outputs]
+    all_batches_live = all(item["live_vetting_verified"] for item in batch_provenance)
     first_metadata = dict(outputs[0].get("metadata") or {})
     first_metadata.update(
         {
@@ -794,6 +858,9 @@ def merge_vetting_outputs(
             "candidate_offset": 0,
             "max_candidates": len(records),
             "merged_batch_count": len(outputs),
+            "review_mode": "merged_live_vertex_ai" if all_batches_live else "merged_mixed_or_non_live",
+            "live_llm_used": all_batches_live,
+            "merged_batch_provenance": batch_provenance,
         }
     )
     output = {
@@ -1358,7 +1425,7 @@ def exclusion_reason_for_review(
         return "source_cleanup_not_strong_enough"
     if review.get("invented_candidate_facts_detected"):
         return "invented_candidate_facts_detected"
-    source_channel = review.get("source_channel") or candidate.get("source_channel") or "public_web"
+    source_channel = review.get("source_channel") or candidate.get("source_channel") or "unknown"
     if not discovery_backbone_tools.final_pdf_eligible_from_channel(source_channel):
         return "hint_channel_requires_public_web_evidence"
     if generic_or_job_board_company_name(company):
@@ -1369,14 +1436,57 @@ def exclusion_reason_for_review(
         fingerprint = review.get("opportunity_fingerprint") or candidate.get("opportunity_fingerprint") or current_opportunity_fingerprint(review, candidate, follow_up)
         if fingerprint in duplicate_opportunity_fingerprints:
             return "duplicate_same_opportunity"
-        if review.get("same_company_new_opportunity_evidenced") or candidate.get("same_company_new_opportunity_evidenced"):
-            return None
-        return "prior_or_parked_account_duplicate"
+        if not (
+            review.get("same_company_new_opportunity_evidenced")
+            or candidate.get("same_company_new_opportunity_evidenced")
+        ):
+            return "prior_or_parked_account_duplicate"
+    declared_urls = [
+        *extract_urls(review.get("evidence_used")),
+        *(candidate.get("evidence_urls") or []),
+        *(item.get("final_url") for item in follow_up if item.get("final_url")),
+        *(item.get("url") for item in follow_up if item.get("url")),
+    ]
+    declared_evidence_text = " ".join(
+        clean_text(value)
+        for value in (
+            review.get("signal_type"),
+            review.get("opportunity_signal"),
+            candidate.get("title"),
+            candidate.get("snippet"),
+            *(candidate.get("evidence_snippets") or []),
+        )
+    )
+    if any(
+        lead_tools.tender_or_procurement_source(declared_evidence_text, str(value))
+        for value in declared_urls
+    ):
+        return "tender_or_procurement_out_of_scope"
+    safely_replaced_urls = {
+        str(item.get("url") or "")
+        for item in follow_up
+        if item.get("kind") == "source_fetch"
+        and "vertexaisearch.cloud.google.com" in str(item.get("url") or "").lower()
+        and item.get("verified_live") is True
+        and item.get("source_fetch_status") in {"fetched", "success", "recovered"}
+        and item.get("final_url")
+        and not any(
+            term in str(item.get("final_url") or "").lower()
+            for term in FORBIDDEN_FINAL_URL_TERMS
+        )
+    }
+    if any(
+        term in str(value or "").lower()
+        and str(value or "") not in safely_replaced_urls
+        for value in declared_urls
+        for term in FORBIDDEN_FINAL_URL_TERMS
+    ):
+        return "forbidden_source_url"
     url = best_evidence_url(review, candidate, follow_up)
     if not url:
         return "missing_public_evidence_url"
-    if any(term in url.lower() for term in FORBIDDEN_FINAL_URL_TERMS):
-        return "forbidden_source_url"
+    if lead_tools.tender_or_procurement_source(declared_evidence_text, url):
+        return "tender_or_procurement_out_of_scope"
     if not has_verified_public_evidence(review, candidate, follow_up):
         return "missing_verified_live_public_evidence"
     return None
@@ -1392,7 +1502,7 @@ def selection_exclusion_row(record: dict[str, Any], company: str, reason: str) -
         "candidate_id": review.get("candidate_id") or candidate.get("candidate_id"),
         "run_id": review.get("run_id") or candidate.get("run_id"),
         "retention_status": retention_status_from_selection_reason(reason, review, candidate),
-        "source_channel": review.get("source_channel") or candidate.get("source_channel") or "public_web",
+        "source_channel": review.get("source_channel") or candidate.get("source_channel") or "unknown",
         "final_pdf_eligible": bool(
             review.get("final_pdf_eligible")
             if "final_pdf_eligible" in review
@@ -1506,10 +1616,18 @@ def retention_row_from_record(
     exclusion = excluded_by_id.get(str(candidate_id or ""), {})
     reason = exclusion.get("reason") or retention_reason_from_review(review, candidate, follow_up)
     status = exclusion.get("retention_status") or retention_status_from_review(reason, review, candidate)
+    evidence_url = best_evidence_url(review, candidate, follow_up)
+    source_fetch = best_source_fetch(
+        evidence_url, follow_up
+    ) or source_fetch_from_record(review, candidate, evidence_url)
+    evidence_excerpt = best_evidence_excerpt(review, candidate, follow_up, source_fetch)
+    source_name = source_fetch.get("source_name") or source_name_from_url(evidence_url)
+    fetched_at = source_fetch.get("fetched_at")
+    company_name = review.get("company_name") or candidate.get("company_name")
     return {
         "run_id": review.get("run_id") or candidate.get("run_id"),
         "candidate_id": candidate_id,
-        "company_name": review.get("company_name") or candidate.get("company_name"),
+        "company_name": company_name,
         "country": review.get("country") or candidate.get("country"),
         "sector": review.get("sector") or candidate.get("sector"),
         "industry": review.get("industry") or candidate.get("industry"),
@@ -1518,21 +1636,31 @@ def retention_row_from_record(
         "account_identity_status": review.get("account_identity_status") or candidate.get("account_identity_status"),
         "retention_status": status,
         "reason": reason,
-        "source_channel": review.get("source_channel") or candidate.get("source_channel") or "public_web",
+        "source_channel": review.get("source_channel") or candidate.get("source_channel") or "unknown",
         "final_pdf_eligible": bool(
             review.get("final_pdf_eligible")
             if "final_pdf_eligible" in review
             else candidate.get("final_pdf_eligible", True)
         ),
         "verified_live": has_verified_public_evidence(review, candidate, follow_up),
-        "source_fetch_status": review.get("source_fetch_status") or candidate.get("source_fetch_status"),
+        "source_fetch_status": source_fetch.get("source_fetch_status"),
         "lead_status": review.get("lead_status"),
         "signal_strength": review.get("signal_strength"),
         "signal_type": review.get("signal_type") or candidate.get("signal_type"),
         "company_fingerprint": review.get("company_fingerprint") or candidate.get("company_fingerprint"),
         "opportunity_fingerprint": review.get("opportunity_fingerprint") or candidate.get("opportunity_fingerprint") or current_opportunity_fingerprint(review, candidate, follow_up),
         "source_fingerprint": review.get("source_fingerprint") or candidate.get("source_fingerprint"),
-        "evidence_url": best_evidence_url(review, candidate, follow_up),
+        "evidence_url": evidence_url,
+        "evidence_excerpt": evidence_excerpt,
+        "source_name": source_name,
+        "fetched_at": fetched_at,
+        "evidence_proof_digest": evidence_proof_digest(
+            company_name=company_name,
+            evidence_url=evidence_url,
+            evidence_excerpt=evidence_excerpt,
+            source_name=source_name,
+            fetched_at=fetched_at,
+        ),
         "evidence_gaps": review.get("evidence_gaps") or candidate.get("missing_verification_points") or [],
         "deterministic_flags": review.get("deterministic_flags") or candidate.get("deterministic_flags") or [],
         "identity_resolution_required": bool(review.get("identity_resolution_required") or candidate.get("identity_resolution_required")),
@@ -1551,7 +1679,7 @@ def retention_reason_from_review(
         return "invented_candidate_facts_detected"
     if review.get("identity_resolution_required") or candidate.get("identity_resolution_required"):
         return "identity_resolution_required"
-    source_channel = review.get("source_channel") or candidate.get("source_channel") or "public_web"
+    source_channel = review.get("source_channel") or candidate.get("source_channel") or "unknown"
     if not discovery_backbone_tools.final_pdf_eligible_from_channel(source_channel):
         return "hint_channel_requires_public_web_evidence"
     if not best_evidence_url(review, candidate, follow_up):
@@ -1735,6 +1863,8 @@ def final_lead_from_vetting_record(record: dict[str, Any], *, rank: int, metadat
     fetched = best_source_fetch(url, follow_up) or source_fetch_from_record(review, candidate, url)
     source_name = fetched.get("source_name") if fetched else source_name_from_url(url)
     excerpt = best_evidence_excerpt(review, candidate, follow_up, fetched)
+    fetched_at = fetched.get("fetched_at") if fetched else ""
+    company_name = review.get("company_name") or candidate.get("company_name")
     return {
         "rank": rank,
         "run_id": review.get("run_id") or candidate.get("run_id"),
@@ -1742,15 +1872,15 @@ def final_lead_from_vetting_record(record: dict[str, Any], *, rank: int, metadat
         "company_fingerprint": review.get("company_fingerprint") or candidate.get("company_fingerprint"),
         "opportunity_fingerprint": review.get("opportunity_fingerprint") or candidate.get("opportunity_fingerprint") or current_opportunity_fingerprint(review, candidate, follow_up),
         "source_fingerprint": review.get("source_fingerprint") or candidate.get("source_fingerprint"),
-        "company_name": review.get("company_name") or candidate.get("company_name"),
+        "company_name": company_name,
         "country": review.get("country") or candidate.get("country"),
         "sector": review.get("sector") or candidate.get("sector"),
         "industry": review.get("industry") or candidate.get("industry"),
         "source_company": review.get("source_company") or candidate.get("source_company"),
         "source_role": review.get("source_role") or candidate.get("source_role"),
         "account_identity_status": review.get("account_identity_status") or candidate.get("account_identity_status"),
-        "source_channel": review.get("source_channel") or candidate.get("source_channel") or "public_web",
-        "final_pdf_eligible": True,
+        "source_channel": review.get("source_channel") or candidate.get("source_channel") or "unknown",
+        "final_pdf_eligible": bool(fetched and fetched.get("verified_live")),
         "retention_status": "final_ready",
         "lead_status": review.get("lead_status"),
         "signal_strength": review.get("signal_strength"),
@@ -1767,8 +1897,15 @@ def final_lead_from_vetting_record(record: dict[str, Any], *, rank: int, metadat
         "evidence_url": url,
         "evidence_excerpt": excerpt,
         "source_name": source_name,
-        "fetched_at": (fetched.get("fetched_at") if fetched else metadata.get("finished_at") or now_utc()),
-        "verified_live": bool(fetched.get("verified_live")) if fetched else bool(review.get("verified_live") or candidate.get("verified_live")),
+        "fetched_at": fetched_at,
+        "verified_live": bool(fetched and fetched.get("verified_live")),
+        "evidence_proof_digest": evidence_proof_digest(
+            company_name=company_name,
+            evidence_url=url,
+            evidence_excerpt=excerpt,
+            source_name=source_name,
+            fetched_at=fetched_at,
+        ),
         "source_provider": metadata.get("provider_path"),
         "project": metadata.get("project"),
         "deterministic_flags": review.get("deterministic_flags") or [],
@@ -1778,34 +1915,41 @@ def final_lead_from_vetting_record(record: dict[str, Any], *, rank: int, metadat
 
 def best_evidence_url(review: dict[str, Any], candidate: dict[str, Any], follow_up: list[dict[str, Any]]) -> str:
     values: list[Any] = []
-    values.extend(item.get("final_url") for item in follow_up if item.get("final_url"))
     values.append(review.get("final_url"))
-    values.append(candidate.get("final_url"))
-    values.append((review.get("source_fetch") or {}).get("final_url"))
-    values.append((candidate.get("source_fetch") or {}).get("final_url"))
-    values.extend(candidate.get("evidence_urls") or [])
-    values.extend(item.get("url") for item in follow_up if item.get("url"))
     values.extend(extract_urls(review.get("evidence_used")))
+    values.append(candidate.get("final_url"))
+    values.extend(candidate.get("evidence_urls") or [])
+    values.extend(item.get("final_url") for item in follow_up if item.get("final_url"))
+    values.extend(item.get("url") for item in follow_up if item.get("url"))
     for value in values:
         url = str(value or "")
-        if url.startswith("http") and not any(term in url.lower() for term in FORBIDDEN_FINAL_URL_TERMS):
+        if url.lower().startswith(("http://", "https://")) and not any(
+            term in url.lower() for term in FORBIDDEN_FINAL_URL_TERMS
+        ):
             return url
     return ""
 
 
 def best_source_fetch(url: str, follow_up: list[dict[str, Any]]) -> dict[str, Any]:
     for item in follow_up:
-        if item.get("kind") == "source_fetch" and (item.get("url") == url or item.get("final_url") == url):
-            return item
-    for item in follow_up:
-        if item.get("kind") == "source_fetch" and item.get("verified_live"):
+        if (
+            item.get("kind") == "source_fetch"
+            and item.get("verified_live") is True
+            and item.get("source_fetch_status") in {"fetched", "success", "recovered"}
+            and (item.get("url") == url or item.get("final_url") == url)
+        ):
             return item
     return {}
 
 
 def source_fetch_from_record(review: dict[str, Any], candidate: dict[str, Any], url: str) -> dict[str, Any]:
     for item in (review.get("source_fetch") or {}, candidate.get("source_fetch") or {}):
-        if item and (item.get("url") == url or item.get("final_url") == url or item.get("verified_live")):
+        if (
+            item
+            and item.get("verified_live") is True
+            and item.get("source_fetch_status") in {"fetched", "success", "recovered"}
+            and (item.get("url") == url or item.get("final_url") == url)
+        ):
             return item
     return {}
 
@@ -1817,11 +1961,7 @@ def has_verified_public_evidence(
 ) -> bool:
     url = best_evidence_url(review, candidate, follow_up)
     fetched = best_source_fetch(url, follow_up) or source_fetch_from_record(review, candidate, url)
-    return bool(
-        review.get("verified_live")
-        or candidate.get("verified_live")
-        or (fetched and fetched.get("verified_live"))
-    )
+    return bool(fetched and fetched.get("verified_live") is True)
 
 
 def best_evidence_excerpt(
@@ -1848,6 +1988,29 @@ def source_name_from_url(url: str) -> str:
     if not url:
         return ""
     return re.sub(r"^www\.", "", re.sub(r"^https?://", "", url).split("/")[0])
+
+
+def evidence_proof_digest(
+    *,
+    company_name: Any,
+    evidence_url: Any,
+    evidence_excerpt: Any,
+    source_name: Any,
+    fetched_at: Any,
+) -> str:
+    """Bind a final claim to the exact live source evidence recorded in its ledger."""
+    canonical = json.dumps(
+        [
+            clean_text(company_name),
+            clean_text(evidence_url),
+            clean_text(evidence_excerpt),
+            clean_text(source_name),
+            clean_text(fetched_at),
+        ],
+        ensure_ascii=False,
+        separators=(",", ":"),
+    )
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
 
 def first_url(values: list[Any]) -> str:

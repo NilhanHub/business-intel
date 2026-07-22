@@ -14,6 +14,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from business_intel.public_http import PublicHTTPError, fetch_public_http
 from uk_ie_d365_leads.tools import lead_tools
 from uk_ie_d365_leads.tools import opportunity_vetting_tools as vetting
 
@@ -226,6 +227,28 @@ def evidence_account_from_lead(lead: dict[str, Any], source_check: dict[str, Any
         final_url = clean_text((source_check or {}).get("final_url") or lead.get("final_evidence_url_after_redirect") or url)
         if forbidden_report_url(final_url, lead.get("evidence_excerpt") or ""):
             continue
+        proof_status = clean_text(
+            (source_check or {}).get("source_fetch_status")
+            or (source_check or {}).get("fetch_status")
+            or lead.get("source_fetch_status")
+        )
+        proof_original_url = clean_text(
+            (source_check or {}).get("url")
+            or (source_check or {}).get("original_url")
+            or lead.get("source_fetch_url")
+        )
+        proof_verified_flag = (
+            (source_check or {}).get("verified_live")
+            if source_check
+            else lead.get("verified_live")
+        )
+        proof_verified = bool(
+            proof_verified_flag is True
+            and proof_status in {"fetched", "success", "recovered"}
+            and proof_original_url == url
+        )
+        if not proof_verified:
+            continue
         evidence.append(
             {
                 "url": final_url,
@@ -233,7 +256,7 @@ def evidence_account_from_lead(lead: dict[str, Any], source_check: dict[str, Any
                 "source_name": clean_text(lead.get("source_name") or (source_check or {}).get("source_name") or source_name_from_url(final_url)),
                 "excerpt": clean_text(lead.get("evidence_excerpt") or first_text(lead.get("evidence_snippets"))),
                 "fetched_at": clean_text(lead.get("fetched_at") or (source_check or {}).get("fetched_at")),
-                "verified_live": bool(lead.get("verified_live") or (source_check or {}).get("verified_live")),
+                "verified_live": True,
                 "source_cleanup_needed": bool(
                     lead.get("lead_status") == "source_cleanup_needed"
                     or (source_check or {}).get("supplemental_live_check_required")
@@ -503,8 +526,29 @@ def validate_report_spec(spec: dict[str, Any], inventory: dict[str, Any]) -> dic
             raise UnsafeReportSpecError(f"forbidden URL in report spec: {url}")
     for row in spec.get("at_a_glance") or []:
         validate_evidence_refs(row.get("evidence_refs") or [], allowed, "at_a_glance")
+    inventory_by_account = {
+        vetting.normalize_company_for_match(row.get("account")): row
+        for row in inventory.get("accounts") or []
+    }
     for account in spec.get("accounts") or []:
-        validate_evidence_refs(account.get("evidence_refs") or [], allowed, str(account.get("account") or "account"))
+        account_name = str(account.get("account") or "")
+        inventory_account = inventory_by_account.get(
+            vetting.normalize_company_for_match(account_name)
+        )
+        if not inventory_account:
+            raise UnsafeReportSpecError(
+                f"report account is not present in the evidence inventory: {account_name}"
+            )
+        account_allowed = {
+            clean_text(item.get("url"))
+            for item in inventory_account.get("evidence") or []
+            if item.get("verified_live") is True
+        }
+        validate_evidence_refs(
+            account.get("evidence_refs") or [],
+            account_allowed,
+            account_name or "account",
+        )
     return spec
 
 
@@ -556,6 +600,7 @@ def build_report_composer_package(
     if live_ai or live_browse:
         enforce_report_project(required_project)
     if live_ai:
+        assert_secret_free_model_payload(inventory, context="report evidence inventory")
         client, client_info = make_report_client(model)
     else:
         client_info = {
@@ -896,35 +941,47 @@ def fetch_public_source(url: str, request: dict[str, Any] | None = None) -> dict
     if forbidden_report_url(url, ""):
         return {"kind": "source_fetch", "url": url, "verified_live": False, "fetch_error": "forbidden_url"}
     started = now_utc()
-    req = urllib.request.Request(
-        url,
-        headers={
-            "User-Agent": "Business_Intel/1.0 report-composer public-source check",
-            "Accept": "text/html,application/xhtml+xml,application/json,text/plain;q=0.8,*/*;q=0.5",
-        },
-    )
     try:
-        with urllib.request.urlopen(req, timeout=12) as response:
-            body = response.read(250_000)
-            charset = response.headers.get_content_charset() or "utf-8"
-            text = body.decode(charset, errors="replace")
-            final_url = response.geturl()
-            status = response.status
-    except (urllib.error.URLError, TimeoutError, ValueError) as exc:
+        outbound_request = urllib.request.Request(
+            url,
+            headers={
+                "User-Agent": "Business_Intel/1.0 report-composer public-source check",
+                "Accept": "text/html,application/xhtml+xml,application/json,text/plain;q=0.8,*/*;q=0.5",
+            },
+        )
+        response = fetch_public_http(
+            outbound_request,
+            timeout_seconds=12,
+            max_body_bytes=250_000,
+        )
+        charset_getter = getattr(response.headers, "get_content_charset", None)
+        charset = charset_getter() if callable(charset_getter) else None
+        text = response.body.decode(charset or "utf-8", errors="replace")
+        final_url = response.url
+        status = response.status_code
+    except (
+        PublicHTTPError,
+        urllib.error.URLError,
+        TimeoutError,
+        ValueError,
+    ) as exc:
         return {
             "kind": "source_fetch",
             "url": url,
             "source_name": source_name_from_url(url),
             "verified_live": False,
+            "source_fetch_status": "fetch_error",
             "fetched_at": started,
-            "fetch_error": str(exc)[:500],
+            "fetch_error": lead_tools._safe_error(exc)[:500],
         }
+    fetched_ok = 200 <= int(status or 0) < 400 and bool(clean_text(strip_html(text)))
     return {
         "kind": "source_fetch",
         "url": url,
         "final_url": final_url,
         "source_name": source_name_from_url(final_url),
-        "verified_live": 200 <= int(status or 0) < 400,
+        "verified_live": fetched_ok,
+        "source_fetch_status": "fetched" if fetched_ok else "http_error",
         "http_status": status,
         "fetched_at": now_utc(),
         "text_excerpt": clean_text(strip_html(text))[:1200],
@@ -936,6 +993,13 @@ def attach_follow_up_evidence(inventory: dict[str, Any], follow_up_evidence: lis
         return inventory
     inventory = json.loads(json.dumps(inventory))
     for item in follow_up_evidence:
+        if not (
+            item.get("kind") == "source_fetch"
+            and item.get("verified_live") is True
+            and item.get("source_fetch_status")
+            in {"fetched", "success", "recovered"}
+        ):
+            continue
         url = clean_text(item.get("final_url") or item.get("url"))
         target = clean_text(item.get("target"))
         if not url or forbidden_report_url(url, item.get("text_excerpt") or item.get("snippet") or ""):
@@ -1346,6 +1410,18 @@ def scan_report_secrets(paths: list[Path]) -> dict[str, Any]:
     scan = vetting.scan_secret_patterns(paths)
     scan["artifact_type"] = "uk_ie_d365_report_composer_secret_scan"
     return scan
+
+
+def assert_secret_free_model_payload(value: Any, *, context: str) -> None:
+    """Refuse external report-model calls before evidence containing secrets is sent."""
+    text = json.dumps(value, ensure_ascii=False, sort_keys=True)
+    matches = sorted(
+        name for name, pattern in vetting.SECRET_PATTERNS.items() if pattern.search(text)
+    )
+    if matches:
+        raise RuntimeError(
+            f"Secret scan failed for {context}; external model call refused ({', '.join(matches)})."
+        )
 
 
 def enforce_report_project(required_project: str | None) -> dict[str, Any]:

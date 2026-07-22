@@ -9,8 +9,11 @@ import os
 import re
 import shutil
 import subprocess
+import urllib.error
 import urllib.parse
+import urllib.request
 from collections import Counter
+from collections.abc import Mapping
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime, timedelta
 from functools import lru_cache
@@ -22,6 +25,7 @@ from typing import Any, Protocol
 
 import requests
 
+from business_intel.public_http import PublicHTTPError, fetch_public_http
 from uk_ie_d365_leads.tools import discovery_backbone_tools
 
 AUDIT_SCHEMA_VERSION = "1.1"
@@ -49,6 +53,7 @@ SOURCE_FETCH_DEFAULT_MAX_URLS = 100
 SOURCE_FETCH_MAX_BYTES = 250_000
 PDF_SOURCE_FETCH_MAX_BYTES = 2_000_000
 SOURCE_FETCH_TIMEOUT_SECONDS = 12
+PUBLIC_HTTP_MAX_REDIRECTS = 5
 DISCOVERY_MEMORY_VERSION = "2026-06-25.local-discovery-memory-v1"
 PROVIDER_SCORECARD_VERSION = "2026-06-25.provider-scorecard-v1"
 SOURCE_RETRY_VERSION = "2026-06-25.source-retry-v1"
@@ -79,6 +84,59 @@ BINARY_CONTENT_TYPES = (
     "video/",
     "audio/",
 )
+
+
+@dataclass(frozen=True)
+class PublicHttpResponse:
+    final_url: str
+    status_code: int
+    headers: Mapping[str, str]
+    body: bytes
+    encoding: str | None = None
+
+    @property
+    def ok(self) -> bool:
+        return 200 <= self.status_code < 400
+
+
+def _header_value(headers: Mapping[str, str], name: str) -> str:
+    target = name.lower()
+    for key, value in headers.items():
+        if str(key).lower() == target:
+            return str(value)
+    return ""
+
+
+def fetch_public_url_requests(
+    url: str,
+    *,
+    headers: Mapping[str, str],
+    timeout: int,
+    max_bytes: int,
+    pdf_max_bytes: int,
+    allow_pdf: bool,
+    max_redirects: int = PUBLIC_HTTP_MAX_REDIRECTS,
+) -> PublicHttpResponse:
+    """Fetch through the shared DNS-pinned public HTTP boundary."""
+    response = fetch_public_http(
+        urllib.request.Request(url, headers=dict(headers)),
+        timeout_seconds=timeout,
+        max_redirects=max_redirects,
+        max_body_bytes=pdf_max_bytes if allow_pdf else max_bytes,
+    )
+    content_type = _header_value(response.headers, "content-type")
+    read_limit = (
+        pdf_max_bytes
+        if allow_pdf and is_pdf_source(content_type, response.url)
+        else max_bytes
+    )
+    return PublicHttpResponse(
+        final_url=response.url,
+        status_code=response.status_code,
+        headers=response.headers,
+        body=response.body[:read_limit],
+        encoding=requests.utils.get_encoding_from_headers(response.headers),
+    )
 
 COUNTRY_TERMS = {
     "United Kingdom": [
@@ -1332,15 +1390,29 @@ def refuse_d365_email_sending(request: str = "") -> dict[str, Any]:
     }
 
 
+def _approved_evidence_root(evidence_dir: str | Path | None) -> Path:
+    approved = discovery_backbone_tools.EVIDENCE_DIR.resolve()
+    requested = Path(evidence_dir).resolve() if evidence_dir else approved
+    if requested != approved and approved not in requested.parents:
+        raise ValueError(
+            f"Evidence inspection is restricted to the project Evidence directory: {approved}"
+        )
+    return requested
+
+
 def inspect_d365_discovery_backbone(evidence_dir: str | None = None) -> dict[str, Any]:
     """Return the local read-only Google ecosystem discovery preflight."""
+    root = _approved_evidence_root(evidence_dir)
     return discovery_backbone_tools.build_discovery_preflight(
-        evidence_dir=Path(evidence_dir) if evidence_dir else discovery_backbone_tools.EVIDENCE_DIR
+        evidence_dir=root
     )
 
 
 def build_local_discovery_memory(evidence_dir: str | Path | None = None) -> dict[str, Any]:
     """Build local discovery memory from saved Evidence artifacts."""
+    # Internal callers and tests may build memory from a caller-selected local
+    # snapshot.  The model-callable inspection wrapper above remains confined
+    # to the project Evidence tree.
     root = Path(evidence_dir) if evidence_dir else discovery_backbone_tools.EVIDENCE_DIR
     prior_final_leads: list[dict[str, Any]] = []
     duplicate_opportunities: list[dict[str, Any]] = []
@@ -1746,16 +1818,18 @@ class SourceFetcher:
             return {**base, "source_fetch_status": skip_reason, "fetch_error": skip_reason}
         assert normalized is not None
         try:
-            response = requests.get(
+            response = fetch_public_url_requests(
                 normalized,
                 headers={
                     "User-Agent": "Business_Intel/1.0 public-source lead verification",
                     "Accept": "text/html,application/xhtml+xml,application/pdf,application/json,text/plain;q=0.8,*/*;q=0.5",
                 },
                 timeout=self.timeout,
-                allow_redirects=True,
+                max_bytes=self.max_bytes,
+                pdf_max_bytes=self.pdf_max_bytes,
+                allow_pdf=self.parse_pdfs,
             )
-            final_url = clean_public_fetch_url(response.url) or normalized
+            final_url = clean_public_fetch_url(response.final_url) or normalized
             final_skip_reason = source_fetch_skip_reason(final_url, allow_pdf=self.parse_pdfs)
             if final_skip_reason:
                 return {
@@ -1763,13 +1837,13 @@ class SourceFetcher:
                     "final_url": final_url,
                     "source_name": source_name_from_url(final_url),
                     "status_code": response.status_code,
-                    "content_type": response.headers.get("content-type", ""),
+                    "content_type": _header_value(response.headers, "content-type"),
                     "source_fetch_status": final_skip_reason,
                     "fetch_error": final_skip_reason,
                 }
-            content_type = response.headers.get("content-type", "")
+            content_type = _header_value(response.headers, "content-type")
             if is_pdf_source(content_type, final_url) and self.parse_pdfs:
-                raw_pdf = response.content[: self.pdf_max_bytes]
+                raw_pdf = response.body
                 parsed_pdf = extract_pdf_source_text(raw_pdf, final_url)
                 status = "fetched" if response.ok and parsed_pdf.get("text_excerpt") else parsed_pdf["parser_status"]
                 return {
@@ -1797,13 +1871,15 @@ class SourceFetcher:
                     "source_fetch_status": "skipped_binary_source",
                     "fetch_error": "skipped_binary_source",
                 }
-            raw = response.content[: self.max_bytes]
-            encoding = response.encoding or response.apparent_encoding or "utf-8"
+            raw = response.body
+            encoding = response.encoding or "utf-8"
             body = raw.decode(encoding, errors="replace")
             is_html = "html" in content_type.lower() or "<html" in body[:1000].lower()
             text = html_to_text(body) if is_html else clean_snippet(body)
             page_title = html_title(body) if is_html else ""
             canonical = clean_public_fetch_url(html_canonical_url(body, final_url)) if is_html else None
+            if canonical and not same_url_origin(canonical, final_url):
+                canonical = None
             status = "fetched" if response.ok and text else "http_error"
             return {
                 **base,
@@ -1817,6 +1893,22 @@ class SourceFetcher:
                 "verified_live": bool(response.ok and text),
                 "text_excerpt": text[:4000],
             }
+        except PublicHTTPError as exc:
+            return {
+                **base,
+                "source_fetch_status": "skipped_unsafe_source",
+                "fetch_error": _safe_error(exc),
+            }
+        except TimeoutError as exc:
+            return {
+                **base,
+                "source_fetch_status": "timeout",
+                "fetch_error": _safe_error(exc),
+            }
+        except urllib.error.URLError as exc:
+            safe_error = _safe_error(exc)
+            status = "timeout" if is_timeout_error(exc, safe_error) else "fetch_error"
+            return {**base, "source_fetch_status": status, "fetch_error": safe_error}
         except requests.Timeout as exc:
             return {**base, "source_fetch_status": "timeout", "fetch_error": _safe_error(exc)}
         except requests.RequestException as exc:
@@ -1838,6 +1930,21 @@ def source_fetch_skip_reason(url: str | None, *, allow_pdf: bool = False) -> str
     if obvious_binary_url(normalized, allow_pdf=allow_pdf):
         return "skipped_binary_source"
     return None
+
+
+def same_url_origin(left: str, right: str) -> bool:
+    left_url = urllib.parse.urlsplit(left)
+    right_url = urllib.parse.urlsplit(right)
+
+    def origin(parsed: urllib.parse.SplitResult) -> tuple[str, str, int]:
+        default_port = 443 if parsed.scheme.lower() == "https" else 80
+        return (
+            parsed.scheme.lower(),
+            (parsed.hostname or "").lower(),
+            parsed.port or default_port,
+        )
+
+    return origin(left_url) == origin(right_url)
 
 
 def obvious_binary_url(url: str, *, allow_pdf: bool = False) -> bool:
@@ -3784,7 +3891,18 @@ def _extract_json(text: str) -> Any:
 
 def _safe_error(exc: BaseException) -> str:
     text = str(exc)
-    text = re.sub(r"(api[_-]?key=)[^&\s]+", r"\1REDACTED", text, flags=re.I)
+    text = re.sub(
+        r"([?&](?:key|api[_-]?key)=)[^&\s]+",
+        r"\1REDACTED",
+        text,
+        flags=re.I,
+    )
+    text = re.sub(
+        r"(x-goog-api-key\s*[:=]\s*)[^&\s]+",
+        r"\1REDACTED",
+        text,
+        flags=re.I,
+    )
     text = re.sub(r"(Authorization:\s*Bearer\s+)[A-Za-z0-9._-]+", r"\1REDACTED", text, flags=re.I)
     return text[:300]
 

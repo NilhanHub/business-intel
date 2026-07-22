@@ -358,8 +358,9 @@ def merge_source_metadata(rows: list[dict], checks_by_name: dict[str, dict]) -> 
         row["strong_signal_terms_found"] = check.get("strong_signal_terms_found") if check else []
         live_excerpt = (check.get("evidence_excerpt_live") or "").strip() if check else ""
         row["evidence_excerpt"] = live_excerpt[:850] if live_excerpt else row["evidence_summary"]
-        if row["account"] in {"Jackson's Bakery", "The Felix Project"}:
-            row["verified_live"] = True
+        # A failed or absent live check must never be overridden by a curated
+        # account-name exception.  The row remains ineligible until its exact
+        # evidence URL succeeds.
 
 
 def build_source_map(rows: list[dict], strength_counts: dict[str, int]) -> dict:

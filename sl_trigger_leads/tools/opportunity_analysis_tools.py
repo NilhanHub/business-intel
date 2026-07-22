@@ -2,13 +2,16 @@ from __future__ import annotations
 
 import csv
 import json
+import os
 import re
+import tempfile
 from pathlib import Path
 from typing import Any
 
 from .signal_tools import assert_no_simulation_data, clean_text
 
 ROOT = Path(__file__).resolve().parents[2]
+OUTPUT_DIR = ROOT / "outputs"
 TAXONOMY_PATH = Path(__file__).resolve().parents[1] / "data" / "onebt_service_taxonomy.json"
 
 
@@ -370,8 +373,7 @@ def create_response_strategy(opportunity_analysis: dict[str, Any]) -> dict[str, 
 
 def export_opportunity_analyses_csv(analyses: list[dict[str, Any]], output_csv_path: str) -> dict[str, Any]:
     """Export opportunity analyses to CSV for evidence and review."""
-    path = Path(output_csv_path)
-    path.parent.mkdir(parents=True, exist_ok=True)
+    path = _resolve_output_path(output_csv_path)
     fields = [
         "company",
         "evidence_url",
@@ -385,26 +387,72 @@ def export_opportunity_analyses_csv(analyses: list[dict[str, Any]], output_csv_p
         "recommended_outreach_theme",
         "who_to_contact",
     ]
-    with path.open("w", encoding="utf-8", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=fields)
-        writer.writeheader()
-        for item in analyses:
-            writer.writerow(
-                {
-                    "company": item.get("company", ""),
-                    "evidence_url": item.get("evidence_url", ""),
-                    "trigger_type": item.get("trigger_type", ""),
-                    "primary_bucket": item.get("primary_bucket", ""),
-                    "primary_bucket_display": item.get("primary_bucket_display", ""),
-                    "secondary_buckets": ";".join(item.get("secondary_buckets", [])),
-                    "bucket_confidence": item.get("bucket_confidence", ""),
-                    "verdict": item.get("verdict", ""),
-                    "recommended_1bt_offer": item.get("recommended_1bt_offer", ""),
-                    "recommended_outreach_theme": item.get("recommended_outreach_theme", ""),
-                    "who_to_contact": item.get("who_to_contact", ""),
-                }
-            )
+    rows = [
+        {
+            "company": item.get("company", ""),
+            "evidence_url": item.get("evidence_url", ""),
+            "trigger_type": item.get("trigger_type", ""),
+            "primary_bucket": item.get("primary_bucket", ""),
+            "primary_bucket_display": item.get("primary_bucket_display", ""),
+            "secondary_buckets": ";".join(item.get("secondary_buckets", [])),
+            "bucket_confidence": item.get("bucket_confidence", ""),
+            "verdict": item.get("verdict", ""),
+            "recommended_1bt_offer": item.get("recommended_1bt_offer", ""),
+            "recommended_outreach_theme": item.get("recommended_outreach_theme", ""),
+            "who_to_contact": item.get("who_to_contact", ""),
+        }
+        for item in analyses
+    ]
+    _atomic_write_csv(path, fields, rows)
     return {"ok": True, "csv_path": str(path), "row_count": len(analyses)}
+
+
+def _resolve_output_path(value: str) -> Path:
+    if not str(value or "").strip():
+        raise ValueError("Output CSV path must not be empty")
+    root = OUTPUT_DIR.resolve()
+    candidate = Path(value)
+    if not candidate.is_absolute():
+        candidate = root / candidate
+    resolved = candidate.resolve(strict=False)
+    if not resolved.is_relative_to(root):
+        raise ValueError(f"Export path must stay within the outputs directory: {root}")
+    return resolved
+
+
+def _escape_csv_formula(value: Any) -> Any:
+    if isinstance(value, str) and value.lstrip().startswith(("=", "+", "-", "@")):
+        return f"'{value}"
+    return value
+
+
+def _atomic_write_csv(
+    path: Path,
+    fields: list[str],
+    rows: list[dict[str, Any]],
+) -> None:
+    path = _resolve_output_path(str(path))
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temp_path: Path | None = None
+    try:
+        fd, raw_temp_path = tempfile.mkstemp(
+            dir=path.parent,
+            prefix=f".{path.stem}-",
+            suffix=".tmp",
+        )
+        temp_path = Path(raw_temp_path)
+        with os.fdopen(fd, "w", encoding="utf-8", newline="") as handle:
+            writer = csv.DictWriter(handle, fieldnames=fields)
+            writer.writeheader()
+            for row in rows:
+                writer.writerow({key: _escape_csv_formula(value) for key, value in row.items()})
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temp_path, path)
+        temp_path = None
+    finally:
+        if temp_path is not None:
+            temp_path.unlink(missing_ok=True)
 
 
 def _bucket_lookup(taxonomy: dict[str, Any]) -> dict[str, dict[str, Any]]:

@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 from datetime import UTC, date, datetime
 from typing import Any
+from urllib.parse import urlsplit
 
 TRIGGER_TYPES = [
     "hiring_spike",
@@ -73,7 +74,9 @@ def contains_simulation_marker(value: Any) -> bool:
     return any(marker in text for marker in SIMULATION_MARKERS)
 
 
-def assert_no_simulation_data(records: list[dict[str, Any]]) -> None:
+def assert_no_simulation_data(
+    records: list[dict[str, Any]], *, require_fetch_proof: bool = False
+) -> None:
     """Fail loudly when runtime lead records contain sample/simulation data or unverifiable evidence."""
     for index, record in enumerate(records):
         evidence_url = clean_text(record.get("evidence_url") or record.get("source_url"))
@@ -87,6 +90,11 @@ def assert_no_simulation_data(records: list[dict[str, Any]]) -> None:
             problems.append("missing evidence_url")
         if "example.test" in evidence_url.lower():
             problems.append("example.test source URL")
+        parsed_url = urlsplit(evidence_url)
+        if parsed_url.scheme not in {"http", "https"} or not parsed_url.hostname:
+            problems.append("non-HTTP(S) evidence_url")
+        if parsed_url.username or parsed_url.password:
+            problems.append("evidence_url contains credentials")
         if not verified_live:
             problems.append("verified_live is not true")
         if not excerpt:
@@ -95,6 +103,13 @@ def assert_no_simulation_data(records: list[dict[str, Any]]) -> None:
             problems.append("missing company")
         if contains_simulation_marker(searchable):
             problems.append("simulation/sample marker present")
+        if require_fetch_proof:
+            fetch_status = clean_text(record.get("source_fetch_status"))
+            fetch_url = clean_text(record.get("source_fetch_url"))
+            if fetch_status not in {"fetched", "success", "recovered"}:
+                problems.append("missing successful source fetch status")
+            if fetch_url != evidence_url:
+                problems.append("source fetch URL does not match evidence_url")
         if problems:
             raise ValueError(f"Runtime lead {index} blocked: {', '.join(problems)}")
 

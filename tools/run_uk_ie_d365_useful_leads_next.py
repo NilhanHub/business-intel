@@ -267,6 +267,8 @@ def hard_exclusion_reason(candidate: dict[str, Any]) -> str | None:
         return "private_or_linkedin_source_excluded"
     if "tender_or_procurement" in reason or any(term in text or term in url for term in TENDER_TERMS):
         return "tender_or_procurement_out_of_scope"
+    if not has_matching_fetch_proof(candidate):
+        return "missing_verified_live_public_evidence"
     if "missing_explicit_dynamics_365_or_business_app_evidence" == reason and not any(
         term in text
         for term in (
@@ -281,6 +283,20 @@ def hard_exclusion_reason(candidate: dict[str, Any]) -> str | None:
     ):
         return "missing_d365_or_microsoft_business_app_evidence"
     return None
+
+
+def has_matching_fetch_proof(candidate: dict[str, Any]) -> bool:
+    """Accept only a successful fetch record bound to the selected evidence URL."""
+    url = first_url(candidate)
+    fetch = candidate.get("source_fetch") or {}
+    return bool(
+        url
+        and fetch.get("verified_live") is True
+        and fetch.get("source_fetch_status") in {"fetched", "success", "recovered"}
+        and clean_text(fetch.get("fetched_at"))
+        and clean_text(fetch.get("source_name"))
+        and url in {str(fetch.get("url") or ""), str(fetch.get("final_url") or "")}
+    )
 
 
 def candidate_score(candidate: dict[str, Any]) -> int:
@@ -611,6 +627,7 @@ def final_score(review_record: dict[str, Any]) -> int:
 
 def final_lead_from_review(review_record: dict[str, Any], rank: int) -> dict[str, Any]:
     candidate = review_record["candidate"]
+    source_fetch = candidate.get("source_fetch") or {}
     raw = review_record["raw_review"]
     status = normalize_status(candidate, raw)
     url = first_url(candidate)
@@ -661,8 +678,9 @@ def final_lead_from_review(review_record: dict[str, Any], rank: int) -> dict[str
             if clean_text(item)
         ]
         or DO_NOT_CLAIM,
-        "verified_live": True,
-        "fetched_at": candidate.get("fetched_at"),
+        "verified_live": has_matching_fetch_proof(candidate),
+        "source_name": clean_text(source_fetch.get("source_name")),
+        "fetched_at": clean_text(source_fetch.get("fetched_at")),
         "final_score": final_score(review_record),
     }
 

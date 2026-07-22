@@ -31,6 +31,7 @@ SOURCE_CHANNELS = {
     "workspace_hint",
     "crm_hint",
     "custom_mcp",
+    "unknown",
 }
 
 PUBLIC_WEB_PROVIDERS = {
@@ -95,7 +96,7 @@ def classify_source_channel(
         return "crm_hint"
     if any(token in text for token in ("custom_mcp", "mcp", "api registry", "api_registry")):
         return "custom_mcp"
-    return "public_web"
+    return "unknown"
 
 
 def source_channel_policy() -> dict[str, Any]:
@@ -108,7 +109,7 @@ def source_channel_policy() -> dict[str, Any]:
 
 
 def final_pdf_eligible_from_channel(source_channel: str | None) -> bool:
-    return (source_channel or "public_web") == "public_web"
+    return source_channel == "public_web"
 
 
 def build_discovery_preflight(

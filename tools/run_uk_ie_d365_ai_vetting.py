@@ -27,6 +27,7 @@ from uk_ie_d365_leads.tools.opportunity_vetting_tools import (
     build_fresh_leads_outputs,
     build_vetting_package,
     merge_vetting_outputs,
+    require_live_vetting_for_final_pack,
 )
 
 TARGETED_SECOND_PASS_QUERIES = [
@@ -384,6 +385,10 @@ def main(argv: list[str] | None = None) -> int:
         )
     artifacts = dict(package["artifacts"])
     if not args.skip_final_pack:
+        try:
+            require_live_vetting_for_final_pack(package["vetting_output"])
+        except ValueError as exc:
+            raise SystemExit(str(exc)) from exc
         raw_search = json.loads(evidence_file.read_text(encoding="utf-8"))
         fresh_package = build_fresh_leads_outputs(
             vetting_output=package["vetting_output"],

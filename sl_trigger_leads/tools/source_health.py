@@ -6,6 +6,8 @@ import urllib.error
 import urllib.request
 from typing import Any
 
+from business_intel.public_http import fetch_public_http
+
 USER_AGENT = "Business_Intel/0.5 (+source health check; polite public fetch)"
 
 
@@ -38,21 +40,24 @@ def test_source_url(url: str, search_terms: list[str] | None = None, timeout_sec
         },
     )
     try:
-        with urllib.request.urlopen(request, timeout=timeout_seconds) as response:
-            body = response.read(500_000)
-            content_type = response.headers.get("Content-Type", "")
-            text = _decode(body, content_type)
-            plain = _strip_html(text)
-            relevant = _is_relevant(plain, search_terms or [], url)
-            return {
-                "url": response.geturl(),
-                "ok": True,
-                "status_code": getattr(response, "status", 200),
-                "content_type": content_type,
-                "elapsed_seconds": round(time.perf_counter() - started, 3),
-                "relevant_content": relevant,
-                "content_excerpt": plain[:240],
-            }
+        response = fetch_public_http(
+            request,
+            timeout_seconds=timeout_seconds,
+            max_body_bytes=500_000,
+        )
+        content_type = response.headers.get("Content-Type", "")
+        text = _decode(response.body, content_type)
+        plain = _strip_html(text)
+        relevant = _is_relevant(plain, search_terms or [], url)
+        return {
+            "url": response.url,
+            "ok": True,
+            "status_code": response.status_code,
+            "content_type": content_type,
+            "elapsed_seconds": round(time.perf_counter() - started, 3),
+            "relevant_content": relevant,
+            "content_excerpt": plain[:240],
+        }
     except urllib.error.HTTPError as exc:
         try:
             return {

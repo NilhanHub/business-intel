@@ -9,6 +9,8 @@ from datetime import UTC, datetime
 from typing import Any
 from urllib.parse import urljoin
 
+from business_intel.public_http import fetch_public_http
+
 from .source_health import classify_failure
 from .source_recovery import recover_source_url
 from .source_registry import load_source_registry
@@ -36,17 +38,20 @@ def fetch_url(url: str, timeout_seconds: int = TIMEOUT_SECONDS) -> dict[str, Any
     started = time.perf_counter()
     fetched_at = _now()
     try:
-        with urllib.request.urlopen(request, timeout=timeout_seconds) as response:
-            body = response.read(1_500_000)
-            return {
-                "ok": True,
-                "url": response.geturl(),
-                "status_code": getattr(response, "status", 200),
-                "content_type": response.headers.get("Content-Type", ""),
-                "text": _decode(body, response.headers),
-                "fetched_at": fetched_at,
-                "elapsed_seconds": round(time.perf_counter() - started, 3),
-            }
+        response = fetch_public_http(
+            request,
+            timeout_seconds=timeout_seconds,
+            max_body_bytes=1_500_000,
+        )
+        return {
+            "ok": True,
+            "url": response.url,
+            "status_code": response.status_code,
+            "content_type": response.headers.get("Content-Type", ""),
+            "text": _decode(response.body, response.headers),
+            "fetched_at": fetched_at,
+            "elapsed_seconds": round(time.perf_counter() - started, 3),
+        }
     except urllib.error.HTTPError as exc:
         try:
             return {

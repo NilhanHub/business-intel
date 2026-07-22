@@ -135,3 +135,37 @@ def test_pack_validation_rejects_malformed_per_lead_report() -> None:
     malformed_count = {**lead(), "report": {"round": 5, "leadCount": "20"}}
     with pytest.raises(RuntimeError, match=r"Lead 1.*report\.leadCount"):
         MODULE.validate_pack({"leads": [malformed_count]}, expected_count=1)
+
+
+def test_pack_validation_binds_exact_evidence_to_candidate_ledger() -> None:
+    record = {**lead(), "candidate_id": "candidate-1"}
+    digest = MODULE.evidence_proof_digest(
+        company_name=record["company_name"],
+        evidence_url=record["evidence_url"],
+        evidence_excerpt=record["evidence_excerpt"],
+        source_name=record["source_name"],
+        fetched_at=record["fetched_at"],
+    )
+    proof = {
+        "candidate_id": record["candidate_id"],
+        "company_name": record["company_name"],
+        "evidence_url": record["evidence_url"],
+        "evidence_excerpt": record["evidence_excerpt"],
+        "source_name": record["source_name"],
+        "fetched_at": record["fetched_at"],
+        "evidence_proof_digest": digest,
+        "source_fetch_status": "fetched",
+        "verified_live": True,
+    }
+
+    assert MODULE.validate_pack(
+        {"leads": [record]}, expected_count=1, fetch_proofs={"candidate-1": proof}
+    ) == [record]
+
+    altered = {**record, "evidence_excerpt": "A different, unsupported claim."}
+    with pytest.raises(RuntimeError, match="exact company, source, and evidence"):
+        MODULE.validate_pack(
+            {"leads": [altered]},
+            expected_count=1,
+            fetch_proofs={"candidate-1": proof},
+        )

@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any
 
 from uk_ie_d365_leads.tools.opportunity_vetting_tools import (
+    evidence_proof_digest,
     is_prior_or_parked_account,
     normalize_company_for_match,
 )
@@ -82,7 +83,10 @@ def company_document_id(name: str) -> str:
 
 
 def validate_pack(
-    payload: dict[str, Any], *, expected_count: int
+    payload: dict[str, Any],
+    *,
+    expected_count: int,
+    fetch_proofs: dict[str, dict[str, Any]] | None = None,
 ) -> list[dict[str, Any]]:
     leads = list(payload.get("leads") or [])
     if len(leads) != expected_count:
@@ -99,6 +103,7 @@ def validate_pack(
         "commercial_opening",
         "evidence_url",
         "evidence_excerpt",
+        "source_name",
         "fetched_at",
     )
     names: set[str] = set()
@@ -119,6 +124,33 @@ def validate_pack(
             raise RuntimeError(f"Lead {index} is not verified public-web evidence.")
         if not str(lead["evidence_url"]).lower().startswith(("https://", "http://")):
             raise RuntimeError(f"Lead {index} has an unsafe evidence URL.")
+        if fetch_proofs is not None:
+            candidate_id = str(lead.get("candidate_id") or "")
+            proof = fetch_proofs.get(candidate_id)
+            if not proof:
+                raise RuntimeError(
+                    f"Lead {index} has no matching source-fetch proof in the candidate ledger."
+                )
+            digest = evidence_proof_digest(
+                company_name=lead["company_name"],
+                evidence_url=lead["evidence_url"],
+                evidence_excerpt=lead["evidence_excerpt"],
+                source_name=lead["source_name"],
+                fetched_at=lead["fetched_at"],
+            )
+            if (
+                proof.get("verified_live") is not True
+                or proof.get("source_fetch_status") not in {"fetched", "success", "recovered"}
+                or str(proof.get("evidence_url") or "") != str(lead["evidence_url"])
+                or normalize_company_for_match(proof.get("company_name")) != normalized
+                or str(proof.get("evidence_excerpt") or "") != str(lead["evidence_excerpt"])
+                or str(proof.get("source_name") or "") != str(lead["source_name"])
+                or str(proof.get("fetched_at") or "") != str(lead["fetched_at"])
+                or str(proof.get("evidence_proof_digest") or "") != digest
+            ):
+                raise RuntimeError(
+                    f"Lead {index} source-fetch proof does not match its exact company, source, and evidence content."
+                )
         supplied_report = lead.get("report")
         if supplied_report is not None and not isinstance(supplied_report, dict):
             raise RuntimeError(f"Lead {index} has a malformed report object.")
@@ -130,6 +162,31 @@ def validate_pack(
                         f"Lead {index} has a malformed report.{field} value."
                     )
     return leads
+
+
+def load_candidate_fetch_proofs(input_path: Path) -> dict[str, dict[str, Any]]:
+    suffix = "_FINAL.json"
+    if not input_path.name.endswith(suffix):
+        raise RuntimeError(
+            "Northwind sync requires a FINAL lead pack with its candidate-ledger sidecar."
+        )
+    ledger_path = input_path.with_name(
+        input_path.name[: -len(suffix)] + "_FINAL_CANDIDATE_LEDGER.json"
+    )
+    if not ledger_path.is_file():
+        raise RuntimeError(f"Candidate-ledger source proof not found: {ledger_path}")
+    rows = json.loads(ledger_path.read_text(encoding="utf-8"))
+    if not isinstance(rows, list):
+        raise RuntimeError(f"Candidate-ledger source proof is malformed: {ledger_path}")
+    proofs: dict[str, dict[str, Any]] = {}
+    for row in rows:
+        if not isinstance(row, dict) or not row.get("candidate_id"):
+            raise RuntimeError(f"Candidate-ledger source proof is malformed: {ledger_path}")
+        candidate_id = str(row["candidate_id"])
+        if candidate_id in proofs:
+            raise RuntimeError(f"Duplicate candidate proof for {candidate_id!r}.")
+        proofs[candidate_id] = row
+    return proofs
 
 
 def intel_payload(lead: dict[str, Any]) -> dict[str, Any]:
@@ -253,7 +310,12 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
 
     input_path = Path(args.input_pack).resolve()
     payload = json.loads(input_path.read_text(encoding="utf-8"))
-    leads = validate_pack(payload, expected_count=args.expected_count)
+    fetch_proofs = load_candidate_fetch_proofs(input_path)
+    leads = validate_pack(
+        payload,
+        expected_count=args.expected_count,
+        fetch_proofs=fetch_proofs,
+    )
     client = firestore.Client(project=args.project, database=args.database)
     workspace_ref = client.collection("workspaces").document(args.workspace)
     companies_ref = workspace_ref.collection("companies")
