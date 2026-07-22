@@ -1,6 +1,6 @@
 {
   "contract_type": "google_sheets_layout_contract",
-  "schema_version": "1.5.0",
+  "schema_version": "1.6.0",
   "captured_date": "2026-07-20",
   "last_amended_date": "2026-07-22",
   "canonical": true,
@@ -12,7 +12,8 @@
     "tabs_in_order": [
       "Search",
       "Warm Paths",
-      "Sam Dharmasiri"
+      "Sam Dharmasiri",
+      "Jeremy Pike"
     ]
   },
   "related_contracts": {
@@ -21,6 +22,12 @@
       "machine": "docs/northwind_sam_dharmasiri_sheet_contract.v1.json",
       "schema_version": "1.0.0",
       "normative_for": "Exact Sam-tab fields, row types, source evidence, formatting, dimensions, validations, insertion procedure and verification gates."
+    },
+    "Jeremy Pike": {
+      "human": "docs/northwind_jeremy_pike_sheet_contract.md",
+      "machine": "docs/northwind_jeremy_pike_sheet_contract.v1.json",
+      "schema_version": "1.0.0",
+      "normative_for": "Exact Jeremy-tab fields, row types, source evidence, formatting, dimensions, validations, insertion procedure and verification gates."
     }
   },
   "current_snapshot": {
@@ -504,6 +511,95 @@
         "full_data_cell_comparison_count": 6875,
         "original_warm_paths_comparison_count": 9775
       }
+    },
+    "Jeremy Pike": {
+      "sheet_id": 959287179,
+      "index": 3,
+      "template_tab": "Sam Dharmasiri",
+      "dedicated_contract": "docs/northwind_jeremy_pike_sheet_contract.v1.json",
+      "purpose": "A separate, company-grouped tracker for the 60 CTO-type Sales Navigator contacts returned by the Connections of Jeremy Pike filter in Paul Fryer's verified session.",
+      "grid": {
+        "row_count": 1294,
+        "column_count": 26,
+        "used_columns": "A:Y",
+        "reserved_blank_column": "Z"
+      },
+      "current_snapshot": {
+        "contact_count": 60,
+        "unique_lead_id_count": 60,
+        "company_block_count": 48,
+        "company_summary_row_count": 48,
+        "data_row_count": 108,
+        "primary_route_count": 60,
+        "additional_mutual_placement_count": 132,
+        "distinct_additional_mutual_count": 66,
+        "total_named_route_placement_count": 192,
+        "contacts_with_additional_mutuals": 33,
+        "privacy_limited_contact_count": 3
+      },
+      "layout": [
+        {"range": "1:1", "role": "title"},
+        {"range": "2:2", "role": "instructions"},
+        {"range": "3:3", "role": "snapshot"},
+        {"range": "4:4", "role": "blank_spacer"},
+        {"range": "5:5", "role": "column_header"},
+        {"range": "6:113", "role": "48_contiguous_company_blocks_with_60_target_rows_and_48_summary_rows"},
+        {"range": "114:114", "role": "permanent_new_company_insertion_marker"},
+        {"range": "115:115", "role": "summary_spacer"},
+        {"range": "116:116", "role": "network_summary_title"},
+        {"range": "117:117", "role": "network_executive_summary"},
+        {"range": "118:118", "role": "network_summary_headers"},
+        {"range": "119:128", "role": "network_summary_metrics"},
+        {"range": "129:129", "role": "network_usage_guidance"},
+        {"range": "130:1294", "role": "unused_blank_grid"}
+      ],
+      "fixed_cells": {
+        "A1": "Northwind CRM Warm Paths Tracker — Jeremy Pike",
+        "A2": "One row per target person. Companies stay in contiguous blocks; Mutual 1 is always Jeremy Pike, followed by up to four additional named mutuals visible to Paul Fryer.",
+        "A3": "Current Jeremy network tracker: 48 companies | 60 target people | 192 named route placements | live Sales Navigator DOM research",
+        "X5": "Source / Profile",
+        "A114": "NEW COMPANY INSERTION POINT — Insert every complete new Jeremy-connected company block immediately above this row. Keep each company contiguous; never overwrite or delete this marker.",
+        "A116": "Jeremy Pike Network Summary"
+      },
+      "company_block_rules": {
+        "one_contiguous_block_per_company": true,
+        "target_rows_precede_summary_row": true,
+        "exactly_one_summary_row_per_company": true,
+        "summary_row_is_last_in_block": true,
+        "summary_columns_D_through_Y_are_blank": true,
+        "company_order": "alphabetical; the explicit Company not shown on Sales Navigator block is last",
+        "target_order_within_company": "alphabetical by target name"
+      },
+      "mutual_route_rules": {
+        "mutual_1_column": "D",
+        "mutual_1_required_value": "Jeremy Pike",
+        "additional_mutual_columns": ["F", "H", "J", "L"],
+        "maximum_named_mutuals_per_target": 5,
+        "source": "live LinkedIn Sales Navigator DOM in Paul Fryer's verified Chrome session",
+        "deduplication_key": "stable LinkedIn lead ID"
+      },
+      "format_contract": {
+        "inherits": "Warm Paths typography, column widths, target-row structure, company-summary treatment, premium insertion marker, and premium A:C summary table",
+        "data_range": "A6:Y113",
+        "banding_range": "A5:Y113",
+        "first_band_color": "#C1E4F5",
+        "second_band_color": "#FFFFFF",
+        "vertical_alignment": "TOP",
+        "wrap": "WRAP",
+        "row_height": "FIT_TO_DATA",
+        "target_stage_validation": "Warm Paths N-column dropdown on target rows only",
+        "conditional_formatting": [
+          {"range": "Y6:Y113", "formula": "=ISNUMBER(SEARCH(\"Already\",Y6))", "background": "#E8F5E9"},
+          {"range": "Y6:Y113", "formula": "=ISNUMBER(SEARCH(\"needs\",Y6))", "background": "#FFF7ED"}
+        ]
+      },
+      "provenance": {
+        "backup_spreadsheet_id": "1aG3MH2UUnCfh6x6HyNla91hdap5Pnt83R0CYmg9tc-8",
+        "evidence_directory": "Evidence/2026-07-22_jeremy-pike-60",
+        "dom_evidence_record_count": 60,
+        "full_data_cell_comparison_count": 2700,
+        "non_targeted_tab_cell_comparison_count": 117288
+      }
     }
   },
   "integrity_rules": [
@@ -523,11 +619,14 @@
     "Search!A8 must read the complete Warm Paths data region and the Search grid and banding must be tall enough for the maximum spill result.",
     "Column Z on Warm Paths remains blank and reserved.",
     "The Sam Dharmasiri tab contains exactly 149 unique target rows in 126 contiguous company blocks, and every target row has Sam Dharmasiri in Mutual 1.",
-    "The Sam Dharmasiri tab is independent of Search and Warm Paths; changes to it must not alter either existing tab unless a later reviewed schema explicitly authorizes that dependency."
+    "The Sam Dharmasiri tab is independent of Search and Warm Paths; changes to it must not alter either existing tab unless a later reviewed schema explicitly authorizes that dependency.",
+    "The Jeremy Pike tab contains exactly 60 unique target rows in 48 contiguous company blocks, and every target row has Jeremy Pike in Mutual 1.",
+    "The Jeremy Pike tab is independent of Search, Warm Paths, and Sam Dharmasiri; changes to it must not alter those existing tabs unless a later reviewed schema explicitly authorizes that dependency."
   ],
   "change_protocol": [
     "Read this contract and docs/northwind_warm_paths_sheet_contract.md before every edit.",
     "Before editing the Sam Dharmasiri tab, also read docs/northwind_sam_dharmasiri_sheet_contract.md and docs/northwind_sam_dharmasiri_sheet_contract.v1.json; those files are normative for the complete tab schema.",
+    "Before editing the Jeremy Pike tab, also read docs/northwind_jeremy_pike_sheet_contract.md and docs/northwind_jeremy_pike_sheet_contract.v1.json; those files are normative for the complete tab schema.",
     "Create a dated Drive copy of the entire workbook before changing rows, formats, formulas, or dimensions.",
     "Read metadata and the exact affected CellData immediately before writing.",
     "Never use a values-only append for populated company data; copy the complete native row structure and overwrite only planned row-specific fields.",
@@ -538,6 +637,11 @@
     "After writing, prove that all non-targeted values and user-entered formats are byte-for-byte unchanged, all PF feedback is exact, every company is contiguous, all counts reconcile, and the rendered sheet has no format boundary."
   ],
   "change_log": [
+    {
+      "version": "1.6.0",
+      "date": "2026-07-22",
+      "change": "Added and linked the independent Jeremy Pike tab with 60 verified Sales Navigator contacts in 48 contiguous company blocks, Jeremy fixed as Mutual 1, 132 additional named-route placements, recoverable stable-ID evidence, a permanent insertion marker, and a premium summary. Search, Warm Paths, and Sam Dharmasiri matched the dated pre-edit backup."
+    },
     {
       "version": "1.5.0",
       "date": "2026-07-22",

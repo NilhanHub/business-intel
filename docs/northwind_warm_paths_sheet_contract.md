@@ -1,6 +1,6 @@
 # Northwind Warm Paths spreadsheet contract
 
-Version: **1.5.0**
+Version: **1.6.0**
 
 Captured and repaired: **2026-07-20**
 
@@ -12,6 +12,11 @@ Dedicated `Sam Dharmasiri` contract:
 [`northwind_sam_dharmasiri_sheet_contract.md`](northwind_sam_dharmasiri_sheet_contract.md)
 and
 [`northwind_sam_dharmasiri_sheet_contract.v1.json`](northwind_sam_dharmasiri_sheet_contract.v1.json)
+
+Dedicated `Jeremy Pike` contract:
+[`northwind_jeremy_pike_sheet_contract.md`](northwind_jeremy_pike_sheet_contract.md)
+and
+[`northwind_jeremy_pike_sheet_contract.v1.json`](northwind_jeremy_pike_sheet_contract.v1.json)
 
 This document is the mandatory change-control contract for the Google Sheet
 `Northwind CRM Warm Paths Tracker`. Future edits must preserve this structure
@@ -61,12 +66,20 @@ unless a deliberate schema-version change is reviewed and recorded.
 16. Before editing the `Sam Dharmasiri` tab, read and follow its dedicated human
     and machine contracts. They are normative for its exact fields, values,
     formatting, dimensions, evidence, insertion procedure, and verification.
+17. `Jeremy Pike` is an independent network tab. It must retain exactly one
+    contiguous block per company, with target rows first and exactly one summary
+    row last. It must not alter `Search`, `Warm Paths`, or `Sam Dharmasiri`.
+18. Every target row on `Jeremy Pike` must contain `Jeremy Pike` in Mutual 1
+    (`D`), followed by no more than four additional named live-observed mutuals.
+19. Before editing `Jeremy Pike`, read and follow its dedicated human and
+    machine contracts. They govern its exact evidence, rows, formats, dimensions,
+    backup comparison, insertion procedure, and verification.
 
 ## Workbook structure
 
 The workbook ID is `1nikwNWJ3N5622S_a8l9YQsP_pTLxCLtmezgNmBq4abs`. Its tab
-order is fixed: `Search`, `Warm Paths`, then `Sam Dharmasiri`. Locale is
-`en_GB`; timezone is `America/Los_Angeles`.
+order is fixed: `Search`, `Warm Paths`, `Sam Dharmasiri`, then `Jeremy Pike`.
+Locale is `en_GB`; timezone is `America/Los_Angeles`.
 
 Current controlled snapshot:
 
@@ -92,6 +105,18 @@ The independent `Sam Dharmasiri` snapshot contains:
   named mutual.
 - One privacy-limited contact whose employer was not visible. The tab records
   that limitation explicitly and does not infer an employer.
+
+The independent `Jeremy Pike` snapshot contains:
+
+- 60 unique Sales Navigator contacts keyed by stable LinkedIn lead ID.
+- 48 companies in 48 contiguous blocks.
+- 60 target rows and 48 company-summary rows, totalling 108 data rows.
+- 60 primary Jeremy routes, 132 additional named-mutual placements, and 192
+  total named route placements.
+- 66 distinct additional mutuals; 33 contacts have at least one additional
+  named mutual.
+- Three privacy-limited contacts whose employers were not visible. The tab
+  records that limitation explicitly and infers no employer.
 
 ## `Warm Paths` layout
 
@@ -226,6 +251,32 @@ marker and compact premium summary are controlled structure. Exact fixed text,
 counts, formats, conditional rules, provenance, and backup ID are normative in
 the JSON contract.
 
+## `Jeremy Pike` layout
+
+The dedicated
+[`northwind_jeremy_pike_sheet_contract.md`](northwind_jeremy_pike_sheet_contract.md)
+and
+[`northwind_jeremy_pike_sheet_contract.v1.json`](northwind_jeremy_pike_sheet_contract.v1.json)
+are the complete normative schema. This tab uses the same premium company-block
+and relationship-route design as `Sam Dharmasiri` but is an independent data
+set and is not a source for `Search`.
+
+| Rows | Role | Required treatment |
+| --- | --- | --- |
+| 1–5 | Title, guidance, snapshot, spacer, headers | Same native premium structure |
+| 6–113 | Company blocks | 60 targets plus 48 final summary rows in 48 contiguous blocks |
+| 114 | Permanent insertion marker | Add complete future company blocks immediately above |
+| 115 | Spacer | Blank |
+| 116–129 | Premium network summary | Title, executive statement, headers, ten metrics, guidance |
+| 130–1294 | Unused grid | Blank |
+
+`Jeremy Pike` is always in `D` on a target row. Additional named live routes
+use `F/H/J/L` with paired notes in `G/I/K/M`. The banding is exactly
+`A5:Y113`; conditional CRM-status formatting is exactly `Y6:Y113`. Populated
+rows are wrapped, top-aligned, and content-fitted. Column `Z` is reserved and
+blank. Exact cells, colours, widths, merges, validations, evidence hashes, and
+backup identifiers are normative in the dedicated machine contract.
+
 ## `Search` layout
 
 - Grid: 2,000 rows × 25 columns; rows 1–7 frozen.
@@ -247,6 +298,8 @@ formula are controlled structure.
 
 1. Read the JSON contract and this document.
    For a `Sam Dharmasiri` edit, also read both dedicated Sam contracts before
+   inspecting or changing the live tab.
+   For a `Jeremy Pike` edit, also read both dedicated Jeremy contracts before
    inspecting or changing the live tab.
 2. Create a dated copy of the entire workbook.
 3. Read current spreadsheet metadata and exact affected cells.
@@ -287,6 +340,12 @@ checkpoint, because live result ordering and page membership may change.
 
 ## Schema history
 
+- **1.6.0 — 2026-07-22:** Added and linked the independent `Jeremy Pike`
+  network tab: 60 verified Sales Navigator contacts in 48 contiguous company
+  blocks, Jeremy fixed as Mutual 1, 132 additional named-route placements,
+  atomic stable-ID evidence, a permanent insertion marker, and a premium
+  summary. `Search`, `Warm Paths`, and `Sam Dharmasiri` matched the dated
+  pre-edit backup.
 - **1.5.0 — 2026-07-22:** Added and linked the standalone complete human and
   machine schema for the `Sam Dharmasiri` tab. No live sheet values or formats
   changed.

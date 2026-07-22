@@ -25,3 +25,9 @@ human contract `docs/northwind_sam_dharmasiri_sheet_contract.md` and canonical
 machine contract `docs/northwind_sam_dharmasiri_sheet_contract.v1.json`. Preserve
 Sam-first route ordering, stable-ID evidence, atomic checkpoint recovery,
 complete company blocks, source provenance, and all exact formatting rules.
+
+Before any edit to the `Jeremy Pike` tab, also read and follow the dedicated
+human contract `docs/northwind_jeremy_pike_sheet_contract.md` and canonical
+machine contract `docs/northwind_jeremy_pike_sheet_contract.v1.json`. Preserve
+Jeremy-first route ordering, stable-ID evidence, atomic checkpoint recovery,
+complete company blocks, source provenance, and all exact formatting rules.
