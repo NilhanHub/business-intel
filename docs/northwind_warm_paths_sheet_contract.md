@@ -1,10 +1,10 @@
 # Northwind Warm Paths spreadsheet contract
 
-Version: **1.6.0**
+Version: **1.7.0**
 
 Captured and repaired: **2026-07-20**
 
-Last amended: **2026-07-22**
+Last amended: **2026-07-23**
 
 Canonical machine-readable contract: [`northwind_warm_paths_sheet_contract.v1.json`](northwind_warm_paths_sheet_contract.v1.json)
 
@@ -17,6 +17,11 @@ Dedicated `Jeremy Pike` contract:
 [`northwind_jeremy_pike_sheet_contract.md`](northwind_jeremy_pike_sheet_contract.md)
 and
 [`northwind_jeremy_pike_sheet_contract.v1.json`](northwind_jeremy_pike_sheet_contract.v1.json)
+
+Dedicated `Prasath Nanayakkara` contract:
+[`northwind_prasath_nanayakkara_sheet_contract.md`](northwind_prasath_nanayakkara_sheet_contract.md)
+and
+[`northwind_prasath_nanayakkara_sheet_contract.v1.json`](northwind_prasath_nanayakkara_sheet_contract.v1.json)
 
 This document is the mandatory change-control contract for the Google Sheet
 `Northwind CRM Warm Paths Tracker`. Future edits must preserve this structure
@@ -74,12 +79,22 @@ unless a deliberate schema-version change is reviewed and recorded.
 19. Before editing `Jeremy Pike`, read and follow its dedicated human and
     machine contracts. They govern its exact evidence, rows, formats, dimensions,
     backup comparison, insertion procedure, and verification.
+20. `Prasath Nanayakkara` is an independent network tab. It must retain exactly
+    one contiguous block per company, with target rows first and exactly one
+    summary row last. It must not alter any earlier tab.
+21. Every target row on `Prasath Nanayakkara` must contain `Prasath Nanayakkara`
+    in Mutual 1 (`D`), followed by no more than four additional named
+    live-observed mutuals.
+22. Before editing `Prasath Nanayakkara`, read and follow its dedicated human
+    and machine contracts. They govern its exact evidence, rows, formats,
+    dimensions, backup comparison, insertion procedure, and verification.
 
 ## Workbook structure
 
 The workbook ID is `1nikwNWJ3N5622S_a8l9YQsP_pTLxCLtmezgNmBq4abs`. Its tab
-order is fixed: `Search`, `Warm Paths`, `Sam Dharmasiri`, then `Jeremy Pike`.
-Locale is `en_GB`; timezone is `America/Los_Angeles`.
+order is fixed: `Search`, `Warm Paths`, `Sam Dharmasiri`, `Jeremy Pike`, then
+`Prasath Nanayakkara`. Locale is `en_GB`; timezone is
+`America/Los_Angeles`.
 
 Current controlled snapshot:
 
@@ -117,6 +132,17 @@ The independent `Jeremy Pike` snapshot contains:
   named mutual.
 - Three privacy-limited contacts whose employers were not visible. The tab
   records that limitation explicitly and infers no employer.
+
+The independent `Prasath Nanayakkara` snapshot contains:
+
+- 20 unique Sales Navigator contacts keyed by stable LinkedIn lead ID.
+- 19 companies in 19 contiguous blocks.
+- 20 target rows and 19 company-summary rows, totalling 39 data rows.
+- 20 primary Prasath routes, 44 additional named-mutual placements, and 64
+  total named route placements.
+- 25 distinct additional mutuals; 17 contacts have at least one additional
+  named mutual.
+- No privacy-limited employers and no inferred company values.
 
 ## `Warm Paths` layout
 
@@ -277,6 +303,32 @@ rows are wrapped, top-aligned, and content-fitted. Column `Z` is reserved and
 blank. Exact cells, colours, widths, merges, validations, evidence hashes, and
 backup identifiers are normative in the dedicated machine contract.
 
+## `Prasath Nanayakkara` layout
+
+The dedicated
+[`northwind_prasath_nanayakkara_sheet_contract.md`](northwind_prasath_nanayakkara_sheet_contract.md)
+and
+[`northwind_prasath_nanayakkara_sheet_contract.v1.json`](northwind_prasath_nanayakkara_sheet_contract.v1.json)
+are the complete normative schema. This tab uses the same premium company-block
+and relationship-route design as `Sam Dharmasiri` and `Jeremy Pike`, but it is
+an independent data set and is not a source for `Search`.
+
+| Rows | Role | Required treatment |
+| --- | --- | --- |
+| 1–5 | Title, guidance, snapshot, spacer, headers | Same native premium structure |
+| 6–44 | Company blocks | 20 targets plus 19 final summary rows in 19 contiguous blocks |
+| 45 | Permanent insertion marker | Add complete future company blocks immediately above |
+| 46 | Spacer | Blank |
+| 47–60 | Premium network summary | Title, executive statement, headers, ten metrics, guidance |
+| 61–1294 | Unused grid | Blank |
+
+`Prasath Nanayakkara` is always in `D` on a target row. Additional named live
+routes use `F/H/J/L` with paired notes in `G/I/K/M`. The banding is exactly
+`A5:Y44`; conditional CRM-status formatting is exactly `Y6:Y44`. Populated
+rows are wrapped, top-aligned, and content-fitted. Column `Z` is reserved and
+blank. Exact cells, colours, widths, merges, validations, evidence hashes, and
+backup identifiers are normative in the dedicated machine contract.
+
 ## `Search` layout
 
 - Grid: 2,000 rows × 25 columns; rows 1–7 frozen.
@@ -301,6 +353,8 @@ formula are controlled structure.
    inspecting or changing the live tab.
    For a `Jeremy Pike` edit, also read both dedicated Jeremy contracts before
    inspecting or changing the live tab.
+   For a `Prasath Nanayakkara` edit, also read both dedicated Prasath contracts
+   before inspecting or changing the live tab.
 2. Create a dated copy of the entire workbook.
 3. Read current spreadsheet metadata and exact affected cells.
 4. Build one narrowly scoped, atomic batch.
@@ -340,6 +394,12 @@ checkpoint, because live result ordering and page membership may change.
 
 ## Schema history
 
+- **1.7.0 — 2026-07-23:** Added and linked the independent
+  `Prasath Nanayakkara` network tab: 20 verified Sales Navigator contacts in 19
+  contiguous company blocks, Prasath fixed as Mutual 1, 44 additional named
+  route placements, atomic stable-ID evidence, a permanent insertion marker,
+  and a premium summary. All four earlier tabs matched the dated pre-edit
+  backup across values, formats, validations, notes, and hyperlinks.
 - **1.6.0 — 2026-07-22:** Added and linked the independent `Jeremy Pike`
   network tab: 60 verified Sales Navigator contacts in 48 contiguous company
   blocks, Jeremy fixed as Mutual 1, 132 additional named-route placements,

@@ -514,15 +514,25 @@ def _content_requests(
             "and company blocks still reconcile."
         )
     )
+    portfolio_coverage_meaning = (
+        "Every company is represented by one contiguous block; privacy-limited "
+        "profiles are kept in one explicit company-not-shown block."
+        if stats["privacy_limited_contact_count"]
+        else "Every company is represented by one complete contiguous block."
+    )
+    research_caveat_meaning = (
+        (
+            f"Employer was not displayed for {privacy_names}; the sheet records "
+            "that limitation instead of inferring a company."
+        )
+        if stats["privacy_limited_contact_count"]
+        else "No employer names were privacy-limited in this result set."
+    )
     metrics = [
         [
             "Portfolio coverage",
             f"{stats['company_block_count']} companies",
-            (
-                "Every company is represented by one contiguous block; the "
-                "privacy-limited profiles are kept in one explicit "
-                "company-not-shown block."
-            ),
+            portfolio_coverage_meaning,
         ],
         [
             "Target people",
@@ -585,10 +595,7 @@ def _content_requests(
         [
             "Research caveat",
             f"{stats['privacy_limited_contact_count']} profiles",
-            (
-                f"Employer was not displayed for {privacy_names}; the sheet "
-                "records that limitation instead of inferring a company."
-            ),
+            research_caveat_meaning,
         ],
     ]
 

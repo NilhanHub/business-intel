@@ -118,6 +118,39 @@ def test_validation_does_not_mutate_checkpoint_and_accepts_distinct_same_names()
     assert stats["duplicate_name_count"] == 1
 
 
+def test_prasath_primary_name_generates_prasath_first_rows_and_summary() -> None:
+    record = _record(
+        "lead-prasath",
+        name="Target Person",
+        company="Target Ltd",
+        mutuals=["Prasath Nanayakkara", "Second Route"],
+        primaryVisibleInPanel=True,
+    )
+    checkpoint = _checkpoint([record])
+    checkpoint["source"]["filters"] = [
+        "Connections of Prasath Nanayakkara",
+        "CTO Type",
+    ]
+
+    validated = MODULE._validate_checkpoint(checkpoint, "Prasath Nanayakkara")
+    rows, _, stats = MODULE._build_data(validated, "Prasath Nanayakkara")
+    requests, _ = MODULE._content_requests(
+        2114113563,
+        rows,
+        stats,
+        "Prasath Nanayakkara",
+    )
+
+    assert rows[0][3] == "Prasath Nanayakkara"
+    assert rows[0][5] == "Second Route"
+    assert requests[0]["updateCells"]["rows"][0]["values"][0][
+        "userEnteredValue"
+    ]["stringValue"] == "Northwind CRM Warm Paths Tracker — Prasath Nanayakkara"
+    assert requests[3]["updateCells"]["rows"][0]["values"][0][
+        "userEnteredValue"
+    ]["stringValue"] == "Prasath Nanayakkara Network Summary"
+
+
 @pytest.mark.parametrize(
     ("mutator", "message"),
     [
@@ -265,3 +298,10 @@ def test_content_plan_places_marker_and_ten_metrics_after_data() -> None:
     assert requests[2]["updateCells"]["rows"][0]["values"][0]["userEnteredValue"][
         "stringValue"
     ].startswith("NEW COMPANY INSERTION POINT")
+    metric_rows = requests[5]["updateCells"]["rows"]
+    assert metric_rows[1]["values"][2]["userEnteredValue"]["stringValue"] == (
+        "Every company is represented by one complete contiguous block."
+    )
+    assert metric_rows[10]["values"][2]["userEnteredValue"]["stringValue"] == (
+        "No employer names were privacy-limited in this result set."
+    )
