@@ -1316,6 +1316,58 @@ wheels = [
 ]
 
 [[package]]
+name = "hello-cloud-agent"
+version = "0.1.0"
+source = { editable = "." }
+dependencies = [
+    { name = "gcsfs" },
+    { name = "google-adk" },
+    { name = "google-cloud-aiplatform", extra = ["agent-engines", "evaluation"] },
+    { name = "google-cloud-logging" },
+    { name = "opentelemetry-instrumentation-google-genai" },
+    { name = "protobuf" },
+]
+
+[package.optional-dependencies]
+eval = [
+    { name = "google-adk", extra = ["eval"] },
+]
+lint = [
+    { name = "codespell" },
+    { name = "ruff" },
+    { name = "ty" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "nest-asyncio" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "codespell", marker = "extra == 'lint'", specifier = ">=2.2.0,<3.0.0" },
+    { name = "gcsfs", specifier = ">=2024.11.0" },
+    { name = "google-adk", specifier = ">=1.15.0,<2.0.0" },
+    { name = "google-adk", extras = ["eval"], marker = "extra == 'eval'", specifier = ">=1.15.0,<2.0.0" },
+    { name = "google-cloud-aiplatform", extras = ["evaluation", "agent-engines"], specifier = ">=1.130.0" },
+    { name = "google-cloud-logging", specifier = ">=3.12.0,<4.0.0" },
+    { name = "opentelemetry-instrumentation-google-genai", specifier = ">=0.1.0,<1.0.0" },
+    { name = "protobuf", specifier = ">=6.31.1,<7.0.0" },
+    { name = "ruff", marker = "extra == 'lint'", specifier = ">=0.4.6,<1.0.0" },
+    { name = "ty", marker = "extra == 'lint'", specifier = ">=0.0.1a0" },
+]
+provides-extras = ["eval", "lint"]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "nest-asyncio", specifier = ">=1.6.0,<2.0.0" },
+    { name = "pytest", specifier = ">=8.3.4,<9.0.0" },
+    { name = "pytest-asyncio", specifier = ">=0.23.8,<1.0.0" },
+]
+
+[[package]]
 name = "hf-xet"
 version = "1.4.3"
 source = { registry = "https://pypi.org/simple" }
@@ -1582,58 +1634,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/29/75/1c537aa458426a9127a92bc2273787b2f987f4e5044e21f01f2eed5244fd/litellm-1.82.6.tar.gz", hash = "sha256:2aa1c2da21fe940c33613aa447119674a3ad4d2ad5eb064e4d5ce5ee42420136", size = 17414147, upload-time = "2026-03-22T06:36:00.452Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/02/6c/5327667e6dbe9e98cbfbd4261c8e91386a52e38f41419575854248bbab6a/litellm-1.82.6-py3-none-any.whl", hash = "sha256:164a3ef3e19f309e3cabc199bef3d2045212712fefdfa25fc7f75884a5b5b205", size = 15591595, upload-time = "2026-03-22T06:35:56.795Z" },
-]
-
-[[package]]
-name = "hello-cloud-agent"
-version = "0.1.0"
-source = { editable = "." }
-dependencies = [
-    { name = "gcsfs" },
-    { name = "google-adk" },
-    { name = "google-cloud-aiplatform", extra = ["agent-engines", "evaluation"] },
-    { name = "google-cloud-logging" },
-    { name = "opentelemetry-instrumentation-google-genai" },
-    { name = "protobuf" },
-]
-
-[package.optional-dependencies]
-eval = [
-    { name = "google-adk", extra = ["eval"] },
-]
-lint = [
-    { name = "codespell" },
-    { name = "ruff" },
-    { name = "ty" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "nest-asyncio" },
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "codespell", marker = "extra == 'lint'", specifier = ">=2.2.0,<3.0.0" },
-    { name = "gcsfs", specifier = ">=2024.11.0" },
-    { name = "google-adk", specifier = ">=1.15.0,<2.0.0" },
-    { name = "google-adk", extras = ["eval"], marker = "extra == 'eval'", specifier = ">=1.15.0,<2.0.0" },
-    { name = "google-cloud-aiplatform", extras = ["evaluation", "agent-engines"], specifier = ">=1.130.0" },
-    { name = "google-cloud-logging", specifier = ">=3.12.0,<4.0.0" },
-    { name = "opentelemetry-instrumentation-google-genai", specifier = ">=0.1.0,<1.0.0" },
-    { name = "protobuf", specifier = ">=6.31.1,<7.0.0" },
-    { name = "ruff", marker = "extra == 'lint'", specifier = ">=0.4.6,<1.0.0" },
-    { name = "ty", marker = "extra == 'lint'", specifier = ">=0.0.1a0" },
-]
-provides-extras = ["eval", "lint"]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "nest-asyncio", specifier = ">=1.6.0,<2.0.0" },
-    { name = "pytest", specifier = ">=8.3.4,<9.0.0" },
-    { name = "pytest-asyncio", specifier = ">=0.23.8,<1.0.0" },
 ]
 
 [[package]]
@@ -2380,11 +2380,11 @@ wheels = [
 
 [[package]]
 name = "pyasn1"
-version = "0.6.3"
+version = "0.6.4"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/5c/5f/6583902b6f79b399c9c40674ac384fd9cd77805f9e6205075f828ef11fb2/pyasn1-0.6.3.tar.gz", hash = "sha256:697a8ecd6d98891189184ca1fa05d1bb00e2f84b5977c481452050549c8a72cf", size = 148685, upload-time = "2026-03-17T01:06:53.382Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/a4/9a/23310166d960def5897e91fe20e5b724601b02a22e84ba1f94232c0b7f67/pyasn1-0.6.4.tar.gz", hash = "sha256:9c447d8431c947fe4c8febc4ed9e760bc29011a5b01e5c74b67025bd9fb8ce81", size = 151262, upload-time = "2026-07-09T01:12:33.988Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/5d/a0/7d793dce3fa811fe047d6ae2431c672364b462850c6235ae306c0efd025f/pyasn1-0.6.3-py3-none-any.whl", hash = "sha256:a80184d120f0864a52a073acc6fc642847d0be408e7c7252f31390c0f4eadcde", size = 83997, upload-time = "2026-03-17T01:06:52.036Z" },
+    { url = "https://files.pythonhosted.org/packages/9a/3b/6163796d69c3977d1e4287bea4a6979161cbbdd170ebb430511e8e1999ce/pyasn1-0.6.4-py3-none-any.whl", hash = "sha256:deda9277cfd454080ec40b207fb6df82206a3a2688735233cdcd8d3d565f088b", size = 84410, upload-time = "2026-07-09T01:12:32.92Z" },
 ]
 
 [[package]]
