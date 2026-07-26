@@ -18,6 +18,8 @@
   const menuButton = document.getElementById("menuBtn");
   const toastContainer = document.getElementById("toastContainer");
   const leadCountBadge = document.getElementById("leadCountBadge");
+  const deploymentBadge = document.getElementById("deploymentBadge");
+  const isHosted = !["localhost", "127.0.0.1", "::1"].includes(location.hostname);
   let navigationGeneration = 0;
   let navigationController = null;
   let sidebarReturnFocus = null;
@@ -582,7 +584,7 @@
           return;
         }
         appState.notesOriginal = submittedNotes;
-        showToast("Notes saved locally.", "success");
+        showToast("Workspace notes saved.", "success");
       } catch (error) {
         if (isAbortError(error)) {
           return;
@@ -844,7 +846,9 @@
     }
     clearElement(mainBody);
     const items = [
-      "Local-only FastAPI workspace bound to 127.0.0.1",
+      isHosted
+        ? "Hostinger-hosted workspace available through HTTPS"
+        : "Local FastAPI workspace bound to 127.0.0.1",
       "One intentional shared account; no multi-user tenancy",
       "Runtime leads require genuine HTTP(S) public evidence",
       "Tender and procurement-only signals are rejected",
@@ -930,6 +934,9 @@
   }
 
   async function initialize() {
+    if (deploymentBadge) {
+      deploymentBadge.textContent = isHosted ? "Hosted" : "Local";
+    }
     try {
       const session = await apiFetch("/api/auth/verify");
       appState.csrfToken = session.csrf_token;

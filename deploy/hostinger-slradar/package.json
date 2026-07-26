@@ -1,0 +1,14 @@
+{
+  "name": "slradar-hostinger",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Hostinger runtime adapter for 1BT Opportunity Radar",
+  "engines": {
+    "node": ">=20 <25"
+  },
+  "scripts": {
+    "start": "node server.mjs",
+    "test": "node --test tests/*.test.mjs"
+  }
+}
