@@ -39,6 +39,8 @@ EXPECTED_RUNTIME_COUNT = 4
 EXPECTED_REQUIREMENTS_FILE = "sl_trigger_leads/app_utils/.requirements.txt"
 EXPECTED_ENTRYPOINT_MODULE = "sl_trigger_leads.agent_runtime_app"
 EXPECTED_ENTRYPOINT_OBJECT = "agent_runtime"
+RUNTIME_GATE_NAME = "BT_ENABLE_AGENT_RUNTIME"
+RUNTIME_GATE_VALUE = "1"
 EXPECTED_ENV_NAMES = frozenset(
     {
         "AGENT_VERSION",
@@ -329,6 +331,16 @@ class RuntimeSnapshot:
         return _hash_json(self.env_values)
 
     @property
+    def preserved_env_hash(self) -> str:
+        return _hash_json(
+            {
+                name: value
+                for name, value in self.env_values.items()
+                if name != RUNTIME_GATE_NAME
+            }
+        )
+
+    @property
     def class_methods_hash(self) -> str:
         return _hash_json(self.class_methods)
 
@@ -345,6 +357,7 @@ class RuntimeSnapshot:
             "service_account_present": self.service_account is not None,
             "environment_names": sorted(self.env_values),
             "environment_values_sha256": self.env_hash,
+            "preserved_environment_values_sha256": self.preserved_env_hash,
             "secret_binding_count": self.secret_env_count,
             "scaling": {
                 "min_instances": self.min_instances,
@@ -432,7 +445,6 @@ def validate_pre_update_snapshot(snapshot: RuntimeSnapshot) -> None:
         "agent framework": (snapshot.agent_framework, "google-adk"),
         "service account": (snapshot.service_account, None),
         "secret binding count": (snapshot.secret_env_count, 0),
-        "environment names": (frozenset(snapshot.env_values), EXPECTED_ENV_NAMES),
         "min instances": (snapshot.min_instances, 1),
         "max instances": (snapshot.max_instances, 10),
         "resource limits": (
@@ -440,7 +452,6 @@ def validate_pre_update_snapshot(snapshot: RuntimeSnapshot) -> None:
             {"cpu": "4", "memory": "8Gi"},
         ),
         "container concurrency": (snapshot.container_concurrency, 9),
-        "current Python version": (snapshot.python_version, "3.14"),
         "entrypoint module": (
             snapshot.entrypoint_module,
             EXPECTED_ENTRYPOINT_MODULE,
@@ -462,8 +473,26 @@ def validate_pre_update_snapshot(snapshot: RuntimeSnapshot) -> None:
     ]
     if not snapshot.effective_identity_present:
         mismatches.append("effective Agent Identity is missing")
-    if "BT_ENABLE_AGENT_RUNTIME" in snapshot.env_values:
-        mismatches.append("BT_ENABLE_AGENT_RUNTIME is unexpectedly already present")
+    environment_names = frozenset(snapshot.env_values)
+    is_legacy_baseline = (
+        environment_names == EXPECTED_ENV_NAMES
+        and snapshot.python_version == "3.14"
+        and RUNTIME_GATE_NAME not in snapshot.env_values
+    )
+    is_hardened_baseline = (
+        environment_names == EXPECTED_ENV_NAMES | {RUNTIME_GATE_NAME}
+        and snapshot.python_version == APPROVED_PYTHON_VERSION
+        and snapshot.env_values.get(RUNTIME_GATE_NAME) == RUNTIME_GATE_VALUE
+    )
+    if not (is_legacy_baseline or is_hardened_baseline):
+        mismatches.append(
+            "runtime baseline must be either legacy Python 3.14 without the "
+            f"{RUNTIME_GATE_NAME} gate or hardened Python "
+            f"{APPROVED_PYTHON_VERSION} with {RUNTIME_GATE_NAME}="
+            f"{RUNTIME_GATE_VALUE!r}; got Python {snapshot.python_version!r}, "
+            f"environment names {environment_names!r}, and gate value "
+            f"{snapshot.env_values.get(RUNTIME_GATE_NAME)!r}"
+        )
     if not snapshot.class_methods:
         mismatches.append("operation schemas are empty")
     if mismatches:
@@ -512,8 +541,11 @@ def run_preflight(
         "target": snapshot.safe_dict(),
         "planned_change": {
             "python_version": APPROVED_PYTHON_VERSION,
-            "environment_addition": "BT_ENABLE_AGENT_RUNTIME",
-            "environment_addition_value": "1",
+            "environment_gate": RUNTIME_GATE_NAME,
+            "environment_gate_value": RUNTIME_GATE_VALUE,
+            "environment_gate_already_present": (
+                snapshot.env_values.get(RUNTIME_GATE_NAME) == RUNTIME_GATE_VALUE
+            ),
             "action": "update-only",
         },
     }
@@ -522,7 +554,7 @@ def run_preflight(
 
 def build_update_config_kwargs(snapshot: RuntimeSnapshot) -> dict[str, Any]:
     env_values = dict(snapshot.env_values)
-    env_values["BT_ENABLE_AGENT_RUNTIME"] = "1"
+    env_values[RUNTIME_GATE_NAME] = RUNTIME_GATE_VALUE
     kwargs: dict[str, Any] = {
         "display_name": snapshot.display_name,
         "labels": snapshot.labels,
@@ -666,7 +698,7 @@ def validate_post_update_snapshot(
     old_env = {
         name: value
         for name, value in snapshot.env_values.items()
-        if name != "BT_ENABLE_AGENT_RUNTIME"
+        if name != RUNTIME_GATE_NAME
     }
     checks = {
         "resource name": (snapshot.name, APPROVED_RESOURCE_NAME),
@@ -678,12 +710,15 @@ def validate_post_update_snapshot(
         "secret binding count": (snapshot.secret_env_count, 0),
         "environment names": (
             frozenset(snapshot.env_values),
-            EXPECTED_ENV_NAMES | {"BT_ENABLE_AGENT_RUNTIME"},
+            EXPECTED_ENV_NAMES | {RUNTIME_GATE_NAME},
         ),
-        "runtime gate": (snapshot.env_values.get("BT_ENABLE_AGENT_RUNTIME"), "1"),
+        "runtime gate": (
+            snapshot.env_values.get(RUNTIME_GATE_NAME),
+            RUNTIME_GATE_VALUE,
+        ),
         "preserved environment values": (
             _hash_json(old_env),
-            pre_update.get("environment_values_sha256"),
+            pre_update.get("preserved_environment_values_sha256"),
         ),
         "min instances": (snapshot.min_instances, 1),
         "max instances": (snapshot.max_instances, 10),

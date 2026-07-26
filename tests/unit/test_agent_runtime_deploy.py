@@ -25,13 +25,19 @@ def _runtime_resource(
     display_name: str = deploy.APPROVED_DISPLAY_NAME,
     python_version: str = "3.14",
     include_runtime_gate: bool = False,
+    runtime_gate_value: str = "1",
 ) -> dict[str, Any]:
     env = [
         {"name": name, "value": f"preserved-{index}"}
         for index, name in enumerate(sorted(deploy.EXPECTED_ENV_NAMES), start=1)
     ]
     if include_runtime_gate:
-        env.append({"name": "BT_ENABLE_AGENT_RUNTIME", "value": "1"})
+        env.append(
+            {
+                "name": deploy.RUNTIME_GATE_NAME,
+                "value": runtime_gate_value,
+            }
+        )
     return {
         "name": name,
         "display_name": display_name,
@@ -144,11 +150,33 @@ def test_pre_update_snapshot_requires_exact_identity_and_configuration() -> None
     snapshot = deploy.parse_runtime_snapshot(_runtime_resource())
     deploy.validate_pre_update_snapshot(snapshot)
 
+    hardened = deploy.parse_runtime_snapshot(
+        _runtime_resource(
+            python_version=deploy.APPROVED_PYTHON_VERSION,
+            include_runtime_gate=True,
+        )
+    )
+    deploy.validate_pre_update_snapshot(hardened)
+
     drifted = deploy.parse_runtime_snapshot(
         _runtime_resource(display_name="business-intel")
     )
     with pytest.raises(deploy.DeploymentGuardError, match="configuration drift"):
         deploy.validate_pre_update_snapshot(drifted)
+
+    for mixed_baseline in (
+        _runtime_resource(python_version=deploy.APPROVED_PYTHON_VERSION),
+        _runtime_resource(include_runtime_gate=True),
+        _runtime_resource(
+            python_version=deploy.APPROVED_PYTHON_VERSION,
+            include_runtime_gate=True,
+            runtime_gate_value="0",
+        ),
+    ):
+        with pytest.raises(deploy.DeploymentGuardError, match="runtime baseline"):
+            deploy.validate_pre_update_snapshot(
+                deploy.parse_runtime_snapshot(mixed_baseline)
+            )
 
 
 def test_update_config_preserves_runtime_and_adds_only_gate() -> None:
@@ -166,8 +194,17 @@ def test_update_config_preserves_runtime_and_adds_only_gate() -> None:
     assert config["class_methods"] == snapshot.class_methods
     assert config["env_vars"] == {
         **snapshot.env_values,
-        "BT_ENABLE_AGENT_RUNTIME": "1",
+        deploy.RUNTIME_GATE_NAME: deploy.RUNTIME_GATE_VALUE,
     }
+
+    hardened = deploy.parse_runtime_snapshot(
+        _runtime_resource(
+            python_version=deploy.APPROVED_PYTHON_VERSION,
+            include_runtime_gate=True,
+        )
+    )
+    hardened_config = deploy.build_update_config_kwargs(hardened)
+    assert hardened_config["env_vars"] == hardened.env_values
 
 
 def test_exact_target_lookup_refuses_creation_or_ambiguity() -> None:
@@ -261,6 +298,17 @@ def test_post_update_requires_preserved_state_and_no_fifth_runtime() -> None:
     deploy.validate_post_update_snapshot(after, state, 4)
     with pytest.raises(deploy.DeploymentGuardError, match="runtime count"):
         deploy.validate_post_update_snapshot(after, state, 5)
+
+    hardened_before_data = _runtime_resource(
+        python_version=deploy.APPROVED_PYTHON_VERSION,
+        include_runtime_gate=True,
+    )
+    hardened_before = deploy.parse_runtime_snapshot(hardened_before_data)
+    hardened_state = {
+        "runtime_count_before": 4,
+        "pre_update": hardened_before.safe_dict(),
+    }
+    deploy.validate_post_update_snapshot(after, hardened_state, 4)
 
 
 class TrackingHTTPResponse:

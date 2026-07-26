@@ -13,6 +13,11 @@ This runbook updates only the existing Business_Intel ADK runtime. It never depl
 
 The command refuses any other values. It also requires a clean working tree at the full commit supplied through `--commit`, exactly four existing runtimes, the existing Agent Identity, no service account or secret bindings, and the preserved `1/10`, `4 CPU`, `8GiB`, concurrency `9` scaling contract.
 
+Preflight accepts only the recorded legacy baseline (Python 3.14 without the
+runtime gate) or the completed hardened baseline (Python 3.13 with
+`BT_ENABLE_AGENT_RUNTIME=1`). This keeps later source updates repeatable without
+accepting a partially migrated or otherwise drifted configuration.
+
 ## Prepare the locked Runtime package
 
 Run these commands after dependency changes and commit the resulting lock and requirements file:
