@@ -400,11 +400,11 @@ export async function createApplication(options = {}) {
 
   async function readLeads() {
     const leads = await readJson(path.join(dataDirectory, "leads.json"));
-    return validateRuntimeLeads(leads);
+    return deduplicateLeadsByCompany(validateRuntimeLeads(leads));
   }
 
   async function writeLeads(leads) {
-    const validated = validateRuntimeLeads(leads);
+    const validated = deduplicateLeadsByCompany(validateRuntimeLeads(leads));
     await mutex.run("leads", () =>
       atomicWriteJson(path.join(dataDirectory, "leads.json"), validated),
     );
@@ -1012,6 +1012,25 @@ export function validateRuntimeLeads(value) {
   return value.map((lead, index) => validateLead(lead, index));
 }
 
+export function deduplicateLeadsByCompany(leads) {
+  const unique = new Map();
+  for (const lead of leads) {
+    const companyKey = String(lead.company || "")
+      .normalize("NFKC")
+      .trim()
+      .replace(/\s+/g, " ")
+      .toLocaleLowerCase("en");
+    const existing = unique.get(companyKey);
+    if (
+      !existing ||
+      Number(lead.score?.total ?? -1) > Number(existing.score?.total ?? -1)
+    ) {
+      unique.set(companyKey, lead);
+    }
+  }
+  return [...unique.values()];
+}
+
 export function validateLead(lead, index = 0) {
   if (!lead || typeof lead !== "object" || Array.isArray(lead)) {
     throw new Error(`Runtime lead ${index} must be an object.`);
@@ -1303,24 +1322,15 @@ async function runLiveRefresh({ sources, fetchImplementation }) {
   );
 
   const leads = [];
-  const seen = new Set();
   for (const candidate of [...linkedCandidates, ...sourceTextCandidates]) {
     if (!candidate) {
       continue;
     }
-    const key = [
-      candidate.company.toLowerCase(),
-      candidate.evidence_url.toLowerCase(),
-      candidate.trigger_summary.toLowerCase(),
-    ].join("|");
-    if (seen.has(key)) {
-      continue;
-    }
-    seen.add(key);
     leads.push(candidate);
   }
-  leads.sort((left, right) => right.score.total - left.score.total);
-  const verified = validateRuntimeLeads(leads.slice(0, 10));
+  const verified = deduplicateLeadsByCompany(validateRuntimeLeads(leads))
+    .sort((left, right) => right.score.total - left.score.total)
+    .slice(0, 10);
   const fetchedAt = new Date().toISOString();
   return {
     fetched_at: fetchedAt,

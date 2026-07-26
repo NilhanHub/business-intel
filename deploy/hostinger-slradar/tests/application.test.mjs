@@ -10,6 +10,7 @@ import { fileURLToPath } from "node:url";
 import {
   classifySignal,
   createApplication,
+  deduplicateLeadsByCompany,
   validateLead,
 } from "../src/application.mjs";
 
@@ -263,6 +264,26 @@ test("runtime lead validation rejects unsafe and malformed evidence", () => {
   const tender = validLead();
   tender.trigger_type = "tender_or_procurement";
   assert.throws(() => validateLead(tender), /tender-only/);
+});
+
+test("company results are deduplicated and retain the strongest evidence", () => {
+  const weaker = validLead();
+  weaker.company = " Lycerix   Global ";
+  weaker.score.total = 74;
+  const stronger = structuredClone(weaker);
+  stronger.company = "LYCERIX GLOBAL";
+  stronger.score.total = 92;
+  stronger.evidence_url = "https://itpro.lk/jobs/lycerix";
+
+  const deduplicated = deduplicateLeadsByCompany([
+    weaker,
+    stronger,
+    { ...validLead(), company: "Another Company" },
+  ]);
+
+  assert.equal(deduplicated.length, 2);
+  assert.equal(deduplicated[0].evidence_url, stronger.evidence_url);
+  assert.equal(deduplicated[0].score.total, 92);
 });
 
 test("signal policy behavior remains aligned with the Python application", () => {
