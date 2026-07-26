@@ -135,6 +135,8 @@ filterwarnings = [
 exclude = [
     "/frontend/data/**",
     "/frontend/.env*",
+    "/sl_trigger_leads/tests/**",
+    "/uk_ie_d365_leads/tests/**",
     "**/*.log",
 ]
 

@@ -10,7 +10,7 @@ Business Intel is an evidence-grounded multi-agent system for discovering, valid
 | Agent lanes | Sri Lanka trigger leads, contact resolution, opportunity analysis, UK/IE Dynamics 365 intelligence |
 | Trust model | Real-data-only policy, source provenance, live verification flags, tender rejection, explicit delivery gates |
 | Operator surface | Authenticated local web application plus command-line smoke and evaluation tools |
-| Quality strategy | Ruff, 255 public-snapshot tests, 14 explicit skips, 9 passing subtests, evalsets, live-smoke boundaries |
+| Quality strategy | Ruff, ty, codespell, deterministic pytest coverage, evalsets, and explicit live-smoke boundaries |
 
 ## Why this project is technically interesting
 
@@ -58,13 +58,20 @@ The application can be evaluated without exposing a public service. Authenticati
 
 ## Verification
 
-The employer release passes:
+The deterministic repository gates are:
 
+- `uv lock --check`;
+- `uv pip check`;
 - `uv run ruff check .`;
-- 255 pytest tests in the public snapshot;
-- 14 documented skips and 9 passing subtests; 11 skips are private-evidence replay cases;
-- a redacted Git-history and current-snapshot secret scan;
-- no object or publishable file above 90 MB.
+- `uv run ty check`;
+- `uv run codespell`;
+- `uv run pytest`;
+- JavaScript syntax checks for both frontend scripts;
+- a wheel build and inventory check confirming that static assets are present and runtime data, logs, evidence, environment files, and internal tests are absent.
+
+Live-provider evaluation, deployment checks, dependency audits, and secret scans
+remain separate release gates because they can require credentials, incur cost, or
+serve a different assurance purpose.
 
 ## For coding agents
 
