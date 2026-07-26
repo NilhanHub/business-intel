@@ -131,6 +131,21 @@ def test_runtime_requirements_are_the_exact_locked_export() -> None:
     assert canonical.replace("\r\n", "\n") == result.stdout.replace("\r\n", "\n")
 
 
+def test_runtime_source_package_closure_includes_first_party_imports() -> None:
+    result = deploy.validate_source_package_closure()
+
+    assert result["source_packages"] == [
+        "./sl_trigger_leads",
+        "./business_intel",
+        "./uk_ie_d365_leads",
+    ]
+    assert result["first_party_import_roots"] == [
+        "business_intel",
+        "sl_trigger_leads",
+        "uk_ie_d365_leads",
+    ]
+
+
 def test_requirement_validation_rejects_unpinned_and_evaluation_packages() -> None:
     with pytest.raises(deploy.DeploymentGuardError, match="not an exact pin"):
         deploy.parse_locked_requirements("google-adk>=2.4.0\n")
@@ -184,7 +199,11 @@ def test_update_config_preserves_runtime_and_adds_only_gate() -> None:
     config = deploy.build_update_config_kwargs(snapshot)
 
     assert config["python_version"] == "3.13"
-    assert config["source_packages"] == ["./sl_trigger_leads"]
+    assert config["source_packages"] == [
+        "./sl_trigger_leads",
+        "./business_intel",
+        "./uk_ie_d365_leads",
+    ]
     assert config["requirements_file"] == deploy.EXPECTED_REQUIREMENTS_FILE
     assert config["identity_type"] == "AGENT_IDENTITY"
     assert config["min_instances"] == 1

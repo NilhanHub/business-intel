@@ -9,6 +9,7 @@ resource, followed by separately invoked status and smoke commands.
 from __future__ import annotations
 
 import argparse
+import ast
 import asyncio
 import hashlib
 import json
@@ -39,6 +40,11 @@ EXPECTED_RUNTIME_COUNT = 4
 EXPECTED_REQUIREMENTS_FILE = "sl_trigger_leads/app_utils/.requirements.txt"
 EXPECTED_ENTRYPOINT_MODULE = "sl_trigger_leads.agent_runtime_app"
 EXPECTED_ENTRYPOINT_OBJECT = "agent_runtime"
+APPROVED_SOURCE_PACKAGES = (
+    "./sl_trigger_leads",
+    "./business_intel",
+    "./uk_ie_d365_leads",
+)
 RUNTIME_GATE_NAME = "BT_ENABLE_AGENT_RUNTIME"
 RUNTIME_GATE_VALUE = "1"
 EXPECTED_ENV_NAMES = frozenset(
@@ -197,6 +203,55 @@ def validate_runtime_requirements(path: Path) -> dict[str, Any]:
             name: packages[name] for name in sorted(REQUIRED_RUNTIME_PACKAGES)
         },
         "forbidden_packages_present": [],
+    }
+
+
+def validate_source_package_closure() -> dict[str, Any]:
+    """Require every first-party import to be present in the uploaded source."""
+    included_roots = {
+        Path(package.removeprefix("./")).parts[0]
+        for package in APPROVED_SOURCE_PACKAGES
+    }
+    first_party_roots = {
+        "business_intel",
+        "frontend",
+        "sl_trigger_leads",
+        "uk_ie_d365_leads",
+    }
+    imported_roots: set[str] = set()
+    for package_root in sorted(included_roots):
+        for source_path in (PROJECT_ROOT / package_root).rglob("*.py"):
+            if "tests" in source_path.relative_to(PROJECT_ROOT).parts:
+                continue
+            tree = ast.parse(
+                source_path.read_text(encoding="utf-8"),
+                filename=str(source_path),
+            )
+            for node in ast.walk(tree):
+                if isinstance(node, ast.Import):
+                    imported_roots.update(
+                        alias.name.partition(".")[0]
+                        for alias in node.names
+                        if alias.name.partition(".")[0] in first_party_roots
+                    )
+                elif (
+                    isinstance(node, ast.ImportFrom)
+                    and node.level == 0
+                    and node.module
+                ):
+                    root = node.module.partition(".")[0]
+                    if root in first_party_roots:
+                        imported_roots.add(root)
+        imported_roots.add(package_root)
+    missing = sorted(imported_roots - included_roots)
+    if missing:
+        raise DeploymentGuardError(
+            "Runtime source package closure is incomplete; missing: "
+            + ", ".join(missing)
+        )
+    return {
+        "source_packages": list(APPROVED_SOURCE_PACKAGES),
+        "first_party_import_roots": sorted(imported_roots),
     }
 
 
@@ -529,6 +584,7 @@ def run_preflight(
     validate_approved_arguments(args)
     git_state = validate_git_release_state(args.commit)
     requirements = validate_runtime_requirements(Path(args.requirements_file))
+    source_package_closure = validate_source_package_closure()
     client = client_factory(args)
     snapshot, runtime_count = _list_exact_target(client)
     validate_pre_update_snapshot(snapshot)
@@ -537,6 +593,7 @@ def run_preflight(
         "checked_at": _now(),
         "git": git_state,
         "requirements": requirements,
+        "source_package_closure": source_package_closure,
         "runtime_count": runtime_count,
         "target": snapshot.safe_dict(),
         "planned_change": {
@@ -558,7 +615,7 @@ def build_update_config_kwargs(snapshot: RuntimeSnapshot) -> dict[str, Any]:
     kwargs: dict[str, Any] = {
         "display_name": snapshot.display_name,
         "labels": snapshot.labels,
-        "source_packages": ["./sl_trigger_leads"],
+        "source_packages": list(APPROVED_SOURCE_PACKAGES),
         "entrypoint_module": snapshot.entrypoint_module,
         "entrypoint_object": snapshot.entrypoint_object,
         "class_methods": snapshot.class_methods,

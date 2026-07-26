@@ -30,6 +30,11 @@ uv run pytest -q tests\unit\test_agent_runtime_deploy.py
 
 The Runtime export must include ADK 2.4, Vertex AI, Cloud Logging, Secret Manager, Google GenAI, GCS support, and telemetry. It must not include Vertex evaluation packages such as `litellm`, `pandas`, or `scikit-learn`.
 
+The source upload contains `sl_trigger_leads` and its first-party
+`business_intel` and `uk_ie_d365_leads` dependencies. Preflight parses absolute
+first-party imports across the declared upload set and refuses deployment if
+the source-package closure is incomplete.
+
 ## Preflight and single update
 
 Run from a clean detached worktree at the exact merged `master` commit. Create a fresh ignored folder under the main repository's `Evidence` directory and use absolute paths for its output and operation state.
