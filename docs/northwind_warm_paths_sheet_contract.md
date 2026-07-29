@@ -1,10 +1,10 @@
 # Northwind Warm Paths spreadsheet contract
 
-Version: **1.7.0**
+Version: **1.9.0**
 
 Captured and repaired: **2026-07-20**
 
-Last amended: **2026-07-23**
+Last amended: **2026-07-28**
 
 Canonical machine-readable contract: [`northwind_warm_paths_sheet_contract.v1.json`](northwind_warm_paths_sheet_contract.v1.json)
 
@@ -22,6 +22,11 @@ Dedicated `Prasath Nanayakkara` contract:
 [`northwind_prasath_nanayakkara_sheet_contract.md`](northwind_prasath_nanayakkara_sheet_contract.md)
 and
 [`northwind_prasath_nanayakkara_sheet_contract.v1.json`](northwind_prasath_nanayakkara_sheet_contract.v1.json)
+
+Dedicated `Former Clients` contract:
+[`northwind_former_clients_sheet_contract.md`](northwind_former_clients_sheet_contract.md)
+and
+[`northwind_former_clients_sheet_contract.v1.json`](northwind_former_clients_sheet_contract.v1.json)
 
 This document is the mandatory change-control contract for the Google Sheet
 `Northwind CRM Warm Paths Tracker`. Future edits must preserve this structure
@@ -88,12 +93,30 @@ unless a deliberate schema-version change is reviewed and recorded.
 22. Before editing `Prasath Nanayakkara`, read and follow its dedicated human
     and machine contracts. They govern its exact evidence, rows, formats,
     dimensions, backup comparison, insertion procedure, and verification.
+23. `Former Clients` is an independent propensity-based research tab. It must
+    retain the complete published 1BT relationship register in `AC:AN` and an
+    expandable set of scored UK/Ireland prospect company blocks in `A:Y`.
+    Columns `Z:AB` remain blank. It must not alter any earlier tab and must not
+    be added to the existing `Search` formula.
+24. A `Former Clients` prospect block contains one to five eligible senior
+    target rows first and exactly one company-summary row last. Every retained
+    target must have a named, target-specific, live-observed mutual route, and
+    the complete block may contain no more than five distinct introducers.
+25. Products, delivery partners, PoCs, ambiguous items and anonymized cases are
+    never labelled as former clients or used as named Sales Navigator seeds.
+    Anonymous case identities are never guessed.
+26. `Former Clients` scores and change proxies express propensity only. They
+    must not be described as confirmed, active or verified opportunities.
+27. Before editing `Former Clients`, read and follow its dedicated human and
+    machine contracts. They govern the evidence ledger, exact sections, fields,
+    scoring, rows, formats, dimensions, backup comparison, insertion procedure,
+    idempotency and rendered verification.
 
 ## Workbook structure
 
 The workbook ID is `1nikwNWJ3N5622S_a8l9YQsP_pTLxCLtmezgNmBq4abs`. Its tab
-order is fixed: `Search`, `Warm Paths`, `Sam Dharmasiri`, `Jeremy Pike`, then
-`Prasath Nanayakkara`. Locale is `en_GB`; timezone is
+order is fixed: `Search`, `Warm Paths`, `Sam Dharmasiri`, `Jeremy Pike`,
+`Prasath Nanayakkara`, then `Former Clients`. Locale is `en_GB`; timezone is
 `America/Los_Angeles`.
 
 Current controlled snapshot:
@@ -143,6 +166,13 @@ The independent `Prasath Nanayakkara` snapshot contains:
 - 25 distinct additional mutuals; 17 contacts have at least one additional
   named mutual.
 - No privacy-limited employers and no inferred company values.
+
+The independent `Former Clients` snapshot and all exact row boundaries are
+recorded in its dedicated machine contract. It contains the complete
+consolidated published 1BT relationship register plus 11 scored,
+evidence-gated UK/Ireland prospect blocks, 25 routed senior targets and 41
+target-specific named-route placements. The tab is deliberately excluded from
+`Search`.
 
 ## `Warm Paths` layout
 
@@ -329,6 +359,39 @@ rows are wrapped, top-aligned, and content-fitted. Column `Z` is reserved and
 blank. Exact cells, colours, widths, merges, validations, evidence hashes, and
 backup identifiers are normative in the dedicated machine contract.
 
+## `Former Clients` layout
+
+The dedicated
+[`northwind_former_clients_sheet_contract.md`](northwind_former_clients_sheet_contract.md)
+and
+[`northwind_former_clients_sheet_contract.v1.json`](northwind_former_clients_sheet_contract.v1.json)
+are the complete normative schema. This independent tab combines a published
+1BT relationship register with a scored prospect-route tracker. It is not a
+source for `Search`.
+
+| Region | Role | Required treatment |
+| --- | --- | --- |
+| `A1:Y3` | Tracker title, guidance and evidence snapshot | Merged premium headings |
+| `AC1:AN3` | Register title, guidance and evidence snapshot | Merged premium headings |
+| Row 4 | Spacer | Blank |
+| `A5:Y5` | Prospect headers | Established 25-column route schema |
+| `AC5:AN5` | Register headers | Twelve-field published-evidence schema |
+| `A6:Y41` | Eleven contiguous company blocks | One to five routed senior targets first; one company-summary row last |
+| `AC6:AN26` | Published relationship register | One consolidated record per identity or anonymous archetype |
+| `A42:Y42` | Permanent insertion marker | Add future complete blocks immediately above |
+| `A44:Y58` | Premium portfolio summary | Eleven reconciled metrics plus guidance |
+| Rows 59–1294 | Unused grid | Blank at 21 px |
+| `Z:AB` | Visual gutter | Permanently blank |
+
+The prospect tracker uses the established `A:Y` company-block structure.
+Named introducers and their evidence notes remain paired in `D:M`. Every target
+has at least one named route. Populated tracker and register rows alternate
+blue/white by worksheet row, are wrapped, top-aligned and fitted to content.
+Products, partners, PoCs, ambiguous entries and anonymous cases remain visible
+in the register but are never promoted to named former-client seeds. Exact
+boundaries, metrics, formats, validations, source hashes and backup identifiers
+are normative in the dedicated machine contract.
+
 ## `Search` layout
 
 - Grid: 2,000 rows × 25 columns; rows 1–7 frozen.
@@ -355,6 +418,8 @@ formula are controlled structure.
    inspecting or changing the live tab.
    For a `Prasath Nanayakkara` edit, also read both dedicated Prasath contracts
    before inspecting or changing the live tab.
+   For a `Former Clients` edit, also read both dedicated Former Clients
+   contracts before inspecting or changing the live tab.
 2. Create a dated copy of the entire workbook.
 3. Read current spreadsheet metadata and exact affected cells.
 4. Build one narrowly scoped, atomic batch.
@@ -391,9 +456,25 @@ checkpoint, because live result ordering and page membership may change.
 - Resuming a Sales Navigator run from a remembered page number without first
   reconciling the validated stable-ID checkpoint.
 - Treating browser memory as the authoritative collection ledger.
+- Adding `Former Clients` to the existing `Search` formula.
+- Guessing an anonymized former-client identity or using a non-seed register
+  item as a named Sales Navigator anchor.
+- Recording a mutual-count badge as a name, or copying one target's mutual onto
+  another target without visible route evidence.
+- Describing a propensity score, product release or change proxy as a confirmed
+  opportunity.
 
 ## Schema history
 
+- **1.9.0 — 2026-07-28:** Updated the `Former Clients` parent rules for the
+  route-first side-by-side layout, expandable prospect count, blank `Z:AB`
+  gutter, named-route requirement on every target, and verified 11-company
+  snapshot.
+- **1.8.0 — 2026-07-28:** Added and linked the independent `Former Clients`
+  evidence register and adjacency-prospect contract. The new tab preserves the
+  established company-block visual language while enforcing named former-client
+  seeds, a fixed evidence score, target-specific mutual routes, atomic
+  stable-ID checkpoints, idempotent generation and exclusion from `Search`.
 - **1.7.0 — 2026-07-23:** Added and linked the independent
   `Prasath Nanayakkara` network tab: 20 verified Sales Navigator contacts in 19
   contiguous company blocks, Prasath fixed as Mutual 1, 44 additional named

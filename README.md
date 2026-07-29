@@ -73,7 +73,7 @@ The local runtime is locked to Google ADK `2.4.0`, FastAPI `0.139.0`, and Starle
 Paid or account-sensitive checks are explicit approval gates and are not part of `uv run pytest`:
 
 ```powershell
-uv run pytest tests\integration hello_cloud_agent\tests\integration
+uv run pytest tests\integration
 agents-cli eval run --all
 ```
 

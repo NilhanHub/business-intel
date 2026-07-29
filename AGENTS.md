@@ -38,3 +38,12 @@ dedicated human contract
 contract `docs/northwind_prasath_nanayakkara_sheet_contract.v1.json`. Preserve
 Prasath-first route ordering, stable-ID evidence, atomic checkpoint recovery,
 complete company blocks, source provenance, and all exact formatting rules.
+
+Before any edit to the `Former Clients` tab, also read and follow the dedicated
+human contract `docs/northwind_former_clients_sheet_contract.md` and canonical
+machine contract `docs/northwind_former_clients_sheet_contract.v1.json`.
+Preserve the published 1BT relationship register, named-seed restrictions,
+propensity-only language, target-specific mutual-route evidence, complete
+company blocks, stable-ID checkpoints, source provenance, insertion marker,
+premium summary, and all exact formatting rules. The tab is not a source for
+the existing `Search` formula.

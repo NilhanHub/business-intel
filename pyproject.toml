@@ -117,7 +117,6 @@ testpaths = [
     "tests/unit",
     "sl_trigger_leads/tests",
     "uk_ie_d365_leads/tests",
-    "hello_cloud_agent/tests/unit",
 ]
 norecursedirs = ["Evidence", "archive", ".adk", ".venv", "outputs"]
 markers = [

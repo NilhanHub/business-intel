@@ -1,8 +1,8 @@
 {
   "contract_type": "google_sheets_layout_contract",
-  "schema_version": "1.7.0",
+  "schema_version": "1.9.0",
   "captured_date": "2026-07-20",
-  "last_amended_date": "2026-07-23",
+  "last_amended_date": "2026-07-28",
   "canonical": true,
   "workbook": {
     "spreadsheet_id": "1nikwNWJ3N5622S_a8l9YQsP_pTLxCLtmezgNmBq4abs",
@@ -14,7 +14,8 @@
       "Warm Paths",
       "Sam Dharmasiri",
       "Jeremy Pike",
-      "Prasath Nanayakkara"
+      "Prasath Nanayakkara",
+      "Former Clients"
     ]
   },
   "related_contracts": {
@@ -35,6 +36,12 @@
       "machine": "docs/northwind_prasath_nanayakkara_sheet_contract.v1.json",
       "schema_version": "1.0.0",
       "normative_for": "Exact Prasath-tab fields, row types, source evidence, formatting, dimensions, validations, insertion procedure and verification gates."
+    },
+    "Former Clients": {
+      "human": "docs/northwind_former_clients_sheet_contract.md",
+      "machine": "docs/northwind_former_clients_sheet_contract.v1.json",
+      "schema_version": "2.0.0",
+      "normative_for": "Exact 1BT relationship-register and former-client-adjacency prospect fields, scoring, evidence, rows, formatting, dimensions, validations, insertion procedure and verification gates."
     }
   },
   "current_snapshot": {
@@ -696,6 +703,82 @@
         "full_data_cell_comparison_count": 975,
         "non_targeted_tab_cell_comparison_count": 150932
       }
+    },
+    "Former Clients": {
+      "sheet_id": 2026072801,
+      "index": 5,
+      "dedicated_contract": "docs/northwind_former_clients_sheet_contract.v1.json",
+      "purpose": "An evidence-backed, route-first former-client-adjacent UK and Ireland prospect tracker in A:Y with its supporting published 1BT relationship register in AC:AN.",
+      "grid": {
+        "row_count": 1294,
+        "column_count": 40,
+        "frozen_row_count": 5,
+        "tracker_columns": "A:Y",
+        "reserved_blank_columns": "Z:AB",
+        "register_columns": "AC:AN"
+      },
+      "current_snapshot": {
+        "published_relationship_record_count": 21,
+        "named_seed_client_count": 7,
+        "anonymized_archetype_count": 8,
+        "prospect_company_count": 11,
+        "target_person_count": 25,
+        "company_summary_row_count": 11,
+        "companies_with_five_distinct_mutuals": 3,
+        "distinct_mutual_count": 34,
+        "target_to_mutual_route_placement_count": 41,
+        "cross_tab_match_count": 0,
+        "unrouted_target_count": 0,
+        "score_range": "61-95"
+      },
+      "layout": [
+        {"range": "A1:Y3", "role": "tracker_title_instructions_and_snapshot"},
+        {"range": "AC1:AN3", "role": "register_title_instructions_and_snapshot"},
+        {"range": "4:4", "role": "blank_spacer"},
+        {"range": "A5:Y5", "role": "prospect_tracker_headers"},
+        {"range": "AC5:AN5", "role": "published_register_headers"},
+        {"range": "A6:Y41", "role": "11_contiguous_prospect_company_blocks"},
+        {"range": "AC6:AN26", "role": "21_published_relationship_records"},
+        {"range": "A42:Y42", "role": "permanent_new_prospect_insertion_marker"},
+        {"range": "43:43", "role": "summary_spacer"},
+        {"range": "A44:Y58", "role": "premium_portfolio_summary"},
+        {"range": "59:1294", "role": "unused_blank_grid"},
+        {"range": "Z:AB", "role": "permanently_blank_visual_gutter"}
+      ],
+      "company_block_rules": {
+        "one_contiguous_block_per_company": true,
+        "target_rows_precede_summary_row": true,
+        "exactly_one_summary_row_per_company": true,
+        "summary_row_is_last_in_block": true,
+        "summary_columns_D_through_Y_are_blank": true,
+        "target_count_minimum": 1,
+        "target_count_maximum": 5,
+        "every_target_has_named_route": true,
+        "maximum_distinct_named_mutuals_per_company": 5
+      },
+      "format_contract": {
+        "font_family": "Carlito",
+        "data_vertical_alignment": "TOP",
+        "data_wrap_strategy": "WRAP",
+        "populated_rows": "FIT_TO_DATA",
+        "unused_rows_59_through_1294_px": 21,
+        "names_underlined": false,
+        "source_underlined": false,
+        "banding_rule": "blue on even worksheet rows and white on odd worksheet rows",
+        "target_stage_validation_range": "N6:N41 on target rows only",
+        "conditional_formatting": [
+          {"range": "Y6:Y41", "formula": "=ISNUMBER(SEARCH(\"Already\",Y6))", "background": "#E8F5E9"},
+          {"range": "Y6:Y41", "formula": "=ISNUMBER(SEARCH(\"needs\",Y6))", "background": "#FFF7ED"}
+        ]
+      },
+      "provenance": {
+        "backup_spreadsheet_id": "13X9DIF8Ry-03FZMY5slonJB9s_GRh20UPogJZWFglS0",
+        "evidence_directory": "Evidence/2026-07-28_former-client-seven-candidate-review",
+        "website_record_count": 21,
+        "linkedin_target_record_count": 25,
+        "idempotent_request_sha256": "6d9d154eec893820eca5b4fd11a85d1d83d32fb62c8fe72e0906f4d9d9e233b9",
+        "non_targeted_tabs_exact_match": true
+      }
     }
   },
   "integrity_rules": [
@@ -719,13 +802,19 @@
     "The Jeremy Pike tab contains exactly 60 unique target rows in 48 contiguous company blocks, and every target row has Jeremy Pike in Mutual 1.",
     "The Jeremy Pike tab is independent of Search, Warm Paths, and Sam Dharmasiri; changes to it must not alter those existing tabs unless a later reviewed schema explicitly authorizes that dependency.",
     "The Prasath Nanayakkara tab contains exactly 20 unique target rows in 19 contiguous company blocks, and every target row has Prasath Nanayakkara in Mutual 1.",
-    "The Prasath Nanayakkara tab is independent of Search, Warm Paths, Sam Dharmasiri, and Jeremy Pike; changes to it must not alter those existing tabs unless a later reviewed schema explicitly authorizes that dependency."
+    "The Prasath Nanayakkara tab is independent of Search, Warm Paths, Sam Dharmasiri, and Jeremy Pike; changes to it must not alter those existing tabs unless a later reviewed schema explicitly authorizes that dependency.",
+    "The Former Clients tab contains an expandable A:Y route tracker and the complete consolidated published 1BT relationship register in AC:AN; Z:AB remains blank.",
+    "Every Former Clients prospect block contains one to five eligible senior target rows followed by exactly one company-summary row, every target has at least one target-specific named mutual route, and the complete block has no more than five distinct named introducers.",
+    "Only high-confidence direct clients and testimonial clients may be named Former Clients Sales Navigator seeds; products, partners, PoCs, ambiguous items and anonymized cases remain non-seed register records.",
+    "Former Clients is independent of Search and every earlier tab; Search must not reference it and changes to it must not alter any existing tab.",
+    "Former Clients scores and change proxies are propensity evidence only and must never be presented as confirmed, active or verified opportunities."
   ],
   "change_protocol": [
     "Read this contract and docs/northwind_warm_paths_sheet_contract.md before every edit.",
     "Before editing the Sam Dharmasiri tab, also read docs/northwind_sam_dharmasiri_sheet_contract.md and docs/northwind_sam_dharmasiri_sheet_contract.v1.json; those files are normative for the complete tab schema.",
     "Before editing the Jeremy Pike tab, also read docs/northwind_jeremy_pike_sheet_contract.md and docs/northwind_jeremy_pike_sheet_contract.v1.json; those files are normative for the complete tab schema.",
     "Before editing the Prasath Nanayakkara tab, also read docs/northwind_prasath_nanayakkara_sheet_contract.md and docs/northwind_prasath_nanayakkara_sheet_contract.v1.json; those files are normative for the complete tab schema.",
+    "Before editing the Former Clients tab, also read docs/northwind_former_clients_sheet_contract.md and docs/northwind_former_clients_sheet_contract.v1.json; those files are normative for the complete tab schema.",
     "Create a dated Drive copy of the entire workbook before changing rows, formats, formulas, or dimensions.",
     "Read metadata and the exact affected CellData immediately before writing.",
     "Never use a values-only append for populated company data; copy the complete native row structure and overwrite only planned row-specific fields.",
@@ -736,6 +825,16 @@
     "After writing, prove that all non-targeted values and user-entered formats are byte-for-byte unchanged, all PF feedback is exact, every company is contiguous, all counts reconcile, and the rendered sheet has no format boundary."
   ],
   "change_log": [
+    {
+      "version": "1.9.0",
+      "date": "2026-07-28",
+      "change": "Updated the parent contract for the route-first side-by-side Former Clients layout, expandable prospect count, blank Z:AB gutter, named-route requirement on every target, and verified 11-company snapshot."
+    },
+    {
+      "version": "1.8.0",
+      "date": "2026-07-28",
+      "change": "Added and linked the independent Former Clients relationship-register and former-client-adjacency prospect contract, including seed classification, fixed evidence scoring, target-specific mutual routes, atomic stable-ID checkpoints, idempotent generation, backup comparison, and explicit exclusion from Search."
+    },
     {
       "version": "1.7.0",
       "date": "2026-07-23",

@@ -131,5 +131,5 @@ uv run adk eval ./uk_ie_d365_leads tests/eval/evalsets/uk_ie_d365_report_compose
 directory from `pyproject.toml`. Use the direct `adk eval ./uk_ie_d365_leads`
 form above for this composer-specific eval.
 
-Do not use full-repo pytest as the acceptance gate for this lane because
-`hello_cloud_agent` is an unrelated old experiment.
+Use the composer-specific evaluation above as this lane's acceptance gate; the
+full deterministic repository suite remains a separate regression gate.

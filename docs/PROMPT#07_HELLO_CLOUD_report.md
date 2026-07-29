@@ -1,5 +1,11 @@
 # PROMPT#07 Hello Cloud Report
 
+> Historical record retained for audit. The isolated `hello_cloud_agent`
+> source scaffold was retired on 2026-07-29 because it was no longer an active
+> application or deployment source. The historical cloud runtime was not
+> updated or deleted. Paths and commands below describe the original run and
+> are not current operating instructions.
+
 ## Verdict
 PASS
 

@@ -11,7 +11,7 @@
 - Audit reviewer sub-agent: `uk_ie_d365_leads.agents.classification_reviewer_agent.d365_classification_reviewer_agent`
 - Production opportunity vetter sub-agent: `uk_ie_d365_leads.agents.opportunity_vetter_agent.d365_opportunity_vetter_agent`
 
-The agent is separate from `sl_trigger_leads` and `hello_cloud_agent`.
+The agent is separate from `sl_trigger_leads`.
 
 ## Search Architecture
 

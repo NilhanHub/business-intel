@@ -1,0 +1,662 @@
+{
+  "contract_type": "google_sheets_former_client_adjacency_contract",
+  "schema_version": "2.0.0",
+  "established_date": "2026-07-28",
+  "last_verified_date": "2026-07-28",
+  "canonical": true,
+  "parent_contracts": [
+    "docs/northwind_warm_paths_sheet_contract.md",
+    "docs/northwind_warm_paths_sheet_contract.v1.json"
+  ],
+  "human_contract": "docs/northwind_former_clients_sheet_contract.md",
+  "workbook": {
+    "spreadsheet_id": "1nikwNWJ3N5622S_a8l9YQsP_pTLxCLtmezgNmBq4abs",
+    "title": "Northwind CRM Warm Paths Tracker",
+    "locale": "en_GB",
+    "time_zone": "America/Los_Angeles",
+    "tabs_in_order": [
+      "Search",
+      "Warm Paths",
+      "Sam Dharmasiri",
+      "Jeremy Pike",
+      "Prasath Nanayakkara",
+      "Former Clients"
+    ]
+  },
+  "sheet": {
+    "title": "Former Clients",
+    "sheet_id": 2026072801,
+    "index": 5,
+    "row_count": 1294,
+    "column_count": 40,
+    "frozen_row_count": 5,
+    "tracker_columns": "A:Y",
+    "reserved_blank_columns": "Z:AB",
+    "register_columns": "AC:AN",
+    "independent_of_search": true,
+    "search_formula_must_not_reference_sheet": true
+  },
+  "purpose": "Evidence-backed former-client-adjacent UK and Ireland warm-route tracker in A:Y with the supporting published 1BT relationship register in AC:AN.",
+  "truth_boundary": {
+    "prospecting_mode": "propensity_based",
+    "confirmed_opportunity_claim": false,
+    "forbidden_phrases": [
+      "confirmed opportunity",
+      "active opportunity",
+      "verified opportunity"
+    ],
+    "anonymous_identity_guessing": false,
+    "former_client_family_is_clean_adjacent_prospect": false
+  },
+  "snapshot": {
+    "published_relationship_record_count": 21,
+    "relationship_type_counts": {
+      "direct client": 5,
+      "testimonial client": 2,
+      "delivery partner": 2,
+      "1BT product": 1,
+      "anonymized case": 8,
+      "non-direct/PoC": 1,
+      "ambiguous": 2
+    },
+    "named_seed_client_count": 7,
+    "anonymized_archetype_count": 8,
+    "prospect_company_count": 11,
+    "target_person_count": 25,
+    "company_summary_row_count": 11,
+    "companies_with_five_distinct_mutuals": 3,
+    "distinct_mutual_count": 34,
+    "target_to_mutual_route_placement_count": 41,
+    "cross_tab_match_count": 0,
+    "minimum_score": 61,
+    "maximum_score": 95,
+    "duplicate_company_count": 0,
+    "duplicate_target_lead_id_count": 0,
+    "unresolved_register_duplicate_count": 0,
+    "unrouted_target_count": 0
+  },
+  "expansion_limits": {
+    "minimum_prospect_company_count": 1,
+    "maximum_prospect_company_count": 100,
+    "fixed_ten_company_cap": false,
+    "all_boundaries_are_derived": true
+  },
+  "named_seed_clients": [
+    {
+      "record_id": "fc-001",
+      "name": "IdeaPoint",
+      "relationship_type": "direct client"
+    },
+    {
+      "record_id": "fc-009",
+      "name": "Zamplo",
+      "relationship_type": "direct client"
+    },
+    {
+      "record_id": "fc-010",
+      "name": "TradeStation Securities",
+      "relationship_type": "direct client"
+    },
+    {
+      "record_id": "fc-017",
+      "name": "Bay Coins, LLC",
+      "relationship_type": "direct client"
+    },
+    {
+      "record_id": "fc-018",
+      "name": "Assetminder Limited",
+      "relationship_type": "direct client"
+    },
+    {
+      "record_id": "fc-020",
+      "name": "ZoeInsights",
+      "relationship_type": "testimonial client"
+    },
+    {
+      "record_id": "fc-021",
+      "name": "My Kora Life",
+      "relationship_type": "testimonial client"
+    }
+  ],
+  "layout": [
+    {
+      "range": "A1:Y3",
+      "role": "tracker_title_instruction_and_snapshot"
+    },
+    {
+      "range": "AC1:AN3",
+      "role": "register_title_instruction_and_snapshot"
+    },
+    {
+      "range": "4:4",
+      "role": "blank_spacer"
+    },
+    {
+      "range": "A5:Y5",
+      "role": "tracker_headers"
+    },
+    {
+      "range": "AC5:AN5",
+      "role": "register_headers"
+    },
+    {
+      "range": "A6:Y41",
+      "role": "11_contiguous_company_blocks_with_25_target_rows_and_11_summary_rows"
+    },
+    {
+      "range": "AC6:AN26",
+      "role": "21_consolidated_published_relationship_records"
+    },
+    {
+      "range": "A42:Y42",
+      "role": "permanent_new_prospect_insertion_marker"
+    },
+    {
+      "range": "43:43",
+      "role": "summary_spacer"
+    },
+    {
+      "range": "A44:Y58",
+      "role": "premium_portfolio_summary"
+    },
+    {
+      "range": "59:1294",
+      "role": "unused_blank_grid"
+    },
+    {
+      "range": "Z:AB",
+      "role": "permanently_blank_visual_gutter"
+    }
+  ],
+  "current_boundaries": {
+    "tracker_header_row": 5,
+    "tracker_start_row": 6,
+    "tracker_last_row": 41,
+    "register_header_row": 5,
+    "register_start_row": 6,
+    "register_last_row": 26,
+    "company_summary_rows": [
+      8,
+      12,
+      17,
+      21,
+      25,
+      27,
+      29,
+      31,
+      35,
+      38,
+      41
+    ],
+    "marker_row": 42,
+    "summary_spacer_row": 43,
+    "summary_title_row": 44,
+    "executive_statement_row": 45,
+    "summary_header_row": 46,
+    "summary_metric_rows": "47:57",
+    "summary_guidance_row": 58,
+    "unused_start_row": 59
+  },
+  "merged_ranges": [
+    "A1:Y1",
+    "A2:Y2",
+    "A3:Y3",
+    "AC1:AN1",
+    "AC2:AN2",
+    "AC3:AN3",
+    "A42:Y42",
+    "A44:Y44",
+    "A45:Y45",
+    "A58:Y58"
+  ],
+  "row_heights": [
+    {
+      "range": "1:1",
+      "rule": "FIXED",
+      "pixel_size": 42
+    },
+    {
+      "range": "2:2",
+      "rule": "FIXED",
+      "pixel_size": 48
+    },
+    {
+      "range": "3:3",
+      "rule": "FIXED",
+      "pixel_size": 34
+    },
+    {
+      "range": "4:4",
+      "rule": "FIXED",
+      "pixel_size": 14
+    },
+    {
+      "range": "5:5",
+      "rule": "FIXED",
+      "pixel_size": 42
+    },
+    {
+      "range": "6:41",
+      "rule": "FIT_TO_DATA"
+    },
+    {
+      "range": "42:42",
+      "rule": "FIXED",
+      "pixel_size": 48
+    },
+    {
+      "range": "43:43",
+      "rule": "FIXED",
+      "pixel_size": 14
+    },
+    {
+      "range": "44:44",
+      "rule": "FIXED",
+      "pixel_size": 42
+    },
+    {
+      "range": "45:45",
+      "rule": "FIXED",
+      "pixel_size": 62
+    },
+    {
+      "range": "46:46",
+      "rule": "FIXED",
+      "pixel_size": 36
+    },
+    {
+      "range": "47:57",
+      "rule": "FIXED",
+      "pixel_size": 56
+    },
+    {
+      "range": "58:58",
+      "rule": "FIXED",
+      "pixel_size": 62
+    },
+    {
+      "range": "59:1294",
+      "rule": "FIXED_UNUSED_BLANK",
+      "pixel_size": 21
+    }
+  ],
+  "column_widths_px": {
+    "A": 191,
+    "B": 191,
+    "C": 335,
+    "D": 175,
+    "E": 191,
+    "F": 175,
+    "G": 191,
+    "H": 175,
+    "I": 191,
+    "J": 175,
+    "K": 191,
+    "L": 175,
+    "M": 191,
+    "N": 159,
+    "O": 223,
+    "P": 223,
+    "Q": 223,
+    "R": 223,
+    "S": 223,
+    "T": 223,
+    "U": 175,
+    "V": 66,
+    "W": 271,
+    "X": 239,
+    "Y": 223,
+    "Z": 32,
+    "AA": 32,
+    "AB": 32,
+    "AC": 90,
+    "AD": 190,
+    "AE": 135,
+    "AF": 115,
+    "AG": 95,
+    "AH": 165,
+    "AI": 155,
+    "AJ": 220,
+    "AK": 200,
+    "AL": 280,
+    "AM": 200,
+    "AN": 280
+  },
+  "colours": {
+    "burgundy": "#7A1730",
+    "dark_burgundy": "#771630",
+    "teal": "#156082",
+    "navy": "#1F2937",
+    "blue_band": "#C1E4F5",
+    "white_band": "#FFFFFF",
+    "gold_marker": "#F3E8D5",
+    "cream_body": "#F8F3EF",
+    "pale_blue_emphasis": "#EAF3F8",
+    "light_grey": "#F5F7F8",
+    "text_grey": "#444F59"
+  },
+  "published_register": {
+    "range": "AC5:AN26",
+    "data_range": "AC6:AN26",
+    "headers": [
+      {
+        "column": "AC",
+        "field": "record_id",
+        "header": "Record ID"
+      },
+      {
+        "column": "AD",
+        "field": "label",
+        "header": "Published client / case"
+      },
+      {
+        "column": "AE",
+        "field": "relationship_type",
+        "header": "Relationship type"
+      },
+      {
+        "column": "AF",
+        "field": "identity_confidence",
+        "header": "Identity confidence"
+      },
+      {
+        "column": "AG",
+        "field": "seed_eligible",
+        "header": "Seed eligible"
+      },
+      {
+        "column": "AH",
+        "field": "industry",
+        "header": "Industry"
+      },
+      {
+        "column": "AI",
+        "field": "geography",
+        "header": "Geography"
+      },
+      {
+        "column": "AJ",
+        "field": "services",
+        "header": "Services"
+      },
+      {
+        "column": "AK",
+        "field": "technologies",
+        "header": "Technologies"
+      },
+      {
+        "column": "AL",
+        "field": "engagement_evidence",
+        "header": "Published engagement evidence"
+      },
+      {
+        "column": "AM",
+        "field": "aliases_or_identity_notes",
+        "header": "Aliases / identity notes"
+      },
+      {
+        "column": "AN",
+        "field": "source_urls",
+        "header": "Source URLs"
+      }
+    ],
+    "allowed_relationship_types": [
+      "direct client",
+      "testimonial client",
+      "delivery partner",
+      "1BT product",
+      "anonymized case",
+      "non-direct/PoC",
+      "ambiguous"
+    ],
+    "seed_eligible_relationship_types": [
+      "direct client",
+      "testimonial client"
+    ],
+    "seed_requires_high_identity_confidence": true,
+    "retain_all_source_urls": true,
+    "consolidate_aliases": true,
+    "unresolved_duplicate_identity_count_must_equal": 0
+  },
+  "prospect_headers": [
+    "Company",
+    "Target Person",
+    "Target Role",
+    "Mutual 1",
+    "Mutual 1 Notes",
+    "Mutual 2",
+    "Mutual 2 Notes",
+    "Mutual 3",
+    "Mutual 3 Notes",
+    "Mutual 4",
+    "Mutual 4 Notes",
+    "Mutual 5",
+    "Mutual 5 Notes",
+    "Current Stage",
+    "Found Route Notes",
+    "Mutual Friend Contact Notes",
+    "Intro Requested Notes",
+    "Intro Agreed Notes",
+    "Target Contacted Notes",
+    "Meeting / Reply Notes",
+    "Won Notes",
+    "Dead / No Route Notes",
+    "Final Notes",
+    "Source / Profile",
+    "CRM Status"
+  ],
+  "company_block_rules": {
+    "one_contiguous_block_per_company": true,
+    "target_rows_precede_summary_row": true,
+    "exactly_one_summary_row_per_company": true,
+    "summary_row_is_last_in_block": true,
+    "summary_columns_D_through_Y_are_blank": true,
+    "target_count_minimum": 1,
+    "target_count_maximum": 5,
+    "every_target_has_at_least_one_named_route": true,
+    "maximum_named_mutuals_per_target": 5,
+    "maximum_distinct_named_mutuals_per_company": 5,
+    "duplicate_company_target_pairs": 0,
+    "company_is_not_former_client_or_former_client_family": true
+  },
+  "scoring": {
+    "minimum_total": 55,
+    "maximum_total": 100,
+    "components": {
+      "service_similarity": 35,
+      "former_client_people_link": 30,
+      "verified_warm_route_depth": 20,
+      "buying_committee_quality_and_change_proxies": 15
+    },
+    "component_sum_must_equal_total": true,
+    "opportunity_claim_from_score": false
+  },
+  "target_rules": {
+    "current_company_verified": true,
+    "current_role_verified": true,
+    "stable_linkedin_identifier_required": true,
+    "profile_url_required": true,
+    "capture_timestamp_required": true,
+    "named_mutual_count_badge_is_not_a_name": true,
+    "route_must_be_visible_for_exact_target": true,
+    "allowed_authority_markers": [
+      "Chief",
+      "President",
+      "VP",
+      "Vice President",
+      "Director",
+      "Head",
+      "Partner",
+      "Owner",
+      "Founding team"
+    ],
+    "excluded": [
+      "junior staff",
+      "recruiters",
+      "unrelated sales roles",
+      "former employees",
+      "unverified employers",
+      "targets with no named route"
+    ]
+  },
+  "stage_validation": {
+    "column": "N",
+    "target_rows_only": true,
+    "current_target_rows": [
+      6,
+      7,
+      9,
+      10,
+      11,
+      13,
+      14,
+      15,
+      16,
+      18,
+      19,
+      20,
+      22,
+      23,
+      24,
+      26,
+      28,
+      30,
+      32,
+      33,
+      34,
+      36,
+      37,
+      39,
+      40
+    ],
+    "values": [
+      "Found route",
+      "Mutual friend to contact",
+      "Intro requested",
+      "Intro agreed",
+      "Target contacted",
+      "Meeting / reply",
+      "Won",
+      "Dead / no route"
+    ]
+  },
+  "format_contract": {
+    "font_family": "Carlito",
+    "data_vertical_alignment": "TOP",
+    "data_wrap_strategy": "WRAP",
+    "populated_rows": "FIT_TO_DATA",
+    "unused_rows_59_through_1294_px": 21,
+    "names_underlined": false,
+    "source_underlined": false,
+    "banding_rule": "BLUE_ON_EVEN_WORKSHEET_ROWS_WHITE_ON_ODD_WORKSHEET_ROWS",
+    "banding_scope": "each populated tracker or register row, not whole company blocks",
+    "conditional_formatting": [
+      {
+        "range": "Y6:Y41",
+        "formula": "=ISNUMBER(SEARCH(\"Already\",Y6))",
+        "background": "#E8F5E9"
+      },
+      {
+        "range": "Y6:Y41",
+        "formula": "=ISNUMBER(SEARCH(\"needs\",Y6))",
+        "background": "#FFF7ED"
+      }
+    ]
+  },
+  "evidence_contract": {
+    "verified_identity": "Paul Fryer",
+    "allowed_live_collection_methods": [
+      "LinkedIn Sales Navigator live DOM",
+      "LinkedIn Sales Navigator and standard LinkedIn live DOM in Paul Fryer's verified session"
+    ],
+    "stable_id_checkpoint_required": true,
+    "atomic_checkpoint_after_each_completed_contact": true,
+    "resume_by_stable_id_not_page_number": true,
+    "every_register_source_url_retained": true,
+    "every_alumni_anchor_has_profile_url": true,
+    "every_target_has_profile_url_and_timestamp": true,
+    "every_mutual_placement_has_visible_dom_evidence": true,
+    "reliable_cross_reference_sources_allowed": [
+      "validated prior workbook data",
+      "Northwind CRM",
+      "email",
+      "official company websites",
+      "reputable public sources"
+    ]
+  },
+  "current_addition": {
+    "company": "Olivine Development Company",
+    "company_block_rows": "30:31",
+    "target": "Gerard Bennett",
+    "former_client_anchor": "Assetminder Limited",
+    "target_count": 1,
+    "route_count": 3,
+    "named_routes": [
+      "Avanthi Amunugama",
+      "Randika Swaris",
+      "Prasath Nanayakkara"
+    ],
+    "score": 79,
+    "truth_boundary": "No current project, procurement or buying event is claimed."
+  },
+  "verification": {
+    "prewrite_full_workbook_backup_id": "13X9DIF8Ry-03FZMY5slonJB9s_GRh20UPogJZWFglS0",
+    "evidence_directory": "Evidence/2026-07-28_former-client-seven-candidate-review",
+    "request_count": 232,
+    "idempotent_request_sha256": "6d9d154eec893820eca5b4fd11a85d1d83d32fb62c8fe72e0906f4d9d9e233b9",
+    "focused_builder_tests_passed": 22,
+    "live_tracker_matrix_matches_expected": true,
+    "live_register_matrix_matches_expected": true,
+    "non_target_tabs_exact_cell_data_match_to_backup": true,
+    "non_target_metadata_and_conditional_formats_match_to_backup": true,
+    "native_browser_render_verified": true,
+    "live_structure_checks": {
+      "company_blocks": 11,
+      "targets": 25,
+      "summary_rows": 11,
+      "companies_contiguous": true,
+      "summary_rows_last": true,
+      "summary_counts_reconcile": true,
+      "duplicate_company_target_pairs": 0,
+      "every_target_has_named_route": true,
+      "maximum_five_distinct_mutuals_per_company": true,
+      "marker_row": 42,
+      "summary_title_row": 44,
+      "reserved_gutter_is_blank": true,
+      "search_unchanged": true
+    }
+  },
+  "change_protocol": [
+    "Read both parent contracts and both Former Clients contracts before every edit.",
+    "Create a dated copy of the complete workbook before changing any cell, format or structure.",
+    "Reconcile website records and LinkedIn records by stable IDs before generation.",
+    "Verify the current visible Paul Fryer LinkedIn identity before using live route evidence.",
+    "Run the offline builder twice and require byte-equivalent plans.",
+    "Reject invalid seeds, former-client-family accounts, invalid scores, non-senior or unrouted targets, unnamed routes, route-placement mismatches and opportunity claims.",
+    "Insert only complete company blocks immediately above the permanent marker.",
+    "Apply a scoped batch to Former Clients only and never add the tab to Search.",
+    "Update tracker and register boundaries, marker, summary, validations, formatting and both contracts together.",
+    "Compare every pre-existing tab to the dated backup after writing.",
+    "Inspect the native Google Sheets renderer at normal zoom and retain final evidence."
+  ],
+  "unsupported_structures": {
+    "native_tables": false,
+    "basic_filters": false,
+    "charts": false,
+    "protected_ranges": false,
+    "smart_chips": false,
+    "formulas": false
+  },
+  "change_log": [
+    {
+      "version": "2.0.0",
+      "date": "2026-07-28",
+      "change": "Rebuilt Former Clients as a route-first side-by-side workspace, moved the relationship register to AC:AN, reserved Z:AB as a blank gutter, required a named route on every target, made the prospect count expandable, and verified the first expansion to 11 companies with Olivine Development Company."
+    },
+    {
+      "version": "1.0.0",
+      "date": "2026-07-28",
+      "change": "Established the initial vertically arranged 21-record relationship register and ten-company former-client-adjacency tracker."
+    }
+  ]
+}

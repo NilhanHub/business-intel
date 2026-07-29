@@ -48,4 +48,3 @@ frontend/data/*.tmp
 archive/
 build/
 dist/
-System.Collections.Specialized.OrderedDictionary

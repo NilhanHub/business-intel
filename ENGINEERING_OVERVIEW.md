@@ -36,11 +36,10 @@ flowchart LR
 
 1. **`sl_trigger_leads/`** — Sri Lanka public-signal agents, source tooling, contact resolution, analysis, and guarded delivery.
 2. **`uk_ie_d365_leads/`** — Dynamics 365 discovery, extraction, classification, vetting, and report composition.
-3. **`hello_cloud_agent/`** — compact ADK runtime and integration reference.
-4. **`frontend/`** — authenticated local operator application with storage and refresh controls.
-5. **`tools/`** — bounded smoke, measurement, vetting, recovery, and report-production entry points.
-6. **`tests/`** — unit, integration, evaluation, compatibility, authentication, and real-data policy coverage.
-7. **`REAL_DATA_POLICY.md`** — the non-negotiable evidence contract for runtime leads.
+3. **`frontend/`** — authenticated local operator application with storage and refresh controls.
+4. **`tools/`** — bounded smoke, measurement, vetting, recovery, and report-production entry points.
+5. **`tests/`** — unit, integration, evaluation, compatibility, authentication, and real-data policy coverage.
+6. **`REAL_DATA_POLICY.md`** — the non-negotiable evidence contract for runtime leads.
 
 ## Engineering decisions worth discussing
 

@@ -17,8 +17,6 @@ from google.adk.runners import Runner
 from google.adk.sessions import InMemorySessionService
 from packaging.version import Version
 
-from hello_cloud_agent.hello_cloud_agent.agent import app as hello_app
-from hello_cloud_agent.hello_cloud_agent.agent import root_agent as hello_root_agent
 from sl_trigger_leads.agent import app as sl_app
 from sl_trigger_leads.agent import root_agent as sl_root_agent
 from sl_trigger_leads.agents.contact_search_agent import contact_search_agent
@@ -30,10 +28,8 @@ ROOT = Path(__file__).resolve().parents[2]
 PRODUCTION_PACKAGES = (
     ROOT / "sl_trigger_leads",
     ROOT / "uk_ie_d365_leads",
-    ROOT / "hello_cloud_agent",
 )
 EXPECTED_MODEL_FILES = {
-    "hello_cloud_agent/hello_cloud_agent/agent.py",
     "sl_trigger_leads/agent.py",
     "sl_trigger_leads/agents/contact_resolver_agent.py",
     "sl_trigger_leads/agents/contact_search_agent.py",
@@ -53,8 +49,6 @@ EXPECTED_MODEL_FILES = {
 }
 AGENT_RUNTIME_MODULES = (
     "sl_trigger_leads.agent_runtime_app",
-    "hello_cloud_agent.agent_runtime_app",
-    "hello_cloud_agent.hello_cloud_agent.agent_runtime_app",
 )
 
 
@@ -100,8 +94,6 @@ def test_agent_app_exports_and_search_tools_remain_compatible() -> None:
     assert sl_app.root_agent is sl_root_agent
     assert uk_app.name == "uk_ie_d365_leads"
     assert uk_app.root_agent is uk_root_agent
-    assert hello_app.name == "hello_cloud_agent"
-    assert hello_app.root_agent is hello_root_agent
     assert [tool.name for tool in contact_search_agent.tools] == ["google_search"]
     assert [tool.name for tool in d365_search_agent.tools] == ["google_search"]
 

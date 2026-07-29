@@ -6,7 +6,6 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from hello_cloud_agent.hello_cloud_agent.agent import root_agent as hello_root_agent
 from sl_trigger_leads.agent import root_agent as sl_root_agent
 from uk_ie_d365_leads.agent import app, root_agent
 from uk_ie_d365_leads.agents.classification_reviewer_agent import (
@@ -1025,9 +1024,8 @@ class UkIeD365LeadsTest(unittest.TestCase):
         self.assertNotIn("unit-secret-value", serialized)
         self.assertIn("tavily", serialized)
 
-    def test_existing_agents_still_import(self):
+    def test_existing_sri_lanka_agent_still_imports(self):
         self.assertEqual(sl_root_agent.name, "sl_trigger_leads")
-        self.assertEqual(hello_root_agent.name, "root_agent")
 
     def test_refuses_email_sending(self):
         result = lead_tools.refuse_d365_email_sending("send emails")
