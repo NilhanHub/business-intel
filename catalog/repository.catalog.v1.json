@@ -1,0 +1,2157 @@
+{
+  "schema_version": 1,
+  "repository": {
+    "id": "REG-PRJ-BUSINESS-INTEL",
+    "name": "Business Intel",
+    "purpose": "Evidence-safe public-signal lead intelligence, contact-route research, CRM enrichment, reporting, and controlled agent operations for 1BT.",
+    "status": "active",
+    "catalog_mode": "repository",
+    "root": ".",
+    "remote": "https://github.com/NilhanHub/business-intel.git",
+    "default_branch": "master",
+    "verified_commit": "80ae60b8376ed0b6a568025d6ea1390040759baf",
+    "reviewed_at": "2026-07-29T11:00:00Z",
+    "scan_boundary": {
+      "strategy": "BOUNDED_MANIFEST_ENTRYPOINT_AND_CONTRACT_REVIEW",
+      "candidate_evidence": "Evidence/CapabilityCatalog/20260729-162610/discovery.json",
+      "executes_repository_code": false,
+      "excluded_trees": [
+        ".git",
+        ".venv",
+        "archive",
+        "dist",
+        "Evidence",
+        "logs",
+        "outputs",
+        "tmp"
+      ]
+    },
+    "limitations": [
+      "The catalog describes semantic capabilities rather than listing every source file.",
+      "Cloud resources not checked live in this review remain observed rather than verified.",
+      "Ignored runtime leads, credentials, logs, and private evidence are intentionally excluded."
+    ]
+  },
+  "components": [
+    {
+      "id": "APP-BUSINESS-INTEL-WORKSPACE",
+      "kind": "application",
+      "name": "Business Intel Workspace Distribution",
+      "status": "active",
+      "purpose": "Package the repository's local operator application, Google ADK applications, shared libraries, operational tools, and static assets as one reviewed Python distribution.",
+      "locations": [
+        "."
+      ],
+      "entrypoints": [
+        "pyproject.toml"
+      ],
+      "technologies": [
+        "Python",
+        "uv",
+        "Hatchling"
+      ],
+      "commands": [
+        "uv sync --frozen",
+        "uv build"
+      ],
+      "depends_on": [
+        "APP-SL-TRIGGER-LEADS",
+        "APP-UKIE-D365-LEADS",
+        "SERVICE-LOCAL-FASTAPI"
+      ],
+      "external_resources": [],
+      "environment": {
+        "configuration_status": "local defaults with separately gated optional integrations"
+      },
+      "evidence": [
+        {
+          "path": "pyproject.toml",
+          "detail": "Canonical package, dependency, optional-extra, build, and tool configuration for the repository."
+        }
+      ],
+      "confidence": "verified",
+      "last_verified_at": "2026-07-29T11:00:00Z",
+      "limitations": [
+        "The distribution groups several capabilities; each deployable surface retains its own explicit release gate."
+      ],
+      "discovery_keys": [
+        "application:.:business-intel"
+      ]
+    },
+    {
+      "id": "AGENT-SL-CONTACT-SEARCH",
+      "kind": "agent",
+      "name": "Sri Lanka Contact Search Agent",
+      "status": "active",
+      "purpose": "Search public web evidence for named contact routes used by the Contact Resolver.",
+      "locations": [
+        "sl_trigger_leads/agents/contact_search_agent.py"
+      ],
+      "entrypoints": [
+        "sl_trigger_leads/agents/contact_search_agent.py"
+      ],
+      "technologies": [
+        "Google ADK",
+        "Gemini 2.5 Flash",
+        "Google Search"
+      ],
+      "commands": [],
+      "depends_on": [
+        "INTEGRATION-PUBLIC-WEB-SOURCES"
+      ],
+      "external_resources": [],
+      "environment": {
+        "configuration_status": "provider-selected",
+        "variable_names": [
+          "GOOGLE_CLOUD_PROJECT",
+          "GOOGLE_CLOUD_LOCATION"
+        ]
+      },
+      "evidence": [
+        {
+          "path": "sl_trigger_leads/agents/contact_search_agent.py",
+          "detail": "Module-level exported Google ADK Agent named contact_search_agent."
+        }
+      ],
+      "confidence": "verified",
+      "last_verified_at": "2026-07-29T11:00:00Z",
+      "limitations": [
+        "Search results remain candidates until source and person identity checks pass."
+      ],
+      "discovery_keys": [
+        "agent:sl_trigger_leads/agents/contact_search_agent.py:contact_search_agent",
+        "agent:sl_trigger_leads/tools/live_contact_search_tools.py:contact_search_agent"
+      ]
+    },
+    {
+      "id": "AGENT-SL-CONTACT-RESOLVER",
+      "kind": "agent",
+      "name": "Contact Resolver Agent",
+      "status": "active",
+      "purpose": "Resolve role-first, evidence-led public contact routes for verified leads without sending outreach.",
+      "locations": [
+        "sl_trigger_leads/agents/contact_resolver_agent.py",
+        "sl_trigger_leads/tools/contact_resolver_tools.py",
+        "sl_trigger_leads/tools/live_contact_search_tools.py"
+      ],
+      "entrypoints": [
+        "sl_trigger_leads/agents/contact_resolver_agent.py"
+      ],
+      "technologies": [
+        "Google ADK",
+        "Gemini 2.5 Flash",
+        "Python"
+      ],
+      "commands": [
+        "uv run python tools/run_prompt10_contact_resolver_smoke.py",
+        "uv run python tools/run_prompt11_live_contact_resolver_smoke.py"
+      ],
+      "depends_on": [
+        "AGENT-SL-CONTACT-SEARCH",
+        "INTEGRATION-PUBLIC-WEB-SOURCES"
+      ],
+      "external_resources": [],
+      "environment": {
+        "configuration_status": "optional enrichment provider",
+        "secret_reference_names": [
+          "HUNTER_API_KEY"
+        ]
+      },
+      "evidence": [
+        {
+          "path": "sl_trigger_leads/agents/contact_resolver_agent.py",
+          "detail": "Module-level exported contact_resolver_agent and its no-send contract."
+        },
+        {
+          "path": "docs/contact_resolver_agent_design.md",
+          "detail": "Contact resolution architecture and output contract."
+        }
+      ],
+      "confidence": "verified",
+      "last_verified_at": "2026-07-29T11:00:00Z",
+      "limitations": [
+        "It does not send email or convert inferred addresses into verified contact evidence."
+      ],
+      "discovery_keys": [
+        "agent:sl_trigger_leads/agents/contact_resolver_agent.py:contact_resolver_agent"
+      ]
+    },
+    {
+      "id": "AGENT-SL-EMAIL-SENDER",
+      "kind": "agent",
+      "name": "Gmail Sender Agent",
+      "status": "active",
+      "purpose": "Validate the locked local Gmail test-message path while refusing lead outreach and arbitrary recipients.",
+      "locations": [
+        "sl_trigger_leads/agents/email_sender_agent.py",
+        "sl_trigger_leads/tools/gmail_sender_tools.py"
+      ],
+      "entrypoints": [
+        "sl_trigger_leads/agents/email_sender_agent.py"
+      ],
+      "technologies": [
+        "Google ADK",
+        "Gemini 2.5 Flash",
+        "Gmail API"
+      ],
+      "commands": [
+        "uv run python tools/gmail_sender_smoke.py",
+        "uv run python tools/run_prompt09_email_agent_smoke.py"
+      ],
+      "depends_on": [
+        "INTEGRATION-GMAIL-TEST-SENDER"
+      ],
+      "external_resources": [],
+      "environment": {
+        "configuration_status": "local OAuth required for approved smoke path",
+        "secret_reference_names": [
+          "GMAIL_CLIENT_SECRET_FILE",
+          "GMAIL_TOKEN_FILE"
+        ]
+      },
+      "evidence": [
+        {
+          "path": "sl_trigger_leads/agents/email_sender_agent.py",
+          "detail": "Module-level exported email_sender_agent with real sending disabled."
+        },
+        {
+          "path": "docs/email_sender_agent_design.md",
+          "detail": "Sender restrictions and Gmail boundary."
+        }
+      ],
+      "confidence": "verified",
+      "last_verified_at": "2026-07-29T11:00:00Z",
+      "limitations": [
+        "Lead outreach, arbitrary recipients, and bulk sending remain disabled."
+      ],
+      "discovery_keys": [
+        "agent:sl_trigger_leads/agents/email_sender_agent.py:email_sender_agent"
+      ]
+    },
+    {
+      "id": "AGENT-SL-OPPORTUNITY-ANALYST",
+      "kind": "agent",
+      "name": "1BT Opportunity Analyst",
+      "status": "active",
+      "purpose": "Classify verified Sri Lankan leads into 1BT service buckets and propose evidence-bounded response strategies.",
+      "locations": [
+        "sl_trigger_leads/agents/opportunity_analyst.py",
+        "sl_trigger_leads/tools/opportunity_analysis_tools.py"
+      ],
+      "entrypoints": [
+        "sl_trigger_leads/agents/opportunity_analyst.py"
+      ],
+      "technologies": [
+        "Google ADK",
+        "Gemini 2.5 Flash",
+        "Python"
+      ],
+      "commands": [
+        "uv run python tools/run_prompt06_opportunity_analysis_smoke.py"
+      ],
+      "depends_on": [
+        "INTEGRATION-PUBLIC-WEB-SOURCES"
+      ],
+      "external_resources": [],
+      "environment": {
+        "configuration_status": "local or approved model runtime"
+      },
+      "evidence": [
+        {
+          "path": "sl_trigger_leads/agents/opportunity_analyst.py",
+          "detail": "Module-level exported opportunity_analyst using the 1BT service taxonomy."
+        },
+        {
+          "path": "docs/onebt_service_taxonomy.md",
+          "detail": "Canonical service-fit vocabulary."
+        }
+      ],
+      "confidence": "verified",
+      "last_verified_at": "2026-07-29T11:00:00Z",
+      "limitations": [
+        "It does not turn free text into a verified lead or confirmed opportunity."
+      ],
+      "discovery_keys": [
+        "agent:sl_trigger_leads/agents/opportunity_analyst.py:opportunity_analyst"
+      ]
+    },
+    {
+      "id": "AGENT-SL-ROOT",
+      "kind": "agent",
+      "name": "Sri Lanka Trigger Leads Root Agent",
+      "status": "active",
+      "purpose": "Orchestrate verified Sri Lankan public-signal discovery, scoring, source recovery, opportunity analysis, contact resolution, and guarded test-email behavior.",
+      "locations": [
+        "sl_trigger_leads/agent.py"
+      ],
+      "entrypoints": [
+        "sl_trigger_leads/agent.py"
+      ],
+      "technologies": [
+        "Google ADK",
+        "Gemini 2.5 Flash",
+        "Python"
+      ],
+      "commands": [
+        "agents-cli run"
+      ],
+      "depends_on": [
+        "AGENT-SL-CONTACT-RESOLVER",
+        "AGENT-SL-EMAIL-SENDER",
+        "AGENT-SL-OPPORTUNITY-ANALYST"
+      ],
+      "external_resources": [],
+      "environment": {
+        "configuration_status": "local by default"
+      },
+      "evidence": [
+        {
+          "path": "sl_trigger_leads/agent.py",
+          "detail": "Exported root_agent named sl_trigger_leads with explicit sub-agent composition and real-data rules."
+        }
+      ],
+      "confidence": "verified",
+      "last_verified_at": "2026-07-29T11:00:00Z",
+      "limitations": [
+        "Tender-only signals and synthetic evidence are rejected."
+      ],
+      "discovery_keys": [
+        "agent:sl_trigger_leads/agent.py:root_agent"
+      ]
+    },
+    {
+      "id": "APP-SL-TRIGGER-LEADS",
+      "kind": "agent_app",
+      "name": "Sri Lanka Public-Signal Lead Intelligence",
+      "status": "active",
+      "purpose": "Primary Google ADK application for evidence-backed Sri Lankan non-tender lead intelligence.",
+      "locations": [
+        "sl_trigger_leads"
+      ],
+      "entrypoints": [
+        "sl_trigger_leads/agent.py",
+        "sl_trigger_leads/agent_runtime_app.py"
+      ],
+      "technologies": [
+        "Google ADK 2.x",
+        "Gemini 2.5 Flash",
+        "Python"
+      ],
+      "commands": [
+        "agents-cli run",
+        "uv run python tools/run_prompt04_live_smoke.py"
+      ],
+      "depends_on": [
+        "AGENT-SL-ROOT",
+        "LIB-BUSINESS-INTEL-PUBLIC-HTTP"
+      ],
+      "external_resources": [],
+      "environment": {
+        "configuration_status": "local default with explicit cloud gate",
+        "variable_names": [
+          "BT_ENABLE_AGENT_RUNTIME",
+          "GOOGLE_CLOUD_PROJECT",
+          "GOOGLE_CLOUD_LOCATION"
+        ]
+      },
+      "evidence": [
+        {
+          "path": "sl_trigger_leads/agent.py",
+          "detail": "Exported Google ADK App named sl_trigger_leads."
+        },
+        {
+          "path": "REAL_DATA_POLICY.md",
+          "detail": "Runtime real-data and tender-refusal contract."
+        }
+      ],
+      "confidence": "verified",
+      "last_verified_at": "2026-07-29T11:00:00Z",
+      "limitations": [
+        "Live model calls and provider-backed searches require separately configured credentials."
+      ],
+      "discovery_keys": [
+        "agent_app:sl_trigger_leads/agent.py:app"
+      ]
+    },
+    {
+      "id": "AGENT-UKIE-SEARCH",
+      "kind": "agent",
+      "name": "UK and Ireland D365 Search Agent",
+      "status": "active",
+      "purpose": "Search public web sources for Dynamics 365 evidence without treating source publishers as buyer accounts.",
+      "locations": [
+        "uk_ie_d365_leads/agents/search_agent.py"
+      ],
+      "entrypoints": [
+        "uk_ie_d365_leads/agents/search_agent.py"
+      ],
+      "technologies": [
+        "Google ADK",
+        "Gemini 2.5 Flash",
+        "Google Search"
+      ],
+      "commands": [],
+      "depends_on": [
+        "INTEGRATION-PUBLIC-WEB-SOURCES"
+      ],
+      "external_resources": [],
+      "environment": {
+        "configuration_status": "provider-selected"
+      },
+      "evidence": [
+        {
+          "path": "uk_ie_d365_leads/agents/search_agent.py",
+          "detail": "Module-level exported d365_search_agent."
+        }
+      ],
+      "confidence": "verified",
+      "last_verified_at": "2026-07-29T11:00:00Z",
+      "limitations": [
+        "The direct grounded search provider remains the normal live discovery path."
+      ],
+      "discovery_keys": [
+        "agent:uk_ie_d365_leads/agents/search_agent.py:d365_search_agent"
+      ]
+    },
+    {
+      "id": "AGENT-UKIE-END-CUSTOMER",
+      "kind": "agent",
+      "name": "D365 End-Customer Extractor",
+      "status": "active",
+      "purpose": "Resolve end-customer identity from supplied public evidence while preserving partner and source-company separation.",
+      "locations": [
+        "uk_ie_d365_leads/agents/end_customer_extractor_agent.py"
+      ],
+      "entrypoints": [
+        "uk_ie_d365_leads/agents/end_customer_extractor_agent.py"
+      ],
+      "technologies": [
+        "Google ADK",
+        "Gemini 2.5 Flash",
+        "Python"
+      ],
+      "commands": [],
+      "depends_on": [],
+      "external_resources": [],
+      "environment": {
+        "configuration_status": "supplied-evidence only"
+      },
+      "evidence": [
+        {
+          "path": "uk_ie_d365_leads/agents/end_customer_extractor_agent.py",
+          "detail": "Module-level exported d365_end_customer_extractor_agent."
+        }
+      ],
+      "confidence": "verified",
+      "last_verified_at": "2026-07-29T11:00:00Z",
+      "limitations": [
+        "It does not browse or create new facts."
+      ],
+      "discovery_keys": [
+        "agent:uk_ie_d365_leads/agents/end_customer_extractor_agent.py:d365_end_customer_extractor_agent"
+      ]
+    },
+    {
+      "id": "AGENT-UKIE-CLASSIFICATION-REVIEWER",
+      "kind": "agent",
+      "name": "D365 Classification Reviewer",
+      "status": "active",
+      "purpose": "Perform opt-in, proposal-only review of deterministic UK and Ireland D365 classifications against supplied evidence.",
+      "locations": [
+        "uk_ie_d365_leads/agents/classification_reviewer_agent.py"
+      ],
+      "entrypoints": [
+        "uk_ie_d365_leads/agents/classification_reviewer_agent.py"
+      ],
+      "technologies": [
+        "Google ADK",
+        "Environment-selected Gemini model",
+        "Python"
+      ],
+      "commands": [
+        "uv run python tools/run_uk_ie_d365_llm_classification_review.py"
+      ],
+      "depends_on": [],
+      "external_resources": [],
+      "environment": {
+        "configuration_status": "model may be selected by environment",
+        "variable_names": [
+          "D365_REVIEW_MODEL"
+        ]
+      },
+      "evidence": [
+        {
+          "path": "uk_ie_d365_leads/agents/classification_reviewer_agent.py",
+          "detail": "Module-level exported d365_classification_reviewer_agent."
+        }
+      ],
+      "confidence": "verified",
+      "last_verified_at": "2026-07-29T11:00:00Z",
+      "limitations": [
+        "It cannot silently rewrite deterministic policy."
+      ],
+      "discovery_keys": [
+        "agent:uk_ie_d365_leads/agents/classification_reviewer_agent.py:d365_classification_reviewer_agent"
+      ]
+    },
+    {
+      "id": "AGENT-UKIE-OPPORTUNITY-VETTER",
+      "kind": "agent",
+      "name": "D365 Opportunity Vetter",
+      "status": "active",
+      "purpose": "Convert retained public-evidence candidates into bounded 1BT opportunity assessments and explicit rejection decisions.",
+      "locations": [
+        "uk_ie_d365_leads/agents/opportunity_vetter_agent.py",
+        "uk_ie_d365_leads/tools/opportunity_vetting_tools.py"
+      ],
+      "entrypoints": [
+        "uk_ie_d365_leads/agents/opportunity_vetter_agent.py"
+      ],
+      "technologies": [
+        "Google ADK",
+        "Environment-selected Gemini model",
+        "Python"
+      ],
+      "commands": [
+        "uv run python tools/run_uk_ie_d365_ai_vetting.py",
+        "uv run python tools/check_uk_ie_d365_vetter_agent.py"
+      ],
+      "depends_on": [
+        "AGENT-UKIE-END-CUSTOMER"
+      ],
+      "external_resources": [],
+      "environment": {
+        "configuration_status": "model may be selected by environment",
+        "variable_names": [
+          "D365_VETTER_MODEL"
+        ]
+      },
+      "evidence": [
+        {
+          "path": "uk_ie_d365_leads/agents/opportunity_vetter_agent.py",
+          "detail": "Module-level exported d365_opportunity_vetter_agent."
+        },
+        {
+          "path": "docs/uk_ie_d365_ai_vetting.md",
+          "detail": "Evidence-vetting workflow and guard contract."
+        }
+      ],
+      "confidence": "verified",
+      "last_verified_at": "2026-07-29T11:00:00Z",
+      "limitations": [
+        "Model-backed vetting is an explicit paid/live gate."
+      ],
+      "discovery_keys": [
+        "agent:uk_ie_d365_leads/agents/opportunity_vetter_agent.py:d365_opportunity_vetter_agent"
+      ]
+    },
+    {
+      "id": "AGENT-UKIE-REPORT-COMPOSER",
+      "kind": "agent",
+      "name": "D365 Report Composer",
+      "status": "active",
+      "purpose": "Create evidence-safe report blueprints and PDF-ready specifications from vetted UK and Ireland D365 packs.",
+      "locations": [
+        "uk_ie_d365_leads/agents/report_composer_agent.py",
+        "uk_ie_d365_leads/tools/report_composer_tools.py"
+      ],
+      "entrypoints": [
+        "uk_ie_d365_leads/agents/report_composer_agent.py"
+      ],
+      "technologies": [
+        "Google ADK",
+        "Environment-selected Gemini model",
+        "ReportLab",
+        "Python"
+      ],
+      "commands": [
+        "uv run python tools/run_uk_ie_d365_report_composer.py"
+      ],
+      "depends_on": [
+        "AGENT-UKIE-OPPORTUNITY-VETTER",
+        "DATA-LOCAL-EVIDENCE"
+      ],
+      "external_resources": [],
+      "environment": {
+        "configuration_status": "local deterministic composition with optional live model",
+        "variable_names": [
+          "D365_REPORT_MODEL"
+        ]
+      },
+      "evidence": [
+        {
+          "path": "uk_ie_d365_leads/agents/report_composer_agent.py",
+          "detail": "Module-level exported d365_report_composer_agent."
+        },
+        {
+          "path": "docs/uk_ie_d365_report_composer.md",
+          "detail": "Report and PDF composition contract."
+        }
+      ],
+      "confidence": "verified",
+      "last_verified_at": "2026-07-29T11:00:00Z",
+      "limitations": [
+        "An ADK response is not proof that a file was generated; the local runner must create the artifacts."
+      ],
+      "discovery_keys": [
+        "agent:uk_ie_d365_leads/agents/report_composer_agent.py:d365_report_composer_agent"
+      ]
+    },
+    {
+      "id": "AGENT-UKIE-ROOT",
+      "kind": "agent",
+      "name": "UK and Ireland D365 Root Agent",
+      "status": "active",
+      "purpose": "Orchestrate evidence-backed Dynamics 365 discovery, identity resolution, classification review, vetting, and report composition.",
+      "locations": [
+        "uk_ie_d365_leads/agent.py"
+      ],
+      "entrypoints": [
+        "uk_ie_d365_leads/agent.py"
+      ],
+      "technologies": [
+        "Google ADK",
+        "Gemini 2.5 Flash",
+        "Python"
+      ],
+      "commands": [
+        "uv run python tools/run_uk_ie_d365_leads_smoke.py"
+      ],
+      "depends_on": [
+        "AGENT-UKIE-CLASSIFICATION-REVIEWER",
+        "AGENT-UKIE-END-CUSTOMER",
+        "AGENT-UKIE-OPPORTUNITY-VETTER",
+        "AGENT-UKIE-REPORT-COMPOSER",
+        "AGENT-UKIE-SEARCH"
+      ],
+      "external_resources": [],
+      "environment": {
+        "configuration_status": "local by default"
+      },
+      "evidence": [
+        {
+          "path": "uk_ie_d365_leads/agent.py",
+          "detail": "Exported root_agent named uk_ie_d365_leads with five sub-agents."
+        }
+      ],
+      "confidence": "verified",
+      "last_verified_at": "2026-07-29T11:00:00Z",
+      "limitations": [
+        "Tender and private LinkedIn sources are excluded from lead evidence."
+      ],
+      "discovery_keys": [
+        "agent:uk_ie_d365_leads/agent.py:root_agent"
+      ]
+    },
+    {
+      "id": "APP-UKIE-D365-LEADS",
+      "kind": "agent_app",
+      "name": "UK and Ireland Dynamics 365 Lead Intelligence",
+      "status": "active",
+      "purpose": "Separate Google ADK application for public-evidence Dynamics 365 account discovery, vetting, and reporting.",
+      "locations": [
+        "uk_ie_d365_leads"
+      ],
+      "entrypoints": [
+        "uk_ie_d365_leads/agent.py"
+      ],
+      "technologies": [
+        "Google ADK 2.x",
+        "Gemini 2.5 Flash",
+        "Python"
+      ],
+      "commands": [
+        "uv run python tools/run_uk_ie_d365_leads_smoke.py"
+      ],
+      "depends_on": [
+        "AGENT-UKIE-ROOT",
+        "LIB-BUSINESS-INTEL-PUBLIC-HTTP"
+      ],
+      "external_resources": [],
+      "environment": {
+        "configuration_status": "local default with optional Google Cloud backbone"
+      },
+      "evidence": [
+        {
+          "path": "uk_ie_d365_leads/agent.py",
+          "detail": "Exported Google ADK App named uk_ie_d365_leads."
+        },
+        {
+          "path": "docs/uk_ie_d365_leads.md",
+          "detail": "Lead-discovery and evidence lifecycle design."
+        }
+      ],
+      "confidence": "verified",
+      "last_verified_at": "2026-07-29T11:00:00Z",
+      "limitations": [
+        "It is a separate application lane and is not automatically the root of the deployed Agent Runtime."
+      ],
+      "discovery_keys": [
+        "agent_app:uk_ie_d365_leads/agent.py:app"
+      ]
+    },
+    {
+      "id": "LIB-BUSINESS-INTEL-PUBLIC-HTTP",
+      "kind": "library",
+      "name": "Business Intel Public HTTP Utilities",
+      "status": "active",
+      "purpose": "Provide shared safe public-HTTP behavior used by the repository agent packages.",
+      "locations": [
+        "business_intel"
+      ],
+      "entrypoints": [
+        "business_intel/public_http.py"
+      ],
+      "technologies": [
+        "Python",
+        "urllib"
+      ],
+      "commands": [],
+      "depends_on": [],
+      "external_resources": [],
+      "environment": {
+        "configuration_status": "none"
+      },
+      "evidence": [
+        {
+          "path": "business_intel/public_http.py",
+          "detail": "First-party shared HTTP package included in local and Agent Runtime source closure."
+        }
+      ],
+      "confidence": "verified",
+      "last_verified_at": "2026-07-29T11:00:00Z",
+      "limitations": []
+    },
+    {
+      "id": "DATA-LOCAL-RUNTIME-STORE",
+      "kind": "data_store",
+      "name": "Local Runtime JSON Store",
+      "status": "active",
+      "purpose": "Persist mutable lead bootstrap data, notes, and application state outside the source tree using locked atomic JSON updates.",
+      "locations": [
+        "frontend/config.py",
+        "frontend/storage.py"
+      ],
+      "entrypoints": [
+        "frontend/storage.py"
+      ],
+      "technologies": [
+        "JSON",
+        "FileLock",
+        "Python"
+      ],
+      "commands": [],
+      "depends_on": [],
+      "external_resources": [],
+      "environment": {
+        "configuration_status": "user-data directory by default",
+        "variable_names": [
+          "BT_DATA_DIR"
+        ]
+      },
+      "evidence": [
+        {
+          "path": "frontend/storage.py",
+          "detail": "Locked same-directory atomic JSON store."
+        },
+        {
+          "path": "frontend/config.py",
+          "detail": "Runtime data directory resolves outside the repository."
+        }
+      ],
+      "confidence": "verified",
+      "last_verified_at": "2026-07-29T11:00:00Z",
+      "limitations": [
+        "Runtime content is intentionally excluded from Git, wheels, and this catalog."
+      ]
+    },
+    {
+      "id": "SERVICE-LOCAL-FASTAPI",
+      "kind": "service",
+      "name": "Local FastAPI Operator API",
+      "status": "active",
+      "purpose": "Serve authenticated local lead, source, notes, classification, fit-preview, refresh, and health APIs.",
+      "locations": [
+        "frontend"
+      ],
+      "entrypoints": [
+        "frontend/main.py",
+        "frontend/server.py"
+      ],
+      "technologies": [
+        "FastAPI",
+        "Pydantic",
+        "Python",
+        "Starlette"
+      ],
+      "commands": [
+        "uv run python -m frontend.server"
+      ],
+      "depends_on": [
+        "APP-SL-TRIGGER-LEADS",
+        "DATA-LOCAL-RUNTIME-STORE"
+      ],
+      "external_resources": [],
+      "environment": {
+        "configuration_status": "required local authentication configuration",
+        "variable_names": [
+          "BT_HOST",
+          "BT_PORT",
+          "BT_SHARED_USERNAME"
+        ],
+        "secret_reference_names": [
+          "BT_SHARED_PASSWORD_HASH",
+          "BT_SESSION_SECRET_KEY"
+        ]
+      },
+      "evidence": [
+        {
+          "path": "frontend/main.py",
+          "detail": "FastAPI routes and request/response schemas."
+        },
+        {
+          "path": "README.md",
+          "detail": "Local-only startup and runtime boundary."
+        }
+      ],
+      "confidence": "verified",
+      "last_verified_at": "2026-07-29T11:00:00Z",
+      "limitations": [
+        "The Python service binds to loopback and is not the Hostinger deployment."
+      ],
+      "discovery_keys": [
+        "service:frontend:frontend fastapi"
+      ]
+    },
+    {
+      "id": "WEBSITE-LOCAL-OPERATOR",
+      "kind": "website",
+      "name": "Local Business Intel Operator Workspace",
+      "status": "active",
+      "purpose": "Provide the authenticated browser dashboard for verified leads, sources, notes, classification, and service-fit previews.",
+      "locations": [
+        "frontend/static"
+      ],
+      "entrypoints": [
+        "frontend/static/index.html",
+        "frontend/static/js/app.js",
+        "frontend/static/js/login.js",
+        "frontend/static/css/app.css"
+      ],
+      "technologies": [
+        "HTML",
+        "CSS",
+        "JavaScript"
+      ],
+      "commands": [
+        "uv run python -m frontend.server"
+      ],
+      "depends_on": [
+        "SERVICE-LOCAL-FASTAPI"
+      ],
+      "external_resources": [
+        {
+          "name": "Local operator URL",
+          "provider": "Loopback",
+          "type": "website",
+          "environment": "local",
+          "reference": "http://127.0.0.1:8080",
+          "status": "observed",
+          "last_verified_at": "2026-07-29T11:00:00Z"
+        }
+      ],
+      "environment": {
+        "configuration_status": "served by local FastAPI"
+      },
+      "evidence": [
+        {
+          "path": "frontend/static/index.html",
+          "detail": "Primary browser application shell."
+        }
+      ],
+      "confidence": "verified",
+      "last_verified_at": "2026-07-29T11:00:00Z",
+      "limitations": [
+        "This local UI is distinct from the Hostinger Node adapter."
+      ]
+    },
+    {
+      "id": "APP-HOSTINGER-SLRADAR",
+      "kind": "application",
+      "name": "Hostinger Opportunity Radar Adapter",
+      "status": "active",
+      "purpose": "Reimplement the Business Intel web contract for Hostinger's managed Node.js runtime without replacing the Python ADK applications.",
+      "locations": [
+        "deploy/hostinger-slradar"
+      ],
+      "entrypoints": [
+        "deploy/hostinger-slradar/server.mjs",
+        "deploy/hostinger-slradar/src/application.mjs"
+      ],
+      "technologies": [
+        "Node.js",
+        "JavaScript",
+        "Hostinger"
+      ],
+      "commands": [
+        "node deploy/hostinger-slradar/server.mjs"
+      ],
+      "depends_on": [],
+      "external_resources": [],
+      "environment": {
+        "configuration_status": "managed production runtime",
+        "secret_reference_names": [
+          "BT_SHARED_PASSWORD_HASH",
+          "BT_SESSION_SECRET_KEY"
+        ]
+      },
+      "evidence": [
+        {
+          "path": "deploy/hostinger-slradar/README.md",
+          "detail": "Hostinger adapter boundary and release contract."
+        },
+        {
+          "path": "deploy/hostinger-slradar/package.json",
+          "detail": "Node application manifest."
+        }
+      ],
+      "confidence": "verified",
+      "last_verified_at": "2026-07-29T11:00:00Z",
+      "limitations": [
+        "It mirrors the operator contract but does not execute the Python Google ADK application."
+      ],
+      "discovery_keys": [
+        "application:deploy/hostinger-slradar:slradar-hostinger",
+        "service:deploy/hostinger-slradar:hostinger-slradar node service"
+      ]
+    },
+    {
+      "id": "WEBSITE-SLRADAR-PRODUCTION",
+      "kind": "website",
+      "name": "1BT Opportunity Radar",
+      "status": "active",
+      "purpose": "Expose the Hostinger-hosted relationship-intelligence and opportunity-radar interface over HTTPS.",
+      "locations": [
+        "deploy/hostinger-slradar"
+      ],
+      "entrypoints": [
+        "deploy/hostinger-slradar/src/application.mjs"
+      ],
+      "technologies": [
+        "Hostinger",
+        "HTTPS",
+        "Node.js"
+      ],
+      "commands": [],
+      "depends_on": [
+        "APP-HOSTINGER-SLRADAR"
+      ],
+      "external_resources": [
+        {
+          "name": "1BT Opportunity Radar production site",
+          "provider": "Hostinger",
+          "type": "website",
+          "environment": "production",
+          "reference": "https://slradar.globalapps.world",
+          "status": "verified",
+          "last_verified_at": "2026-07-29T11:00:00Z"
+        }
+      ],
+      "environment": {
+        "configuration_status": "live"
+      },
+      "evidence": [
+        {
+          "path": "deploy/hostinger-slradar/src/application.mjs",
+          "detail": "Production-domain HTTP contract."
+        }
+      ],
+      "confidence": "verified",
+      "last_verified_at": "2026-07-29T11:00:00Z",
+      "limitations": [
+        "HTTP 200 and health metadata prove availability, not every authenticated workflow."
+      ]
+    },
+    {
+      "id": "DEPLOY-HOSTINGER-SLRADAR",
+      "kind": "deployment",
+      "name": "Hostinger Opportunity Radar Deployment",
+      "status": "active",
+      "purpose": "Package and release the exact Hostinger Node adapter with production configuration supplied outside Git.",
+      "locations": [
+        "deploy/hostinger-slradar",
+        "tools/build_hostinger_slradar_release.py"
+      ],
+      "entrypoints": [
+        "tools/build_hostinger_slradar_release.py"
+      ],
+      "technologies": [
+        "Hostinger",
+        "Node.js",
+        "Python"
+      ],
+      "commands": [
+        "uv run python tools/build_hostinger_slradar_release.py"
+      ],
+      "depends_on": [
+        "APP-HOSTINGER-SLRADAR",
+        "WEBSITE-SLRADAR-PRODUCTION"
+      ],
+      "external_resources": [
+        {
+          "name": "Hostinger managed Node runtime",
+          "provider": "Hostinger",
+          "type": "application deployment",
+          "environment": "production",
+          "reference": "https://slradar.globalapps.world/api/health",
+          "status": "verified",
+          "last_verified_at": "2026-07-29T11:00:00Z"
+        }
+      ],
+      "environment": {
+        "configuration_status": "release-time configuration outside source"
+      },
+      "evidence": [
+        {
+          "path": "tools/build_hostinger_slradar_release.py",
+          "detail": "Deterministic release packaging command."
+        },
+        {
+          "path": "deploy/hostinger-slradar/tests/application.test.mjs",
+          "detail": "Adapter contract tests."
+        }
+      ],
+      "confidence": "verified",
+      "last_verified_at": "2026-07-29T11:00:00Z",
+      "limitations": [
+        "The root HOSTINGER_DEPLOYMENT.md file is an unsupported historical draft, not this release path."
+      ]
+    },
+    {
+      "id": "DEPLOY-GOOGLE-AGENT-RUNTIME",
+      "kind": "deployment",
+      "name": "Google Agent Runtime Deployment",
+      "status": "active",
+      "purpose": "Update the single approved Business Intel Google Agent Runtime with exact-target, update-only controls and an explicit Python 3.13 dependency closure.",
+      "locations": [
+        "deployment_metadata.json",
+        "sl_trigger_leads/agent_runtime_app.py",
+        "sl_trigger_leads/app_utils/agent_engine.py",
+        "tools/deploy_agent_runtime_exact.py"
+      ],
+      "entrypoints": [
+        "tools/deploy_agent_runtime_exact.py"
+      ],
+      "technologies": [
+        "Google Agent Runtime",
+        "Google Cloud",
+        "Python 3.13",
+        "Vertex AI"
+      ],
+      "commands": [
+        "uv run --extra agent-runtime python tools/deploy_agent_runtime_exact.py preflight",
+        "uv run --extra agent-runtime python tools/deploy_agent_runtime_exact.py status",
+        "uv run --extra agent-runtime python tools/deploy_agent_runtime_exact.py smoke"
+      ],
+      "depends_on": [
+        "APP-SL-TRIGGER-LEADS",
+        "APP-UKIE-D365-LEADS"
+      ],
+      "external_resources": [
+        {
+          "name": "Business Intel Agent Runtime",
+          "provider": "Google Cloud",
+          "type": "reasoning engine",
+          "environment": "production",
+          "reference": "projects/44345068412/locations/us-central1/reasoningEngines/3155700076542689280",
+          "status": "observed",
+          "last_verified_at": "2026-05-10T14:32:13Z"
+        }
+      ],
+      "environment": {
+        "configuration_status": "fail-closed unless explicitly enabled",
+        "variable_names": [
+          "BT_ENABLE_AGENT_RUNTIME",
+          "GOOGLE_CLOUD_PROJECT",
+          "GOOGLE_CLOUD_LOCATION"
+        ]
+      },
+      "evidence": [
+        {
+          "path": "deployment_metadata.json",
+          "detail": "Approved runtime identifier and rollback metadata."
+        },
+        {
+          "path": "docs/agent-runtime-release.md",
+          "detail": "Exact-target update-only release runbook."
+        }
+      ],
+      "confidence": "observed",
+      "last_verified_at": "2026-07-29T11:00:00Z",
+      "limitations": [
+        "The runtime was cataloged from reviewed source metadata rather than a fresh live status call.",
+        "The Sri Lanka App is the deployed root; the UK and Ireland package is included in the source closure, not exposed as a second runtime."
+      ],
+      "discovery_keys": [
+        "deployment:deployment_metadata.json:business_intel deployment"
+      ]
+    },
+    {
+      "id": "INTEGRATION-GMAIL-TEST-SENDER",
+      "kind": "integration",
+      "name": "Local Gmail Test Sender",
+      "status": "active",
+      "purpose": "Provide an OAuth-backed, tightly restricted local Gmail smoke path while refusing sales outreach.",
+      "locations": [
+        "sl_trigger_leads/tools/gmail_sender_tools.py",
+        "tools/gmail_sender_smoke.py"
+      ],
+      "entrypoints": [
+        "tools/gmail_sender_smoke.py"
+      ],
+      "technologies": [
+        "Gmail API",
+        "Google OAuth",
+        "Python"
+      ],
+      "commands": [
+        "uv run python tools/gmail_sender_smoke.py"
+      ],
+      "depends_on": [],
+      "external_resources": [
+        {
+          "name": "Gmail API",
+          "provider": "Google",
+          "type": "mail API",
+          "environment": "local OAuth",
+          "reference": "https://gmail.googleapis.com",
+          "status": "observed",
+          "last_verified_at": "2026-07-29T11:00:00Z"
+        }
+      ],
+      "environment": {
+        "configuration_status": "credentials external to repository"
+      },
+      "evidence": [
+        {
+          "path": "docs/email_sender_agent_design.md",
+          "detail": "Explicit Gmail safety and recipient restrictions."
+        }
+      ],
+      "confidence": "verified",
+      "last_verified_at": "2026-07-29T11:00:00Z",
+      "limitations": [
+        "No email was sent during catalog creation."
+      ]
+    },
+    {
+      "id": "INTEGRATION-PUBLIC-WEB-SOURCES",
+      "kind": "integration",
+      "name": "Public Web Evidence Providers",
+      "status": "active",
+      "purpose": "Fetch, recover, normalize, and retain public-source evidence for lead and contact workflows.",
+      "locations": [
+        "sl_trigger_leads/tools/live_source_tools.py",
+        "sl_trigger_leads/tools/source_recovery.py",
+        "uk_ie_d365_leads/tools/lead_tools.py"
+      ],
+      "entrypoints": [
+        "sl_trigger_leads/tools/live_source_tools.py",
+        "uk_ie_d365_leads/tools/lead_tools.py"
+      ],
+      "technologies": [
+        "Google Search",
+        "HTTP",
+        "Python"
+      ],
+      "commands": [],
+      "depends_on": [
+        "LIB-BUSINESS-INTEL-PUBLIC-HTTP"
+      ],
+      "external_resources": [],
+      "environment": {
+        "configuration_status": "provider-specific"
+      },
+      "evidence": [
+        {
+          "path": "docs/source_transparency_policy.md",
+          "detail": "Source disclosure and provenance requirements."
+        },
+        {
+          "path": "REAL_DATA_POLICY.md",
+          "detail": "Verified-live evidence contract."
+        }
+      ],
+      "confidence": "verified",
+      "last_verified_at": "2026-07-29T11:00:00Z",
+      "limitations": [
+        "Provider availability and public pages can change between runs."
+      ]
+    },
+    {
+      "id": "INTEGRATION-NORTHWIND-CRM",
+      "kind": "integration",
+      "name": "Northwind CRM",
+      "status": "active",
+      "purpose": "Receive reviewed UK and Ireland company intelligence through an exact-project, atomic Firestore synchronization workflow.",
+      "locations": [
+        "tools/sync_uk_ie_d365_leads_to_northwind.py",
+        "docs/uk_ie_d365_northwind_sync.md"
+      ],
+      "entrypoints": [
+        "tools/sync_uk_ie_d365_leads_to_northwind.py"
+      ],
+      "technologies": [
+        "Firebase",
+        "Firestore",
+        "HTTPS",
+        "Python"
+      ],
+      "commands": [
+        "uv run --with google-cloud-firestore python tools/sync_uk_ie_d365_leads_to_northwind.py"
+      ],
+      "depends_on": [],
+      "external_resources": [
+        {
+          "name": "Northwind CRM website",
+          "provider": "Hostinger and Firebase",
+          "type": "CRM",
+          "environment": "production",
+          "reference": "https://crm.globalapps.world",
+          "status": "verified",
+          "last_verified_at": "2026-07-29T11:00:00Z"
+        },
+        {
+          "name": "Northwind CRM Firestore project",
+          "provider": "Firebase",
+          "type": "database",
+          "environment": "production",
+          "reference": "globalapps-northwind-crm",
+          "status": "observed",
+          "last_verified_at": "2026-07-29T11:00:00Z"
+        }
+      ],
+      "environment": {
+        "configuration_status": "exact target enforced"
+      },
+      "evidence": [
+        {
+          "path": "tools/sync_uk_ie_d365_leads_to_northwind.py",
+          "detail": "Pinned project, database, workspace, validation, and atomic sync."
+        }
+      ],
+      "confidence": "verified",
+      "last_verified_at": "2026-07-29T11:00:00Z",
+      "limitations": [
+        "HTTP availability does not prove authenticated CRM data access."
+      ]
+    },
+    {
+      "id": "INTEGRATION-NORTHWIND-WARM-PATHS",
+      "kind": "integration",
+      "name": "Northwind CRM Warm Paths Tracker",
+      "status": "active",
+      "purpose": "Maintain company blocks, target people, mutual-contact routes, evidence, and human feedback in a governed Google Sheet.",
+      "locations": [
+        "docs/northwind_warm_paths_sheet_contract.md",
+        "docs/northwind_warm_paths_sheet_contract.v1.json"
+      ],
+      "entrypoints": [
+        "tools/build_linkedin_network_sheet.py",
+        "tools/build_former_client_adjacency_sheet.py"
+      ],
+      "technologies": [
+        "Google Sheets",
+        "Python",
+        "Sales Navigator"
+      ],
+      "commands": [
+        "uv run python tools/build_linkedin_network_sheet.py",
+        "uv run python tools/build_former_client_adjacency_sheet.py"
+      ],
+      "depends_on": [],
+      "external_resources": [
+        {
+          "name": "Northwind CRM Warm Paths Tracker",
+          "provider": "Google Sheets",
+          "type": "spreadsheet",
+          "environment": "shared workspace",
+          "reference": "https://docs.google.com/spreadsheets/d/1nikwNWJ3N5622S_a8l9YQsP_pTLxCLtmezgNmBq4abs/edit",
+          "status": "observed",
+          "last_verified_at": "2026-07-29T11:00:00Z"
+        }
+      ],
+      "environment": {
+        "configuration_status": "contract-governed edits"
+      },
+      "evidence": [
+        {
+          "path": "docs/northwind_warm_paths_sheet_contract.v1.json",
+          "detail": "Canonical parent workbook structure, format, and preservation contract."
+        }
+      ],
+      "confidence": "verified",
+      "last_verified_at": "2026-07-29T11:00:00Z",
+      "limitations": [
+        "The workbook is external; source contracts do not prove its current live values."
+      ]
+    },
+    {
+      "id": "INTEGRATION-LINKEDIN-SALES-NAVIGATOR",
+      "kind": "integration",
+      "name": "LinkedIn Sales Navigator Evidence Intake",
+      "status": "active",
+      "purpose": "Provide authenticated, DOM-evidenced target and mutual-route inputs for resumable workbook builders.",
+      "locations": [
+        "tools/build_linkedin_network_sheet.py",
+        "tools/former_client_adjacency_checkpoint.py"
+      ],
+      "entrypoints": [
+        "tools/former_client_adjacency_checkpoint.py"
+      ],
+      "technologies": [
+        "LinkedIn Sales Navigator",
+        "Browser DOM",
+        "JSON checkpoints"
+      ],
+      "commands": [
+        "uv run python tools/former_client_adjacency_checkpoint.py"
+      ],
+      "depends_on": [
+        "DATA-LOCAL-EVIDENCE"
+      ],
+      "external_resources": [
+        {
+          "name": "LinkedIn Sales Navigator",
+          "provider": "LinkedIn",
+          "type": "authenticated research surface",
+          "environment": "Paul's verified browser session",
+          "reference": "https://www.linkedin.com/sales/",
+          "status": "observed",
+          "last_verified_at": "2026-07-29T11:00:00Z"
+        }
+      ],
+      "environment": {
+        "configuration_status": "requires current visible browser identity"
+      },
+      "evidence": [
+        {
+          "path": "tools/build_linkedin_network_sheet.py",
+          "detail": "Stable-ID evidence and deterministic Google Sheets request generation."
+        }
+      ],
+      "confidence": "verified",
+      "last_verified_at": "2026-07-29T11:00:00Z",
+      "limitations": [
+        "Current LinkedIn identity and rate-limit state must be reverified for each collection run."
+      ]
+    },
+    {
+      "id": "DATA-UKIE-CLOUD-BACKBONE",
+      "kind": "data_store",
+      "name": "UK and Ireland Lead-Conservation Cloud Backbone",
+      "status": "experimental",
+      "purpose": "Model the optional BigQuery evidence ledger and Cloud Storage evidence bucket for retained UK and Ireland lead candidates.",
+      "locations": [
+        "tools/setup_uk_ie_d365_cloud_backbone.py",
+        "uk_ie_d365_leads/tools/discovery_backbone_tools.py"
+      ],
+      "entrypoints": [
+        "tools/setup_uk_ie_d365_cloud_backbone.py"
+      ],
+      "technologies": [
+        "BigQuery",
+        "Google Cloud Storage",
+        "Python"
+      ],
+      "commands": [
+        "uv run python tools/setup_uk_ie_d365_cloud_backbone.py"
+      ],
+      "depends_on": [
+        "APP-UKIE-D365-LEADS"
+      ],
+      "external_resources": [
+        {
+          "name": "Business Intel lead dataset",
+          "provider": "Google BigQuery",
+          "type": "dataset",
+          "environment": "cloud backbone",
+          "reference": "business-intel-123:business_intel_leads",
+          "status": "observed",
+          "last_verified_at": "2026-07-29T11:00:00Z"
+        },
+        {
+          "name": "Business Intel evidence bucket",
+          "provider": "Google Cloud Storage",
+          "type": "bucket",
+          "environment": "cloud backbone",
+          "reference": "gs://business-intel-123-business-intel-evidence",
+          "status": "observed",
+          "last_verified_at": "2026-07-29T11:00:00Z"
+        }
+      ],
+      "environment": {
+        "configuration_status": "preflight by default; apply is explicit"
+      },
+      "evidence": [
+        {
+          "path": "tools/setup_uk_ie_d365_cloud_backbone.py",
+          "detail": "Declared dataset, table schemas, bucket, and fail-closed apply flag."
+        }
+      ],
+      "confidence": "observed",
+      "last_verified_at": "2026-07-29T11:00:00Z",
+      "limitations": [
+        "Cloud resource existence was not rechecked live during catalog creation."
+      ]
+    },
+    {
+      "id": "DATA-LOCAL-EVIDENCE",
+      "kind": "data_store",
+      "name": "Local Verification Evidence",
+      "status": "active",
+      "purpose": "Retain ignored public-source packs, reports, screenshots, command evidence, audits, hashes, and release records outside the source distribution.",
+      "locations": [
+        "Evidence"
+      ],
+      "entrypoints": [],
+      "technologies": [
+        "JSON",
+        "Markdown",
+        "PDF"
+      ],
+      "commands": [],
+      "depends_on": [],
+      "external_resources": [],
+      "environment": {
+        "configuration_status": "ignored local workspace"
+      },
+      "evidence": [
+        {
+          "path": ".gitignore",
+          "detail": "Evidence, logs, outputs, runtime data, and secrets are excluded from Git."
+        },
+        {
+          "path": "AGENTS.md",
+          "detail": "Repository evidence convention."
+        }
+      ],
+      "confidence": "verified",
+      "last_verified_at": "2026-07-29T11:00:00Z",
+      "limitations": [
+        "Private evidence content is intentionally not represented in the catalog."
+      ]
+    },
+    {
+      "id": "WORKFLOW-FORMER-CLIENT-ADJACENCY",
+      "kind": "workflow",
+      "name": "Former-Client Adjacency Prospecting",
+      "status": "active",
+      "purpose": "Reconcile published 1BT client evidence with Sales Navigator target and introducer routes and produce deterministic Google Sheets plans.",
+      "locations": [
+        "tools/build_former_client_adjacency_sheet.py",
+        "tools/former_client_adjacency_checkpoint.py",
+        "docs/northwind_former_clients_sheet_contract.md",
+        "docs/northwind_former_clients_sheet_contract.v1.json"
+      ],
+      "entrypoints": [
+        "tools/build_former_client_adjacency_sheet.py"
+      ],
+      "technologies": [
+        "Google Sheets",
+        "LinkedIn Sales Navigator",
+        "Python"
+      ],
+      "commands": [
+        "uv run python tools/build_former_client_adjacency_sheet.py"
+      ],
+      "depends_on": [
+        "INTEGRATION-LINKEDIN-SALES-NAVIGATOR",
+        "INTEGRATION-NORTHWIND-WARM-PATHS"
+      ],
+      "external_resources": [],
+      "environment": {
+        "configuration_status": "offline plan generation; explicit Sheet apply"
+      },
+      "evidence": [
+        {
+          "path": "tools/build_former_client_adjacency_sheet.py",
+          "detail": "Deterministic, idempotent request-plan builder."
+        },
+        {
+          "path": "docs/northwind_former_clients_sheet_contract.v1.json",
+          "detail": "Dedicated machine contract."
+        }
+      ],
+      "confidence": "verified",
+      "last_verified_at": "2026-07-29T11:00:00Z",
+      "limitations": [
+        "The script does not itself browse LinkedIn or mutate Google Sheets."
+      ]
+    },
+    {
+      "id": "WORKFLOW-LINKEDIN-NETWORK-SHEETS",
+      "kind": "workflow",
+      "name": "Named Mutual-Contact Network Sheets",
+      "status": "active",
+      "purpose": "Build Sam Dharmasiri, Jeremy Pike, and Prasath Nanayakkara company-grouped warm-route tabs from atomic Sales Navigator checkpoints.",
+      "locations": [
+        "tools/build_linkedin_network_sheet.py",
+        "docs/northwind_sam_dharmasiri_sheet_contract.v1.json",
+        "docs/northwind_jeremy_pike_sheet_contract.v1.json",
+        "docs/northwind_prasath_nanayakkara_sheet_contract.v1.json"
+      ],
+      "entrypoints": [
+        "tools/build_linkedin_network_sheet.py"
+      ],
+      "technologies": [
+        "Google Sheets",
+        "LinkedIn Sales Navigator",
+        "Python"
+      ],
+      "commands": [
+        "uv run python tools/build_linkedin_network_sheet.py"
+      ],
+      "depends_on": [
+        "INTEGRATION-LINKEDIN-SALES-NAVIGATOR",
+        "INTEGRATION-NORTHWIND-WARM-PATHS"
+      ],
+      "external_resources": [],
+      "environment": {
+        "configuration_status": "offline plan generation; explicit Sheet apply"
+      },
+      "evidence": [
+        {
+          "path": "tools/build_linkedin_network_sheet.py",
+          "detail": "Stable-ID, atomic-checkpoint workbook plan builder."
+        }
+      ],
+      "confidence": "verified",
+      "last_verified_at": "2026-07-29T11:00:00Z",
+      "limitations": [
+        "Collection requires a separately verified Sales Navigator browser session."
+      ]
+    },
+    {
+      "id": "WORKFLOW-UKIE-LEAD-INTELLIGENCE",
+      "kind": "workflow",
+      "name": "UK and Ireland D365 Lead Pipeline",
+      "status": "active",
+      "purpose": "Discover, retain, deduplicate, identify, review, and vet public-evidence Dynamics 365 account candidates across bounded rounds.",
+      "locations": [
+        "uk_ie_d365_leads",
+        "tools/run_uk_ie_d365_useful_leads_next.py",
+        "tools/finalize_uk_ie_d365_run5.py",
+        "tools/refresh_uk_ie_d365_70_company_intel.py"
+      ],
+      "entrypoints": [
+        "tools/run_uk_ie_d365_useful_leads_next.py"
+      ],
+      "technologies": [
+        "Google ADK",
+        "Google Search",
+        "JSON",
+        "Python"
+      ],
+      "commands": [
+        "uv run python tools/run_uk_ie_d365_useful_leads_next.py",
+        "uv run python tools/finalize_uk_ie_d365_run5.py"
+      ],
+      "depends_on": [
+        "APP-UKIE-D365-LEADS",
+        "DATA-LOCAL-EVIDENCE",
+        "INTEGRATION-PUBLIC-WEB-SOURCES"
+      ],
+      "external_resources": [],
+      "environment": {
+        "configuration_status": "saved evidence by default; live searches explicit"
+      },
+      "evidence": [
+        {
+          "path": "docs/uk_ie_d365_leads.md",
+          "detail": "Candidate lifecycle, evidence, provider, and final-output contract."
+        }
+      ],
+      "confidence": "verified",
+      "last_verified_at": "2026-07-29T11:00:00Z",
+      "limitations": [
+        "Live search and model-backed vetting can incur provider cost."
+      ]
+    },
+    {
+      "id": "WORKFLOW-UKIE-REPORT-PDF",
+      "kind": "workflow",
+      "name": "UK and Ireland Intelligence Report and PDF Production",
+      "status": "active",
+      "purpose": "Transform vetted evidence packs into traceable JSON, Markdown, HTML, PDF, source-map, browse-log, and QA artifacts.",
+      "locations": [
+        "tools/run_uk_ie_d365_report_composer.py",
+        "tools/build_uk_ie_d365_70_company_intel.py",
+        "tools/finalize_uk_ie_d365_70_company_intel.py"
+      ],
+      "entrypoints": [
+        "tools/run_uk_ie_d365_report_composer.py"
+      ],
+      "technologies": [
+        "HTML",
+        "JSON",
+        "Markdown",
+        "PDF",
+        "Python",
+        "ReportLab"
+      ],
+      "commands": [
+        "uv run python tools/run_uk_ie_d365_report_composer.py",
+        "uv run python tools/finalize_uk_ie_d365_70_company_intel.py"
+      ],
+      "depends_on": [
+        "AGENT-UKIE-REPORT-COMPOSER",
+        "DATA-LOCAL-EVIDENCE",
+        "WORKFLOW-UKIE-LEAD-INTELLIGENCE"
+      ],
+      "external_resources": [],
+      "environment": {
+        "configuration_status": "local deterministic output by default"
+      },
+      "evidence": [
+        {
+          "path": "docs/uk_ie_d365_report_composer.md",
+          "detail": "Report artifact and verification contract."
+        }
+      ],
+      "confidence": "verified",
+      "last_verified_at": "2026-07-29T11:00:00Z",
+      "limitations": [
+        "Generated PDF presentation never replaces its machine-readable evidence pack."
+      ]
+    },
+    {
+      "id": "WORKFLOW-UKIE-NORTHWIND-SYNC",
+      "kind": "workflow",
+      "name": "UK and Ireland Northwind CRM Synchronization",
+      "status": "active",
+      "purpose": "Validate a vetted lead pack and dry-run or atomically add or enrich the exact Northwind CRM company collection.",
+      "locations": [
+        "tools/sync_uk_ie_d365_leads_to_northwind.py",
+        "docs/uk_ie_d365_northwind_sync.md"
+      ],
+      "entrypoints": [
+        "tools/sync_uk_ie_d365_leads_to_northwind.py"
+      ],
+      "technologies": [
+        "Firebase",
+        "Firestore",
+        "Python"
+      ],
+      "commands": [
+        "uv run --with google-cloud-firestore python tools/sync_uk_ie_d365_leads_to_northwind.py"
+      ],
+      "depends_on": [
+        "INTEGRATION-NORTHWIND-CRM",
+        "WORKFLOW-UKIE-LEAD-INTELLIGENCE"
+      ],
+      "external_resources": [],
+      "environment": {
+        "configuration_status": "dry-run by default; apply explicit"
+      },
+      "evidence": [
+        {
+          "path": "docs/uk_ie_d365_northwind_sync.md",
+          "detail": "Exact-target and synchronization runbook."
+        }
+      ],
+      "confidence": "verified",
+      "last_verified_at": "2026-07-29T11:00:00Z",
+      "limitations": [
+        "No CRM mutation was performed during catalog creation."
+      ]
+    },
+    {
+      "id": "CLI-AGENT-RUNTIME-EXACT",
+      "kind": "cli",
+      "name": "Exact Agent Runtime Control",
+      "status": "active",
+      "purpose": "Preflight, update once, inspect status, and smoke-test only the approved Google Agent Runtime.",
+      "locations": [
+        "tools/deploy_agent_runtime_exact.py"
+      ],
+      "entrypoints": [
+        "tools/deploy_agent_runtime_exact.py"
+      ],
+      "technologies": [
+        "Google Cloud",
+        "Python",
+        "Vertex AI"
+      ],
+      "commands": [
+        "uv run --extra agent-runtime python tools/deploy_agent_runtime_exact.py preflight",
+        "uv run --extra agent-runtime python tools/deploy_agent_runtime_exact.py deploy",
+        "uv run --extra agent-runtime python tools/deploy_agent_runtime_exact.py status",
+        "uv run --extra agent-runtime python tools/deploy_agent_runtime_exact.py smoke"
+      ],
+      "depends_on": [
+        "DEPLOY-GOOGLE-AGENT-RUNTIME"
+      ],
+      "external_resources": [],
+      "environment": {
+        "configuration_status": "exact target and credentials required"
+      },
+      "evidence": [
+        {
+          "path": "tools/deploy_agent_runtime_exact.py",
+          "detail": "Update-only runtime command with create-path refusal and one-operation state."
+        }
+      ],
+      "confidence": "verified",
+      "last_verified_at": "2026-07-29T11:00:00Z",
+      "limitations": [
+        "Deploy is a consequential live action and is never part of catalog refresh."
+      ],
+      "discovery_keys": [
+        "cli:tools/deploy_agent_runtime_exact.py:deploy agent runtime exact"
+      ]
+    },
+    {
+      "id": "CLI-HOSTINGER-RELEASE",
+      "kind": "cli",
+      "name": "Hostinger Radar Release Builder",
+      "status": "active",
+      "purpose": "Build the production Hostinger source archive and release manifest from reviewed source.",
+      "locations": [
+        "tools/build_hostinger_slradar_release.py"
+      ],
+      "entrypoints": [
+        "tools/build_hostinger_slradar_release.py"
+      ],
+      "technologies": [
+        "Hostinger",
+        "Python",
+        "ZIP"
+      ],
+      "commands": [
+        "uv run python tools/build_hostinger_slradar_release.py"
+      ],
+      "depends_on": [
+        "DEPLOY-HOSTINGER-SLRADAR"
+      ],
+      "external_resources": [],
+      "environment": {
+        "configuration_status": "release output ignored"
+      },
+      "evidence": [
+        {
+          "path": "tools/build_hostinger_slradar_release.py",
+          "detail": "Deterministic packaging, manifest, and archive builder."
+        }
+      ],
+      "confidence": "verified",
+      "last_verified_at": "2026-07-29T11:00:00Z",
+      "limitations": [
+        "Building an archive does not deploy it."
+      ],
+      "discovery_keys": [
+        "cli:tools/build_hostinger_slradar_release.py:build hostinger slradar release"
+      ]
+    },
+    {
+      "id": "CLI-OPERATIONAL-TOOLS",
+      "kind": "cli",
+      "name": "Lead Intelligence Operational Tool Suite",
+      "status": "active",
+      "purpose": "Provide bounded smoke, review, finalization, cost-measurement, contact-resolution, reporting, checkpoint, and cloud-backbone commands.",
+      "locations": [
+        "tools"
+      ],
+      "entrypoints": [
+        "tools/run_prompt04_live_smoke.py",
+        "tools/run_uk_ie_d365_ai_vetting.py",
+        "tools/run_uk_ie_d365_report_composer.py",
+        "tools/review_uk_ie_d365_candidates.py",
+        "tools/measure_uk_ie_d365_round_cost.py"
+      ],
+      "technologies": [
+        "Python",
+        "PowerShell"
+      ],
+      "commands": [
+        "uv run python tools/run_prompt04_live_smoke.py",
+        "uv run python tools/review_uk_ie_d365_candidates.py",
+        "uv run python tools/measure_uk_ie_d365_round_cost.py"
+      ],
+      "depends_on": [
+        "APP-SL-TRIGGER-LEADS",
+        "APP-UKIE-D365-LEADS",
+        "DATA-LOCAL-EVIDENCE"
+      ],
+      "external_resources": [],
+      "environment": {
+        "configuration_status": "command-specific"
+      },
+      "evidence": [
+        {
+          "path": "tools",
+          "detail": "Thirty-two tracked Python operational entry points grouped by shared evidence and guard conventions."
+        }
+      ],
+      "confidence": "verified",
+      "last_verified_at": "2026-07-29T11:00:00Z",
+      "limitations": [
+        "Individual commands retain their own live, paid, apply, send, or deployment gates."
+      ],
+      "discovery_keys": [
+        "cli:tools/build_former_client_adjacency_sheet.py:build former client adjacency sheet",
+        "cli:tools/build_linkedin_network_sheet.py:build linkedin network sheet",
+        "cli:tools/build_uk_ie_d365_70_company_intel.py:build uk ie d365 70 company intel",
+        "cli:tools/build_uk_ie_d365_ai_report_14.py:build uk ie d365 ai report 14",
+        "cli:tools/check_uk_ie_d365_vetter_agent.py:check uk ie d365 vetter agent",
+        "cli:tools/finalize_uk_ie_d365_70_company_intel.py:finalize uk ie d365 70 company intel",
+        "cli:tools/finalize_uk_ie_d365_fresh_batch.py:finalize uk ie d365 fresh batch",
+        "cli:tools/finalize_uk_ie_d365_run5.py:finalize uk ie d365 run5",
+        "cli:tools/finalize_uk_ie_d365_useful_leads_next.py:finalize uk ie d365 useful leads next",
+        "cli:tools/former_client_adjacency_checkpoint.py:former client adjacency checkpoint",
+        "cli:tools/gmail_sender_smoke.py:gmail sender smoke",
+        "cli:tools/measure_uk_ie_d365_round_cost.py:measure uk ie d365 round cost",
+        "cli:tools/refresh_uk_ie_d365_70_company_intel.py:refresh uk ie d365 70 company intel",
+        "cli:tools/review_uk_ie_d365_candidates.py:review uk ie d365 candidates",
+        "cli:tools/run_contact_resolver_explicit_leads_smoke.py:run contact resolver explicit leads smoke",
+        "cli:tools/run_prompt04_live_smoke.py:run prompt04 live smoke",
+        "cli:tools/run_prompt05_source_recovery_smoke.py:run prompt05 source recovery smoke",
+        "cli:tools/run_prompt06_opportunity_analysis_smoke.py:run prompt06 opportunity analysis smoke",
+        "cli:tools/run_prompt09_email_agent_smoke.py:run prompt09 email agent smoke",
+        "cli:tools/run_prompt10_contact_resolver_smoke.py:run prompt10 contact resolver smoke",
+        "cli:tools/run_prompt11_live_contact_resolver_smoke.py:run prompt11 live contact resolver smoke",
+        "cli:tools/run_prompt12_contact_output_smoke.py:run prompt12 contact output smoke",
+        "cli:tools/run_uk_ie_d365_ai_vetting.py:run uk ie d365 ai vetting",
+        "cli:tools/run_uk_ie_d365_leads_smoke.py:run uk ie d365 leads smoke",
+        "cli:tools/run_uk_ie_d365_llm_classification_review.py:run uk ie d365 llm classification review",
+        "cli:tools/run_uk_ie_d365_report_composer.py:run uk ie d365 report composer",
+        "cli:tools/run_uk_ie_d365_run5_contact_resolution.py:run uk ie d365 run5 contact resolution",
+        "cli:tools/run_uk_ie_d365_useful_leads_next.py:run uk ie d365 useful leads next",
+        "cli:tools/setup_uk_ie_d365_cloud_backbone.py:setup uk ie d365 cloud backbone",
+        "cli:tools/sync_uk_ie_d365_leads_to_northwind.py:sync uk ie d365 leads to northwind"
+      ]
+    },
+    {
+      "id": "TEST-PYTHON-DETERMINISTIC",
+      "kind": "test_suite",
+      "name": "Deterministic Python Test Suite",
+      "status": "active",
+      "purpose": "Verify ADK compatibility, evidence rules, web authentication, storage, deployments, reports, CRM synchronization, and operational tools without paid integrations by default.",
+      "locations": [
+        "tests",
+        "sl_trigger_leads/tests",
+        "uk_ie_d365_leads/tests"
+      ],
+      "entrypoints": [
+        "pyproject.toml"
+      ],
+      "technologies": [
+        "pytest",
+        "Python"
+      ],
+      "commands": [
+        "uv run pytest"
+      ],
+      "depends_on": [
+        "APP-SL-TRIGGER-LEADS",
+        "APP-UKIE-D365-LEADS",
+        "SERVICE-LOCAL-FASTAPI"
+      ],
+      "external_resources": [],
+      "environment": {
+        "configuration_status": "paid and live markers excluded by default"
+      },
+      "evidence": [
+        {
+          "path": "pyproject.toml",
+          "detail": "pytest paths, markers, warning policy, and exclusions."
+        },
+        {
+          "path": "tests",
+          "detail": "Cross-repository deterministic unit and compatibility tests."
+        }
+      ],
+      "confidence": "verified",
+      "last_verified_at": "2026-07-29T11:00:00Z",
+      "limitations": [
+        "Passing deterministic tests does not prove live provider or deployment behavior."
+      ],
+      "discovery_keys": [
+        "test_suite:tests:business_intel tests"
+      ]
+    },
+    {
+      "id": "TEST-HOSTINGER-NODE",
+      "kind": "test_suite",
+      "name": "Hostinger Adapter Contract Tests",
+      "status": "active",
+      "purpose": "Verify the Node adapter's authentication, CSRF, lead validation, refresh, notes, and HTTP behavior.",
+      "locations": [
+        "deploy/hostinger-slradar/tests"
+      ],
+      "entrypoints": [
+        "deploy/hostinger-slradar/tests/application.test.mjs"
+      ],
+      "technologies": [
+        "Node.js Test Runner",
+        "JavaScript"
+      ],
+      "commands": [
+        "node --test deploy/hostinger-slradar/tests/*.test.mjs"
+      ],
+      "depends_on": [
+        "APP-HOSTINGER-SLRADAR"
+      ],
+      "external_resources": [],
+      "environment": {
+        "configuration_status": "local test environment"
+      },
+      "evidence": [
+        {
+          "path": "deploy/hostinger-slradar/tests/application.test.mjs",
+          "detail": "Node adapter application contract suite."
+        }
+      ],
+      "confidence": "verified",
+      "last_verified_at": "2026-07-29T11:00:00Z",
+      "limitations": [
+        "Local adapter tests do not replace production browser verification."
+      ]
+    },
+    {
+      "id": "WORKFLOW-REPOSITORY-CATALOG",
+      "kind": "workflow",
+      "name": "Repository Capability Catalog Maintenance",
+      "status": "active",
+      "purpose": "Validate the reviewed repository catalog, detect unreviewed drift without network access, and regenerate the human-readable catalog projection.",
+      "locations": [
+        "catalog",
+        "docs/REPOSITORY_CATALOG.md",
+        "tools/check_repository_catalog.py"
+      ],
+      "entrypoints": [
+        "tools/check_repository_catalog.py"
+      ],
+      "technologies": [
+        "Python",
+        "JSON"
+      ],
+      "commands": [
+        "uv run python tools/check_repository_catalog.py"
+      ],
+      "depends_on": [
+        "DOC-BUSINESS-INTEL"
+      ],
+      "external_resources": [],
+      "environment": {
+        "configuration_status": "non-network deterministic check"
+      },
+      "evidence": [
+        {
+          "path": "tools/check_repository_catalog.py",
+          "detail": "Non-network schema, source-location, export, external-resource, and generated-document drift check."
+        },
+        {
+          "path": ".github/workflows/quality.yml",
+          "detail": "Quality CI executes the catalog drift check before the deterministic test suite."
+        }
+      ],
+      "confidence": "verified",
+      "last_verified_at": "2026-07-29T11:00:00Z",
+      "limitations": [
+        "Discovery candidates are plan-only until a reviewed catalog edit is approved."
+      ],
+      "discovery_keys": [
+        "cli:tools/check_repository_catalog.py:check repository catalog"
+      ]
+    },
+    {
+      "id": "WORKFLOW-CI-PYTHON-QUALITY",
+      "kind": "workflow",
+      "name": "Python Quality CI",
+      "status": "active",
+      "purpose": "Run frozen dependency sync, Ruff, ty, codespell, and deterministic pytest on pushes and pull requests.",
+      "locations": [
+        ".github/workflows/quality.yml"
+      ],
+      "entrypoints": [
+        ".github/workflows/quality.yml"
+      ],
+      "technologies": [
+        "GitHub Actions",
+        "Python",
+        "uv"
+      ],
+      "commands": [],
+      "depends_on": [
+        "TEST-PYTHON-DETERMINISTIC"
+      ],
+      "external_resources": [
+        {
+          "name": "Business Intel GitHub Actions",
+          "provider": "GitHub",
+          "type": "continuous integration",
+          "environment": "repository",
+          "reference": "https://github.com/NilhanHub/business-intel/actions",
+          "status": "observed",
+          "last_verified_at": "2026-07-29T11:00:00Z"
+        }
+      ],
+      "environment": {
+        "configuration_status": "repository workflow"
+      },
+      "evidence": [
+        {
+          "path": ".github/workflows/quality.yml",
+          "detail": "Python quality job definition."
+        }
+      ],
+      "confidence": "verified",
+      "last_verified_at": "2026-07-29T11:00:00Z",
+      "limitations": [
+        "Current remote run status was not queried during catalog creation."
+      ],
+      "discovery_keys": [
+        "workflow:.github/workflows/quality.yml:quality"
+      ]
+    },
+    {
+      "id": "WORKFLOW-CI-PORTFOLIO-INTEGRITY",
+      "kind": "workflow",
+      "name": "Portfolio Integrity CI",
+      "status": "active",
+      "purpose": "Verify portfolio documentation and social-preview dimensions and scan changed Git history for leaked secrets.",
+      "locations": [
+        ".github/workflows/portfolio-integrity.yml"
+      ],
+      "entrypoints": [
+        ".github/workflows/portfolio-integrity.yml"
+      ],
+      "technologies": [
+        "GitHub Actions",
+        "Gitleaks"
+      ],
+      "commands": [],
+      "depends_on": [
+        "DOC-BUSINESS-INTEL"
+      ],
+      "external_resources": [
+        {
+          "name": "Business Intel portfolio workflow",
+          "provider": "GitHub",
+          "type": "continuous integration",
+          "environment": "repository",
+          "reference": "https://github.com/NilhanHub/business-intel/actions",
+          "status": "observed",
+          "last_verified_at": "2026-07-29T11:00:00Z"
+        }
+      ],
+      "environment": {
+        "configuration_status": "repository workflow"
+      },
+      "evidence": [
+        {
+          "path": ".github/workflows/portfolio-integrity.yml",
+          "detail": "Documentation and changed-history integrity job."
+        }
+      ],
+      "confidence": "verified",
+      "last_verified_at": "2026-07-29T11:00:00Z",
+      "limitations": [
+        "Current remote run status was not queried during catalog creation."
+      ],
+      "discovery_keys": [
+        "workflow:.github/workflows/portfolio-integrity.yml:portfolio-integrity"
+      ]
+    },
+    {
+      "id": "DOC-BUSINESS-INTEL",
+      "kind": "documentation_set",
+      "name": "Business Intel Engineering and Operating Contracts",
+      "status": "active",
+      "purpose": "Document architecture, real-data policy, dependency and release boundaries, agent designs, CRM/Sheet schemas, report workflows, and historical implementation reports.",
+      "locations": [
+        "README.md",
+        "ENGINEERING_OVERVIEW.md",
+        "REAL_DATA_POLICY.md",
+        "docs"
+      ],
+      "entrypoints": [
+        "README.md",
+        "ENGINEERING_OVERVIEW.md"
+      ],
+      "technologies": [
+        "JSON",
+        "Markdown",
+        "Mermaid"
+      ],
+      "commands": [],
+      "depends_on": [],
+      "external_resources": [],
+      "environment": {
+        "configuration_status": "repository documentation"
+      },
+      "evidence": [
+        {
+          "path": "ENGINEERING_OVERVIEW.md",
+          "detail": "Current architecture and system-shape overview."
+        },
+        {
+          "path": "docs",
+          "detail": "Thirty-five tracked design, contract, release, and portfolio artifacts."
+        }
+      ],
+      "confidence": "verified",
+      "last_verified_at": "2026-07-29T11:00:00Z",
+      "limitations": [
+        "Historical prompt reports are evidence of earlier work, not current runtime health."
+      ],
+      "discovery_keys": [
+        "documentation_set:docs:business_intel documentation"
+      ]
+    },
+    {
+      "id": "HIST-HELLO-CLOUD-AGENT",
+      "kind": "historical",
+      "name": "Hello Cloud Agent Scaffold",
+      "status": "retired",
+      "purpose": "Preserve provenance for the removed hello-world Agent Runtime scaffold without treating it as a current application.",
+      "locations": [
+        "docs/PROMPT#07_HELLO_CLOUD_report.md"
+      ],
+      "entrypoints": [],
+      "technologies": [
+        "Google ADK",
+        "Google Agent Runtime"
+      ],
+      "commands": [],
+      "depends_on": [],
+      "external_resources": [
+        {
+          "name": "Historical hello runtime",
+          "provider": "Google Cloud",
+          "type": "reasoning engine",
+          "environment": "historical",
+          "reference": "projects/business-intel-123/locations/us-central1/reasoningEngines/6658084415660359680",
+          "status": "historical",
+          "last_verified_at": "2026-07-29T11:00:00Z"
+        }
+      ],
+      "environment": {
+        "configuration_status": "removed from source"
+      },
+      "evidence": [
+        {
+          "path": "docs/PROMPT#07_HELLO_CLOUD_report.md",
+          "detail": "Historical scaffold report retained after source removal."
+        }
+      ],
+      "confidence": "verified",
+      "last_verified_at": "2026-07-29T11:00:00Z",
+      "limitations": [
+        "The hello_cloud_agent source package was removed in commit 8b115a3 and is not deployable from current source."
+      ]
+    }
+  ],
+  "candidates": []
+}

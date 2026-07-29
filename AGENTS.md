@@ -14,6 +14,13 @@ Do not build tender intelligence unless explicitly requested. Tender/procurement
 
 Runtime real-data rule: never return synthetic/sample/demo companies, fake URLs, `example.test` URLs, or simulated evidence as leads. Every runtime lead must trace to live public evidence with `evidence_url`, `evidence_excerpt`, `source_name`, `fetched_at`, and `verified_live: true`.
 
+Repository capability catalog rule: before adding, removing, renaming, or retiring
+an application, website, exported ADK agent/app, service, workflow, deployment,
+integration, data store, public endpoint, or test lane, update
+`catalog/repository.catalog.v1.json`, regenerate `docs/REPOSITORY_CATALOG.md`, and
+run `uv run python tools/check_repository_catalog.py`. Discovery produces
+candidates only; canonical changes require review.
+
 Before any edit to the `Northwind CRM Warm Paths Tracker` Google Sheet, read and
 follow `docs/northwind_warm_paths_sheet_contract.md` and the canonical machine
 contract `docs/northwind_warm_paths_sheet_contract.v1.json`. Preserve complete

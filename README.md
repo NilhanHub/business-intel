@@ -8,6 +8,11 @@
 > [!TIP]
 > Start with [ENGINEERING_OVERVIEW.md](ENGINEERING_OVERVIEW.md) for the architecture, agent lanes, trust model, verification evidence, and implementation boundaries.
 
+For a stable inventory of every application, exported agent, website, service,
+workflow, deployment, integration, data store, documentation set, and test lane,
+see [docs/REPOSITORY_CATALOG.md](docs/REPOSITORY_CATALOG.md). Its canonical
+machine-readable source is `catalog/repository.catalog.v1.json`.
+
 Business Intel is a local-only Google ADK and FastAPI workspace for Sri Lanka public-signal lead intelligence. Runtime leads are accepted only when they retain genuine public evidence, and tender/procurement-only signals are rejected.
 
 ## Local setup on Windows
@@ -61,6 +66,7 @@ uv run pytest
 uv run ruff check .
 uv run ty check
 uv run codespell
+uv run python tools/check_repository_catalog.py
 node --check frontend\static\js\app.js
 node --check frontend\static\js\login.js
 uv run --with pip-audit pip-audit --skip-editable
@@ -84,6 +90,7 @@ agents-cli eval run --all
 - `uk_ie_d365_leads/` — separate UK/IE Dynamics 365 workflow
 - `tests/unit/` — deterministic web security and integrity checks
 - `tests/eval/` — explicit model-evaluation configuration and lead-policy cases
+- `catalog/` — reviewed repository capability truth and stable component IDs
 - `Evidence/` — local verification evidence; ignored by Git
 
 ## Deployment status
